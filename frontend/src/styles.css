@@ -1077,6 +1077,11 @@ button {
   gap: 8px;
 }
 
+.ai-panel__notice {
+  margin: 0 16px 16px;
+  color: var(--text-muted);
+}
+
 .ai-panel__meta-actions {
   padding: 0 16px 16px;
 }

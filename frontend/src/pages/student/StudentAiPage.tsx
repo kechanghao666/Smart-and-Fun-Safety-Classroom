@@ -2,12 +2,18 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { examQuestions } from "../../data/mockData";
 import { useAppState } from "../../state/AppState";
-import { buildAiQuickPrompts, getAiReply, type AiChatMessage } from "../../utils/aiAssistant";
+import {
+  buildAiQuickPrompts,
+  resolveAiReply,
+  type AiChatMessage,
+} from "../../utils/aiAssistant";
 
 export function StudentAiPage() {
   const { state } = useAppState();
   const profileName = state.studentProfile?.nickname ?? "小小安全员";
   const [input, setInput] = useState("");
+  const [isAsking, setIsAsking] = useState(false);
+  const [assistantNotice, setAssistantNotice] = useState("");
   const [messages, setMessages] = useState<AiChatMessage[]>([
     {
       id: "welcome",
@@ -34,20 +40,31 @@ export function StudentAiPage() {
     return Array.from(new Map(prompts.map((item) => [item.id, item])).values()).slice(0, 3);
   }, [wrongQuestionDetails]);
 
-  function ask(question: string) {
+  async function ask(question: string, scene: "hint" | "qa" = "qa") {
     const trimmed = question.trim();
 
     if (!trimmed) {
       return;
     }
 
-    const reply = getAiReply(trimmed);
-    setMessages((current) => [
-      ...current,
-      { id: `${Date.now()}-u`, role: "user", text: trimmed },
-      { id: `${Date.now()}-a`, role: "assistant", text: reply },
-    ]);
-    setInput("");
+    setIsAsking(true);
+    setAssistantNotice("");
+    try {
+      const reply = await resolveAiReply(trimmed, {
+        authSource: state.authSource,
+        authToken: state.authToken,
+        scene,
+      });
+      setMessages((current) => [
+        ...current,
+        { id: `${Date.now()}-u`, role: "user", text: trimmed },
+        { id: `${Date.now()}-a`, role: "assistant", text: reply.text },
+      ]);
+      setAssistantNotice(reply.notice ?? "");
+      setInput("");
+    } finally {
+      setIsAsking(false);
+    }
   }
 
   return (
@@ -113,20 +130,23 @@ export function StudentAiPage() {
             ))}
           </div>
 
+          {assistantNotice ? <p className="ai-panel__notice">{assistantNotice}</p> : null}
+
           <form
             className="ai-panel__composer ai-panel__composer--page"
             onSubmit={(event) => {
               event.preventDefault();
-              ask(input);
+              void ask(input);
             }}
           >
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder="例如：为什么过马路要看红绿灯？"
+              disabled={isAsking}
             />
-            <button type="submit" className="primary-button">
-              发送问题
+            <button type="submit" className="primary-button" disabled={isAsking}>
+              {isAsking ? "思考中..." : "发送问题"}
             </button>
           </form>
         </article>
@@ -141,7 +161,10 @@ export function StudentAiPage() {
                   key={prompt.id}
                   type="button"
                   className="quick-chip"
-                  onClick={() => ask(prompt.question)}
+                  disabled={isAsking}
+                  onClick={() => {
+                    void ask(prompt.question);
+                  }}
                 >
                   {prompt.label}
                 </button>
@@ -159,7 +182,10 @@ export function StudentAiPage() {
                     key={prompt.id}
                     type="button"
                     className="quick-chip"
-                    onClick={() => ask(prompt.question)}
+                    disabled={isAsking}
+                    onClick={() => {
+                      void ask(prompt.question, "hint");
+                    }}
                   >
                     {prompt.label}
                   </button>
@@ -186,4 +212,3 @@ export function StudentAiPage() {
     </div>
   );
 }
-

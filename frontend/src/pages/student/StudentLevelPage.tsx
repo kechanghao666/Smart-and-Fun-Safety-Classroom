@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   guardianTasks,
@@ -6,6 +6,8 @@ import {
   levelOneTasks,
   routeChallengeSteps,
 } from "../../data/mockData";
+import { ApiError } from "../../services/http";
+import { completeStudentLevel, startStudentLevel } from "../../services/student";
 import { useAppState } from "../../state/AppState";
 import type { LevelId, LevelResult } from "../../types";
 
@@ -16,7 +18,11 @@ function isLevelId(value: string | undefined): value is LevelId {
 export function StudentLevelPage() {
   const { levelId } = useParams();
   const navigate = useNavigate();
-  const { completeLevel, markLevelInProgress, state } = useAppState();
+  const { completeLevel, markLevelInProgress, replaceProgress, state } = useAppState();
+  const [syncError, setSyncError] = useState("");
+  const [isFinishing, setIsFinishing] = useState(false);
+  const startRequestRef = useRef<LevelId | null>(null);
+  const canUseApi = state.authSource === "api" && Boolean(state.authToken);
 
   const currentLevel = useMemo(
     () => state.progress.levels.find((level) => level.id === levelId),
@@ -24,10 +30,40 @@ export function StudentLevelPage() {
   );
 
   useEffect(() => {
-    if (isLevelId(levelId) && currentLevel?.status === "available") {
-      markLevelInProgress(levelId);
+    if (!isLevelId(levelId) || currentLevel?.status !== "available") {
+      return;
     }
-  }, [currentLevel?.status, levelId, markLevelInProgress]);
+
+    if (!canUseApi || !state.authToken) {
+      markLevelInProgress(levelId);
+      return;
+    }
+
+    if (startRequestRef.current === levelId) {
+      return;
+    }
+
+    startRequestRef.current = levelId;
+    setSyncError("");
+    void startStudentLevel(state.authToken, levelId)
+      .then((progress) => {
+        replaceProgress(progress);
+      })
+      .catch((error) => {
+        setSyncError(
+          error instanceof ApiError
+            ? error.message
+            : "关卡开始同步失败，当前仍可继续浏览本页内容。",
+        );
+      });
+  }, [
+    canUseApi,
+    currentLevel?.status,
+    levelId,
+    markLevelInProgress,
+    replaceProgress,
+    state.authToken,
+  ]);
 
   const levelMeta = levelBlueprints.find((level) => level.id === levelId);
   const [selectedHotspots, setSelectedHotspots] = useState<string[]>([]);
@@ -125,8 +161,36 @@ export function StudentLevelPage() {
     };
   }
 
-  function finishLevel() {
+  async function finishLevel() {
     const result = buildLevelResult();
+    if (canUseApi && state.authToken) {
+      setIsFinishing(true);
+      setSyncError("");
+
+      try {
+        const response = await completeStudentLevel(state.authToken, activeLevelId);
+        replaceProgress({
+          ...response.progress,
+          levelResults: {
+            ...response.progress.levelResults,
+            [activeLevelId]: response.result ?? result,
+          },
+        });
+      } catch (error) {
+        setSyncError(
+          error instanceof ApiError
+            ? error.message
+            : "关卡完成同步失败，请稍后重试。",
+        );
+        setIsFinishing(false);
+        return;
+      }
+
+      setIsFinishing(false);
+      navigate(`/student/theme/road-safety/level/${activeLevelId}/result`);
+      return;
+    }
+
     completeLevel(activeLevelId, result);
     navigate(`/student/theme/road-safety/level/${activeLevelId}/result`);
   }
@@ -155,6 +219,13 @@ export function StudentLevelPage() {
           </button>
         </div>
       </section>
+
+      {syncError ? (
+        <article className="feedback-box">
+          <strong>同步提醒</strong>
+          <p>{syncError}</p>
+        </article>
+      ) : null}
 
       {levelId === "level-1" ? (
         <section className="surface-card interaction-board">
@@ -200,9 +271,11 @@ export function StudentLevelPage() {
             type="button"
             className="primary-button"
             disabled={selectedHotspots.length !== levelOneTasks.length}
-            onClick={finishLevel}
+            onClick={() => {
+              void finishLevel();
+            }}
           >
-            完成本关
+            {isFinishing ? "提交中..." : "完成本关"}
           </button>
         </section>
       ) : null}
@@ -289,9 +362,11 @@ export function StudentLevelPage() {
               type="button"
               className="primary-button"
               disabled={!routeCompleted || routeSafety <= 0}
-              onClick={finishLevel}
+              onClick={() => {
+                void finishLevel();
+              }}
             >
-              完成本关
+              {isFinishing ? "提交中..." : "完成本关"}
             </button>
           </div>
         </section>
@@ -344,9 +419,11 @@ export function StudentLevelPage() {
             type="button"
             className="primary-button"
             disabled={selectedGuardianTasks.length !== guardianTasks.length}
-            onClick={finishLevel}
+            onClick={() => {
+              void finishLevel();
+            }}
           >
-            完成本关
+            {isFinishing ? "提交中..." : "完成本关"}
           </button>
         </section>
       ) : null}

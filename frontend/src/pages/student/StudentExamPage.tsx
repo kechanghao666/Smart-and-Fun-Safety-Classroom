@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { examQuestions } from "../../data/mockData";
+import { ApiError } from "../../services/http";
+import { submitStudentExam } from "../../services/student";
 import { useAppState } from "../../state/AppState";
 
 interface ExamResultSnapshot {
@@ -11,10 +13,13 @@ interface ExamResultSnapshot {
 
 export function StudentExamPage() {
   const navigate = useNavigate();
-  const { state, submitExam } = useAppState();
+  const { replaceProgress, state, submitExam } = useAppState();
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [examResult, setExamResult] = useState<ExamResultSnapshot | null>(null);
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const canUseApi = state.authSource === "api" && Boolean(state.authToken);
   const answeredCount = Object.keys(answers).length;
   const activeQuestion = examQuestions[activeQuestionIndex];
 
@@ -57,17 +62,49 @@ export function StudentExamPage() {
     );
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (answeredCount !== examQuestions.length) {
       return;
     }
 
+    setSubmitError("");
     const wrongQuestionIds = examQuestions
       .filter((question) => answers[question.id] !== question.correctIndex)
       .map((question) => question.id);
     const score = Math.round(
       ((examQuestions.length - wrongQuestionIds.length) / examQuestions.length) * 100,
     );
+
+    if (canUseApi && state.authToken) {
+      setIsSubmitting(true);
+
+      try {
+        const progress = await submitStudentExam(
+          state.authToken,
+          examQuestions.map((question) => ({
+            questionId: question.id,
+            selectedIndex: answers[question.id],
+          })),
+        );
+
+        replaceProgress(progress);
+        setExamResult({
+          score: progress.exam.score ?? score,
+          wrongQuestionIds: progress.exam.wrongQuestionIds,
+          answers,
+        });
+      } catch (error) {
+        setSubmitError(
+          error instanceof ApiError
+            ? error.message
+            : "考试提交失败，请稍后重试。",
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+
+      return;
+    }
 
     submitExam(score, wrongQuestionIds);
     setExamResult({
@@ -98,6 +135,13 @@ export function StudentExamPage() {
           <span>{reviewSource ? "考试得分" : "已答题数"}</span>
         </div>
       </section>
+
+      {submitError ? (
+        <article className="feedback-box">
+          <strong>提交提醒</strong>
+          <p>{submitError}</p>
+        </article>
+      ) : null}
 
       {!reviewSource ? (
         <>
@@ -206,10 +250,12 @@ export function StudentExamPage() {
             <button
               type="button"
               className="primary-button"
-              disabled={answeredCount !== examQuestions.length}
-              onClick={handleSubmit}
+              disabled={answeredCount !== examQuestions.length || isSubmitting}
+              onClick={() => {
+                void handleSubmit();
+              }}
             >
-              提交考试
+              {isSubmitting ? "提交中..." : "提交考试"}
             </button>
           </div>
         </>
