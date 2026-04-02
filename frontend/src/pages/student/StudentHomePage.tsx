@@ -4,6 +4,7 @@ import { StatusBadge } from "../../components/StatusBadge";
 import { themeCards } from "../../data/mockData";
 import { useAppState } from "../../state/AppState";
 import type { LevelId } from "../../types";
+import { buildStageGuide } from "../../utils/studentOnboarding";
 import { useStudentAiScene } from "../../utils/useStudentAiScene";
 import { buildGrowthSnapshot } from "../../utils/studentGrowth";
 
@@ -27,6 +28,7 @@ export function StudentHomePage() {
   const nextLevel = state.progress.levels.find(
     (level) => level.status === "available" || level.status === "in_progress",
   );
+  const stageGuide = buildStageGuide(profile?.stage);
   const examStatusLabel =
     state.progress.exam.status === "completed"
       ? "已完成"
@@ -261,6 +263,7 @@ export function StudentHomePage() {
             <li>当前外观：{growth.currentTier.appearance}</li>
             <li>专属场景：{growth.currentTier.scene}</li>
             <li>建议下一步：{growth.nextFocus}</li>
+            <li>学段建议：{stageGuide.starterRoute}</li>
           </ul>
         </article>
       </section>

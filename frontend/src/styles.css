@@ -261,6 +261,27 @@ button {
   grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
 }
 
+.profile-preview-card,
+.onboarding-card {
+  display: grid;
+  gap: 16px;
+}
+
+.profile-preview-card {
+  border-radius: 24px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(38, 139, 210, 0.08), rgba(255, 255, 255, 0.82)),
+    var(--surface);
+}
+
+.onboarding-card--soft {
+  background:
+    linear-gradient(180deg, rgba(89, 206, 161, 0.08), rgba(255, 255, 255, 0.82)),
+    var(--surface);
+}
+
 .avatar-grid,
 .stage-grid {
   display: grid;
@@ -286,6 +307,14 @@ button {
 .stage-option--selected {
   border-color: rgba(38, 139, 210, 0.42);
   background: rgba(38, 139, 210, 0.12);
+}
+
+.quick-chip {
+  border: 1px solid transparent;
+}
+
+.quick-chip:hover {
+  border-color: rgba(38, 139, 210, 0.2);
 }
 
 .avatar-option__swatch,
