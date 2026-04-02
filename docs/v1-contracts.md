@@ -140,7 +140,15 @@ interface AppState {
   - `GET /api/admin/modules`
   - `GET /api/admin/themes`
   - `GET /api/admin/levels`
-  - `GET /api/admin/question-bank`
-  - `GET /api/admin/ai-copy`
-  - `GET /api/admin/users`
-  - `GET /api/admin/stats`
+- `GET /api/admin/question-bank`
+- `GET /api/admin/ai-copy`
+- `GET /api/admin/users`
+- `GET /api/admin/stats`
+
+## 教师端与管理员端补充约定
+
+- 教师端首页、班级页、学生列表页、学生详情页统一采用“读取接口优先，失败后回退 mock”的工作流，并在页面上明确展示当前数据来源。
+- 教师端学生详情页需要稳定展示四类信息：学习闭环概览、关卡表现、考试状态 / 风险点、教师建议动作。
+- 管理后台的主题、关卡、题库、AI 文案四个编辑页统一改为显式保存工作流：编辑后先进入未保存状态，点击保存后写入 localStorage。
+- 管理后台编辑页允许“撤销未保存修改”和“恢复同步 / 默认数据”，但本轮不新增真实后端写接口。
+- 管理后台的“保存成功”仅表示本地工作稿已更新，不代表已经写入服务器；后续若接真实写接口，再统一替换保存目标。

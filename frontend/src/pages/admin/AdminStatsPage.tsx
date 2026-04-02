@@ -17,6 +17,8 @@ export function AdminStatsPage() {
     fetcher: () => fetchAdminStats(state.authToken ?? ""),
     dependencies: [state.authToken],
   });
+  const trackedClassCount = data.classSummaries.length;
+  const topMetric = data.metrics[0] ?? null;
 
   return (
     <div className="page-stack">
@@ -24,7 +26,7 @@ export function AdminStatsPage() {
         <div>
           <span className="hero-banner__eyebrow">数据统计</span>
           <h1>查看访问量、完成率、成绩和班级表现</h1>
-          <p>当前为轻量图表原型，后续可直接替换成真实统计接口返回。</p>
+          <p>当前是轻量图表工作台，后续可以直接切换成真实统计接口返回。</p>
         </div>
       </section>
 
@@ -37,7 +39,7 @@ export function AdminStatsPage() {
         </p>
       </article>
 
-      <section className="card-grid card-grid--three">
+      <section className="card-grid card-grid--four">
         {data.metrics.map((metric) => (
           <article
             key={metric.id}
@@ -48,6 +50,11 @@ export function AdminStatsPage() {
             <p>{metric.trend}</p>
           </article>
         ))}
+        <article className="surface-card stat-card admin-summary-card">
+          <span>跟踪班级</span>
+          <strong>{trackedClassCount}</strong>
+          <p>{topMetric ? `当前优先关注：${topMetric.label}` : "当前暂无统计指标。"}</p>
+        </article>
       </section>
 
       <section className="surface-card">
@@ -58,22 +65,30 @@ export function AdminStatsPage() {
           </div>
         </div>
 
-        <div className="bar-list">
-          {data.classSummaries.map((classroom) => (
-            <article key={classroom.id} className="bar-item">
-              <div className="row-between">
-                <strong>{classroom.name}</strong>
-                <span>三关 {classroom.completedRate}% · 考试 {classroom.examCompletionRate}%</span>
-              </div>
-              <div className="bar-item__track">
-                <span
-                  className="bar-item__fill"
-                  style={{ width: `${classroom.completedRate}%` }}
-                />
-              </div>
-            </article>
-          ))}
-        </div>
+        {data.classSummaries.length > 0 ? (
+          <div className="bar-list">
+            {data.classSummaries.map((classroom) => (
+              <article key={classroom.id} className="bar-item">
+                <div className="row-between">
+                  <strong>{classroom.name}</strong>
+                  <span>三关 {classroom.completedRate}% / 考试 {classroom.examCompletionRate}%</span>
+                </div>
+                <div className="bar-item__track">
+                  <span
+                    className="bar-item__fill"
+                    style={{ width: `${classroom.completedRate}%` }}
+                  />
+                </div>
+                <p>{classroom.focusLabel}</p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <article className="feedback-box empty-state-card">
+            <strong>当前没有班级统计</strong>
+            <p>等待后端返回统计数据，或先使用本地演示数据初始化图表。</p>
+          </article>
+        )}
       </section>
     </div>
   );

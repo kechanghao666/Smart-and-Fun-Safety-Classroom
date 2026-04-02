@@ -4,6 +4,11 @@ import { teacherStudentDetails } from "../../data/mockData";
 import { fetchTeacherStudentDetail } from "../../services/teacher";
 import { useAppState } from "../../state/AppState";
 import { useApiResource } from "../../utils/useApiResource";
+import {
+  buildTeacherStudentActions,
+  getTeacherAttentionLabel,
+  getTeacherAttentionLevel,
+} from "../../utils/teacherInsights";
 
 export function TeacherStudentDetailPage() {
   const { studentId } = useParams();
@@ -28,15 +33,29 @@ export function TeacherStudentDetailPage() {
     );
   }
 
+  const attentionLevel = getTeacherAttentionLevel(student);
+  const attentionLabel = getTeacherAttentionLabel(attentionLevel);
+  const suggestedActions = buildTeacherStudentActions(student);
+  const closedLoopRate = Math.round((student.completedLevels / 3) * 100);
+  const wrongTopics =
+    student.wrongTopics.length > 0
+      ? student.wrongTopics
+      : ["当前暂无考试错题，建议继续围绕薄弱点安排复习。"];
+
   return (
     <div className="page-stack">
       <section className="hero-banner hero-banner--teacher">
         <div>
           <span className="hero-banner__eyebrow">学生详情</span>
           <h1>{student.name}</h1>
-          <p>
-            {student.className} · {student.growthStage} · 最近活跃：{student.lastActiveAt}
-          </p>
+          <div className="chip-row">
+            <span className="surface-tag">{student.className}</span>
+            <span className="surface-tag">{student.growthStage}</span>
+            <span className={`teacher-attention-pill teacher-attention-pill--${attentionLevel}`}>
+              {attentionLabel}
+            </span>
+          </div>
+          <p>最近活跃：{student.lastActiveAt}</p>
         </div>
         <div className="hero-banner__actions">
           <Link className="ghost-button link-button" to="/teacher/students">
@@ -54,10 +73,10 @@ export function TeacherStudentDetailPage() {
         </p>
       </article>
 
-      <section className="card-grid card-grid--three">
+      <section className="card-grid card-grid--four">
         <article className="surface-card stat-card">
-          <span>学习完成</span>
-          <strong>{student.completedLevels} / 3</strong>
+          <span>学习闭环完成率</span>
+          <strong>{closedLoopRate}%</strong>
           <p>{student.motivationLabel}</p>
         </article>
         <article className="surface-card stat-card">
@@ -70,19 +89,24 @@ export function TeacherStudentDetailPage() {
           <strong>{student.growthStage}</strong>
           <p>{student.growthSummary}</p>
         </article>
+        <article className="surface-card stat-card">
+          <span>跟进等级</span>
+          <strong>{attentionLabel}</strong>
+          <p>结合关卡完成、考试状态和薄弱点做出的前端分析判断。</p>
+        </article>
       </section>
 
       <section className="card-grid card-grid--two">
         <article className="surface-card">
-          <span className="section-block__eyebrow">关卡完成情况</span>
-          <h2>看每一关卡在哪一段停住了</h2>
+          <span className="section-block__eyebrow">关卡表现</span>
+          <h2>看每一关卡在什么阶段停住了</h2>
           <div className="page-stack">
             {student.levelStatuses.map((level) => (
-              <article key={level.levelId} className="teacher-alert-card">
+              <article key={level.levelId} className="teacher-analysis-card">
                 <div className="row-between">
                   <div>
                     <strong>{level.title}</strong>
-                    <p>{level.note}</p>
+                    <p className="teacher-analysis-card__meta">{level.note}</p>
                   </div>
                   <StatusBadge status={level.status} />
                 </div>
@@ -93,18 +117,46 @@ export function TeacherStudentDetailPage() {
         </article>
 
         <article className="surface-card">
-          <span className="section-block__eyebrow">错题与建议</span>
+          <span className="section-block__eyebrow">风险与薄弱点</span>
           <h2>教师课后跟进重点</h2>
           <ul className="plain-list">
             <li>当前薄弱点：{student.weakSpot}</li>
-            {student.wrongTopics.map((topic) => (
-              <li key={topic}>错题/风险：{topic}</li>
+            {wrongTopics.map((topic) => (
+              <li key={topic}>错题 / 风险：{topic}</li>
             ))}
           </ul>
+        </article>
+      </section>
+
+      <section className="card-grid card-grid--two">
+        <article className="surface-card">
+          <span className="section-block__eyebrow">成长与激励</span>
+          <h2>把学习结果转成可持续推进的反馈</h2>
           <div className="page-stack">
+            <article className="teacher-analysis-card">
+              <strong>成长总结</strong>
+              <p>{student.growthSummary}</p>
+            </article>
+            <article className="teacher-analysis-card">
+              <strong>当前激励标签</strong>
+              <p>{student.motivationLabel}</p>
+            </article>
+          </div>
+        </article>
+
+        <article className="surface-card">
+          <span className="section-block__eyebrow">建议动作</span>
+          <h2>教师下一步最值得执行的跟进</h2>
+          <div className="page-stack">
+            {suggestedActions.map((item) => (
+              <article key={item} className="teacher-action-card">
+                <strong>建议动作</strong>
+                <p>{item}</p>
+              </article>
+            ))}
             {student.recommendations.map((item) => (
               <article key={item} className="feedback-box">
-                <strong>建议动作</strong>
+                <strong>补充建议</strong>
                 <p>{item}</p>
               </article>
             ))}

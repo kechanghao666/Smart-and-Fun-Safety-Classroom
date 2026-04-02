@@ -3,6 +3,11 @@ import { teacherClassSummaries, teacherStudents } from "../../data/mockData";
 import { fetchTeacherDashboard } from "../../services/teacher";
 import { useAppState } from "../../state/AppState";
 import { useApiResource } from "../../utils/useApiResource";
+import {
+  buildTeacherDashboardActions,
+  getTeacherAttentionLabel,
+  getTeacherAttentionLevel,
+} from "../../utils/teacherInsights";
 
 const fallbackDashboard = {
   classSummaries: teacherClassSummaries,
@@ -21,7 +26,23 @@ export function TeacherDashboardPage() {
 
   const completedAll = data.students.filter((student) => student.completedLevels === 3).length;
   const examCompleted = data.students.filter((student) => student.score !== null).length;
-  const attentionStudents = data.students.filter((student) => student.completedLevels < 3);
+  const urgentCount = data.students.filter(
+    (student) => getTeacherAttentionLevel(student) === "urgent",
+  ).length;
+  const attentionWeight = {
+    urgent: 0,
+    watch: 1,
+    stable: 2,
+  } as const;
+  const attentionStudents = data.students
+    .slice()
+    .sort((left, right) => {
+      const leftLevel = getTeacherAttentionLevel(left);
+      const rightLevel = getTeacherAttentionLevel(right);
+      return attentionWeight[leftLevel] - attentionWeight[rightLevel];
+    })
+    .slice(0, 4);
+  const dashboardActions = buildTeacherDashboardActions(data.students, data.classSummaries);
 
   return (
     <div className="page-stack">
@@ -46,11 +67,11 @@ export function TeacherDashboardPage() {
         <p>
           {isLoading
             ? "正在同步教师端数据..."
-            : error || "教师首页已经具备真实接口读取位，后端就绪后会自动切换。"}
+            : error || "教师首页已经具备真实接口读取占位，后端就绪后会自动切换。"}
         </p>
       </article>
 
-      <section className="card-grid card-grid--three">
+      <section className="card-grid card-grid--four">
         <article className="surface-card stat-card">
           <span>班级人数</span>
           <strong>{data.students.length}</strong>
@@ -66,51 +87,106 @@ export function TeacherDashboardPage() {
           <strong>{examCompleted}</strong>
           <p>便于课后查看知识巩固情况和错题分布。</p>
         </article>
+        <article className="surface-card stat-card">
+          <span>需重点跟进</span>
+          <strong>{urgentCount}</strong>
+          <p>优先关注未形成完整闭环或风险仍较高的学生。</p>
+        </article>
       </section>
 
       <section className="card-grid card-grid--two">
         <article className="surface-card">
           <span className="section-block__eyebrow">班级完成概览</span>
           <h2>先看哪一个班级需要更多课堂支持</h2>
-          <div className="bar-list">
-            {data.classSummaries.map((classroom) => (
-              <article key={classroom.id} className="bar-item">
-                <div className="row-between">
-                  <strong>{classroom.name}</strong>
-                  <span>{classroom.completedRate}%</span>
-                </div>
-                <div className="bar-item__track">
-                  <span
-                    className="bar-item__fill"
-                    style={{ width: `${classroom.completedRate}%` }}
-                  />
-                </div>
-                <p>{classroom.focusLabel}</p>
-              </article>
-            ))}
-          </div>
+          {data.classSummaries.length > 0 ? (
+            <div className="bar-list">
+              {data.classSummaries.map((classroom) => (
+                <article key={classroom.id} className="bar-item">
+                  <div className="row-between">
+                    <strong>{classroom.name}</strong>
+                    <span>
+                      三关 {classroom.completedRate}% / 考试 {classroom.examCompletionRate}%
+                    </span>
+                  </div>
+                  <div className="bar-item__track">
+                    <span
+                      className="bar-item__fill"
+                      style={{ width: `${classroom.completedRate}%` }}
+                    />
+                  </div>
+                  <p>{classroom.focusLabel}</p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <article className="feedback-box empty-state-card">
+              <strong>当前没有班级概览数据</strong>
+              <p>等待后端同步班级统计，或先使用本地演示数据。</p>
+            </article>
+          )}
         </article>
 
         <article className="surface-card">
           <span className="section-block__eyebrow">近期异常提醒</span>
           <h2>这些学生值得优先查看</h2>
-          <div className="page-stack">
-            {attentionStudents.map((student) => (
-              <article key={student.id} className="teacher-alert-card">
-                <div className="row-between">
-                  <div>
-                    <strong>{student.name}</strong>
-                    <p>{student.className}</p>
-                  </div>
-                  <Link className="ghost-button link-button" to={`/teacher/students/${student.id}`}>
-                    学生详情
-                  </Link>
-                </div>
-                <p>{student.weakSpot}</p>
-              </article>
-            ))}
-          </div>
+          {attentionStudents.length > 0 ? (
+            <div className="page-stack">
+              {attentionStudents.map((student) => {
+                const attentionLevel = getTeacherAttentionLevel(student);
+
+                return (
+                  <article key={student.id} className="teacher-analysis-card">
+                    <div className="row-between">
+                      <div>
+                        <strong>{student.name}</strong>
+                        <p className="teacher-analysis-card__meta">{student.className}</p>
+                      </div>
+                      <span
+                        className={`teacher-attention-pill teacher-attention-pill--${attentionLevel}`}
+                      >
+                        {getTeacherAttentionLabel(attentionLevel)}
+                      </span>
+                    </div>
+                    <p>{student.weakSpot}</p>
+                    <div className="row-between">
+                      <span className="inline-note">
+                        三关 {student.completedLevels} / 3 · 考试 {student.examStatus}
+                      </span>
+                      <Link
+                        className="ghost-button link-button"
+                        to={`/teacher/students/${student.id}`}
+                      >
+                        学生详情
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <article className="feedback-box empty-state-card">
+              <strong>当前没有异常学生</strong>
+              <p>可以优先查看班级整体趋势，安排下一轮课堂复习重点。</p>
+            </article>
+          )}
         </article>
+      </section>
+
+      <section className="surface-card">
+        <div className="section-block__header">
+          <div>
+            <span className="section-block__eyebrow">教师建议动作</span>
+            <h2>本轮最适合立刻展开的三件事</h2>
+          </div>
+        </div>
+        <div className="card-grid card-grid--three">
+          {dashboardActions.map((item) => (
+            <article key={item.id} className="teacher-action-card">
+              <strong>{item.title}</strong>
+              <p>{item.detail}</p>
+            </article>
+          ))}
+        </div>
       </section>
     </div>
   );

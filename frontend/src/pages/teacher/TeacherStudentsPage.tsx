@@ -4,6 +4,10 @@ import { teacherStudents } from "../../data/mockData";
 import { fetchTeacherStudents } from "../../services/teacher";
 import { useAppState } from "../../state/AppState";
 import { useApiResource } from "../../utils/useApiResource";
+import {
+  getTeacherAttentionLabel,
+  getTeacherAttentionLevel,
+} from "../../utils/teacherInsights";
 
 export function TeacherStudentsPage() {
   const { state } = useAppState();
@@ -36,6 +40,10 @@ export function TeacherStudentsPage() {
       }),
     [classFilter, data, examFilter, query],
   );
+  const urgentCount = filteredStudents.filter(
+    (student) => getTeacherAttentionLevel(student) === "urgent",
+  ).length;
+  const pendingExamCount = filteredStudents.filter((student) => student.score === null).length;
 
   return (
     <div className="page-stack">
@@ -55,6 +63,24 @@ export function TeacherStudentsPage() {
             : error || "学生列表页已经预留真实接口读取能力。"}
         </p>
       </article>
+
+      <section className="card-grid card-grid--three">
+        <article className="surface-card stat-card">
+          <span>当前筛出</span>
+          <strong>{filteredStudents.length}</strong>
+          <p>根据搜索词、班级与考试状态综合筛选后的学生数量。</p>
+        </article>
+        <article className="surface-card stat-card">
+          <span>需立即跟进</span>
+          <strong>{urgentCount}</strong>
+          <p>优先查看高风险学生，缩短发现问题到跟进的路径。</p>
+        </article>
+        <article className="surface-card stat-card">
+          <span>未完成考试</span>
+          <strong>{pendingExamCount}</strong>
+          <p>提醒尽快形成完整的“三关 + 考试”学习闭环。</p>
+        </article>
+      </section>
 
       <section className="surface-card filter-bar">
         <label className="form-field">
@@ -89,35 +115,64 @@ export function TeacherStudentsPage() {
       </section>
 
       <section className="surface-card">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>姓名</th>
-              <th>班级</th>
-              <th>三关完成</th>
-              <th>考试状态</th>
-              <th>成绩</th>
-              <th>最近学习时间</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredStudents.map((student) => (
-              <tr key={student.id}>
-                <td>{student.name}</td>
-                <td>{student.className}</td>
-                <td>{student.completedLevels} / 3</td>
-                <td>{student.examStatus}</td>
-                <td>{student.score ?? "--"}</td>
-                <td>{student.lastActiveAt}</td>
-                <td>
-                  <Link to={`/teacher/students/${student.id}`}>查看详情</Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <p className="inline-note">当前共筛出 {filteredStudents.length} 位学生。</p>
+        {filteredStudents.length > 0 ? (
+          <>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>学生</th>
+                  <th>班级</th>
+                  <th>学习闭环</th>
+                  <th>考试状态</th>
+                  <th>跟进等级</th>
+                  <th>最近学习</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredStudents.map((student) => {
+                  const attentionLevel = getTeacherAttentionLevel(student);
+
+                  return (
+                    <tr key={student.id}>
+                      <td>
+                        <div className="data-table__cell-stack">
+                          <strong>{student.name}</strong>
+                          <span className="data-table__muted">{student.weakSpot}</span>
+                        </div>
+                      </td>
+                      <td>{student.className}</td>
+                      <td>{student.completedLevels} / 3</td>
+                      <td>
+                        <div className="data-table__cell-stack">
+                          <span>{student.examStatus}</span>
+                          <span className="data-table__muted">成绩：{student.score ?? "--"}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span
+                          className={`teacher-attention-pill teacher-attention-pill--${attentionLevel}`}
+                        >
+                          {getTeacherAttentionLabel(attentionLevel)}
+                        </span>
+                      </td>
+                      <td>{student.lastActiveAt}</td>
+                      <td>
+                        <Link to={`/teacher/students/${student.id}`}>查看详情</Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <p className="inline-note">当前共筛出 {filteredStudents.length} 位学生。</p>
+          </>
+        ) : (
+          <article className="feedback-box empty-state-card">
+            <strong>没有匹配的学生</strong>
+            <p>可以清空筛选条件，或者调整搜索词后再继续查看。</p>
+          </article>
+        )}
       </section>
     </div>
   );

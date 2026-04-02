@@ -1,12 +1,16 @@
 import { Link } from "react-router-dom";
-import { teacherClassSummaries } from "../../data/mockData";
+import { teacherClassSummaries, teacherStudents } from "../../data/mockData";
 import { fetchTeacherDashboard } from "../../services/teacher";
 import { useAppState } from "../../state/AppState";
 import { useApiResource } from "../../utils/useApiResource";
+import {
+  buildTeacherDashboardActions,
+  getTeacherAttentionLabel,
+} from "../../utils/teacherInsights";
 
 const fallbackClasses = {
   classSummaries: teacherClassSummaries,
-  students: [],
+  students: teacherStudents,
 };
 
 export function TeacherClassesPage() {
@@ -18,6 +22,34 @@ export function TeacherClassesPage() {
     fetcher: () => fetchTeacherDashboard(state.authToken ?? ""),
     dependencies: [state.authToken],
   });
+  const totalStudents = data.classSummaries.reduce(
+    (count, classroom) => count + classroom.studentCount,
+    0,
+  );
+  const averageCompletion =
+    data.classSummaries.length > 0
+      ? Math.round(
+          data.classSummaries.reduce((sum, classroom) => sum + classroom.completedRate, 0) /
+            data.classSummaries.length,
+        )
+      : 0;
+  const priorityClass =
+    data.classSummaries
+      .slice()
+      .sort((left, right) => left.completedRate - right.completedRate)[0] ?? null;
+  const dashboardActions = buildTeacherDashboardActions(data.students, data.classSummaries);
+
+  function getClassAttentionLevel(completedRate: number, examCompletionRate: number) {
+    if (completedRate < 70 || examCompletionRate < 50) {
+      return "urgent";
+    }
+
+    if (completedRate < 80 || examCompletionRate < 60) {
+      return "watch";
+    }
+
+    return "stable";
+  }
 
   return (
     <div className="page-stack">
@@ -38,26 +70,71 @@ export function TeacherClassesPage() {
         </p>
       </article>
 
+      <section className="card-grid card-grid--four">
+        <article className="surface-card stat-card">
+          <span>班级数量</span>
+          <strong>{data.classSummaries.length}</strong>
+          <p>用于判断当前教师账号下的可管理班级范围。</p>
+        </article>
+        <article className="surface-card stat-card">
+          <span>班级总人数</span>
+          <strong>{totalStudents}</strong>
+          <p>以当前主题学习闭环为中心统计班级覆盖人数。</p>
+        </article>
+        <article className="surface-card stat-card">
+          <span>平均完成率</span>
+          <strong>{averageCompletion}%</strong>
+          <p>帮助教师快速判断班级整体推进是否均衡。</p>
+        </article>
+        <article className="surface-card stat-card">
+          <span>优先关注班级</span>
+          <strong>{priorityClass?.name ?? "--"}</strong>
+          <p>{priorityClass?.focusLabel ?? "当前暂无班级数据。"} </p>
+        </article>
+      </section>
+
       <section className="card-grid card-grid--two">
-        {data.classSummaries.map((classroom) => (
-          <article key={classroom.id} className="surface-card class-card">
-            <div className="row-between">
-              <div>
-                <span className="surface-tag">班级概览</span>
-                <h2>{classroom.name}</h2>
-              </div>
-              <Link className="ghost-button link-button" to="/teacher/students">
-                查看学生
-              </Link>
-            </div>
-            <ul className="plain-list">
-              <li>班级人数：{classroom.studentCount}</li>
-              <li>三关完成率：{classroom.completedRate}%</li>
-              <li>考试完成率：{classroom.examCompletionRate}%</li>
-              <li>当前关注：{classroom.focusLabel}</li>
-            </ul>
+        {data.classSummaries.length > 0 ? (
+          data.classSummaries.map((classroom) => {
+            const attentionLevel = getClassAttentionLevel(
+              classroom.completedRate,
+              classroom.examCompletionRate,
+            );
+
+            return (
+              <article key={classroom.id} className="surface-card class-card">
+                <div className="row-between">
+                  <div>
+                    <span className="surface-tag">班级概览</span>
+                    <h2>{classroom.name}</h2>
+                  </div>
+                  <span
+                    className={`teacher-attention-pill teacher-attention-pill--${attentionLevel}`}
+                  >
+                    {getTeacherAttentionLabel(attentionLevel)}
+                  </span>
+                </div>
+                <ul className="plain-list">
+                  <li>班级人数：{classroom.studentCount}</li>
+                  <li>三关完成率：{classroom.completedRate}%</li>
+                  <li>考试完成率：{classroom.examCompletionRate}%</li>
+                  <li>当前关注：{classroom.focusLabel}</li>
+                </ul>
+                <div className="row-between">
+                  <span className="inline-note">建议先从完成率较低的班级安排复习。</span>
+                  <Link className="ghost-button link-button" to="/teacher/students">
+                    查看学生
+                  </Link>
+                </div>
+              </article>
+            );
+          })
+        ) : (
+          <article className="surface-card empty-state-card">
+            <strong>当前没有班级概览</strong>
+            <p>等待后端返回班级数据，或先使用本地演示数据初始化工作台。</p>
           </article>
-        ))}
+        )}
       </section>
 
       <section className="surface-card">
@@ -67,11 +144,14 @@ export function TeacherClassesPage() {
             <h2>课后最适合直接展开的三件事</h2>
           </div>
         </div>
-        <ul className="plain-list">
-          <li>先查看哪一类学生还没有形成完整的“三关 + 考试”闭环。</li>
-          <li>把完成率偏低的班级优先安排路口判断和盲区复习。</li>
-          <li>从学生详情页提取薄弱点和成长状态，形成课后跟进建议。</li>
-        </ul>
+        <div className="card-grid card-grid--three">
+          {dashboardActions.map((item) => (
+            <article key={item.id} className="teacher-action-card">
+              <strong>{item.title}</strong>
+              <p>{item.detail}</p>
+            </article>
+          ))}
+        </div>
       </section>
     </div>
   );

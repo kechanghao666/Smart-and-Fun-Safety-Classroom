@@ -168,6 +168,10 @@ button {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.card-grid--four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .surface-card {
   padding: 24px;
 }
@@ -1121,6 +1125,95 @@ button {
   color: var(--text-muted);
 }
 
+.editor-status-bar,
+.admin-summary-card,
+.empty-state-card,
+.teacher-analysis-card,
+.teacher-action-card {
+  display: grid;
+  gap: 14px;
+}
+
+.editor-status-bar__header {
+  align-items: flex-start;
+}
+
+.editor-status-pill,
+.teacher-attention-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.editor-status-pill--clean {
+  background: rgba(94, 114, 135, 0.12);
+  color: var(--text-muted);
+}
+
+.editor-status-pill--dirty {
+  background: rgba(240, 147, 43, 0.16);
+  color: #9a5f12;
+}
+
+.editor-status-pill--saved {
+  background: rgba(24, 160, 111, 0.14);
+  color: var(--green);
+}
+
+.editor-status-pill--reset {
+  background: rgba(38, 139, 210, 0.14);
+  color: var(--blue);
+}
+
+.editor-status-pill--sync_error {
+  background: rgba(214, 66, 66, 0.12);
+  color: #b23a3a;
+}
+
+.empty-state-card {
+  place-items: center;
+  text-align: center;
+  min-height: 220px;
+}
+
+.teacher-attention-pill--stable {
+  background: rgba(24, 160, 111, 0.14);
+  color: var(--green);
+}
+
+.teacher-attention-pill--watch {
+  background: rgba(240, 147, 43, 0.16);
+  color: #9a5f12;
+}
+
+.teacher-attention-pill--urgent {
+  background: rgba(214, 66, 66, 0.14);
+  color: #b23a3a;
+}
+
+.teacher-analysis-card,
+.teacher-action-card {
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.teacher-analysis-card__meta,
+.data-table__muted {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.data-table__cell-stack {
+  display: grid;
+  gap: 6px;
+}
+
 .ai-assistant {
   position: fixed;
   right: 24px;
@@ -1236,6 +1329,7 @@ button {
 
   .card-grid--three,
   .card-grid--two,
+  .card-grid--four,
   .profile-card-grid,
   .task-grid,
   .option-grid,
