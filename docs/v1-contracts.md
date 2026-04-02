@@ -88,6 +88,8 @@ interface StudentProfile {
 interface AppState {
   role: UserRole | null;
   sessionAccount: string | null;
+  authToken: string | null;
+  authSource: "mock" | "api";
   studentProfile: StudentProfile | null;
   progress: StudentProgress;
 }
@@ -113,3 +115,15 @@ interface AppState {
 - 本地 mock 数据统一维护在 `frontend/src/data/mockData.ts`
 - 需要改动积分、徽章、解锁条件时，同步更新 `frontend/src/state/AppState.tsx`
 - 接入真实后端后，先保持字段名不变，再逐步替换数据源
+
+## 前端联调约定
+
+- `frontend/.env.local` 中配置 `VITE_API_BASE_URL=http://localhost:3000` 后，登录页切换为后端联调模式
+- 未配置 `VITE_API_BASE_URL` 时，默认继续使用本地示例账号和前端状态
+- 登录接口约定：`POST /api/auth/login` 至少返回 `token`、`role`，并可选返回 `account`、`studentProfile`、`progress`
+- 学生端接口预留：
+  - `GET /api/student/progress`
+  - `POST /api/student/levels/:levelId/start`
+  - `POST /api/student/levels/:levelId/complete`
+  - `POST /api/student/exam/submit`
+  - `POST /api/ai/chat`

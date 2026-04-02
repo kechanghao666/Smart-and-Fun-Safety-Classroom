@@ -1,6 +1,7 @@
 export type UserRole = "student" | "teacher" | "admin";
 export type ThemeAccent = "sky" | "mint" | "orange";
 export type StudentStage = "小学低段" | "小学中段" | "小学高段";
+export type AuthSource = "mock" | "api";
 
 export type LearningStatus =
   | "locked"
@@ -227,6 +228,8 @@ export interface StudentProgress {
 export interface AppState {
   role: UserRole | null;
   sessionAccount: string | null;
+  authToken: string | null;
+  authSource: AuthSource;
   studentProfile: StudentProfile | null;
   progress: StudentProgress;
 }

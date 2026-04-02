@@ -10,6 +10,7 @@ import {
 import { examQuestions, levelBlueprints } from "../data/mockData";
 import type {
   AppState,
+  AuthSource,
   LevelId,
   LevelProgress,
   LevelResult,
@@ -30,6 +31,8 @@ function createInitialState(): AppState {
   return {
     role: null,
     sessionAccount: null,
+    authToken: null,
+    authSource: "mock",
     studentProfile: null,
     progress: {
       themeId: "road-safety",
@@ -67,6 +70,8 @@ function loadInitialState(): AppState {
     return {
       role: parsed.role ?? fallback.role,
       sessionAccount: parsed.sessionAccount ?? fallback.sessionAccount,
+      authToken: parsed.authToken ?? fallback.authToken,
+      authSource: parsed.authSource ?? fallback.authSource,
       studentProfile: parsed.studentProfile ?? fallback.studentProfile,
       progress: {
         ...fallback.progress,
@@ -90,9 +95,16 @@ function loadInitialState(): AppState {
 }
 
 type AppAction =
-  | { type: "signIn"; role: UserRole; account: string }
+  | {
+      type: "signIn";
+      role: UserRole;
+      account: string;
+      token?: string | null;
+      source?: AuthSource;
+    }
   | { type: "signOut" }
   | { type: "saveStudentProfile"; profile: StudentProfile }
+  | { type: "replaceProgress"; progress: AppState["progress"] }
   | { type: "setLastVisitedRoute"; route: string }
   | { type: "markLevelInProgress"; levelId: LevelId }
   | { type: "completeLevel"; levelId: LevelId; result?: LevelResult }
@@ -105,6 +117,8 @@ function reducer(state: AppState, action: AppAction): AppState {
       ...state,
       role: action.role,
       sessionAccount: action.account,
+      authToken: action.token ?? null,
+      authSource: action.source ?? (action.token ? "api" : "mock"),
     };
   }
 
@@ -113,6 +127,8 @@ function reducer(state: AppState, action: AppAction): AppState {
       ...state,
       role: null,
       sessionAccount: null,
+      authToken: null,
+      authSource: "mock",
     };
   }
 
@@ -120,6 +136,13 @@ function reducer(state: AppState, action: AppAction): AppState {
     return {
       ...state,
       studentProfile: action.profile,
+    };
+  }
+
+  if (action.type === "replaceProgress") {
+    return {
+      ...state,
+      progress: action.progress,
     };
   }
 
@@ -277,6 +300,8 @@ function reducer(state: AppState, action: AppAction): AppState {
       ...createInitialState(),
       role: state.role,
       sessionAccount: state.sessionAccount,
+      authToken: state.authToken,
+      authSource: state.authSource,
       studentProfile: state.studentProfile,
     };
   }
@@ -286,9 +311,14 @@ function reducer(state: AppState, action: AppAction): AppState {
 
 interface AppStateContextValue {
   state: AppState;
-  signIn: (role: UserRole, account: string) => void;
+  signIn: (
+    role: UserRole,
+    account: string,
+    options?: { token?: string | null; source?: AuthSource },
+  ) => void;
   signOut: () => void;
   saveStudentProfile: (profile: StudentProfile) => void;
+  replaceProgress: (progress: AppState["progress"]) => void;
   setLastVisitedRoute: (route: string) => void;
   markLevelInProgress: (levelId: LevelId) => void;
   completeLevel: (levelId: LevelId, result?: LevelResult) => void;
@@ -308,12 +338,27 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   const signIn = useCallback(
-    (role: UserRole, account: string) => dispatch({ type: "signIn", role, account }),
+    (
+      role: UserRole,
+      account: string,
+      options?: { token?: string | null; source?: AuthSource },
+    ) =>
+      dispatch({
+        type: "signIn",
+        role,
+        account,
+        token: options?.token,
+        source: options?.source,
+      }),
     [],
   );
   const signOut = useCallback(() => dispatch({ type: "signOut" }), []);
   const saveStudentProfile = useCallback(
     (profile: StudentProfile) => dispatch({ type: "saveStudentProfile", profile }),
+    [],
+  );
+  const replaceProgress = useCallback(
+    (progress: AppState["progress"]) => dispatch({ type: "replaceProgress", progress }),
     [],
   );
   const setLastVisitedRoute = useCallback(
@@ -342,6 +387,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       signIn,
       signOut,
       saveStudentProfile,
+      replaceProgress,
       setLastVisitedRoute,
       markLevelInProgress,
       completeLevel,
@@ -352,6 +398,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       completeLevel,
       markLevelInProgress,
       resetDemo,
+      replaceProgress,
       saveStudentProfile,
       setLastVisitedRoute,
       signIn,

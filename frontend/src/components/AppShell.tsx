@@ -78,6 +78,7 @@ export function AppShell({
           <div className="sidebar-role-card">
             <span>当前身份</span>
             <strong>{roleNameMap[role]}</strong>
+            <p>{state.authSource === "api" ? "后端联调模式" : "本地演示模式"}</p>
             {role === "student" ? (
               <>
                 <p>积分 {state.progress.points}</p>
@@ -90,7 +91,7 @@ export function AppShell({
             ) : null}
           </div>
 
-          {role === "student" ? (
+          {role === "student" && state.authSource === "mock" ? (
             <button type="button" className="ghost-button" onClick={resetDemo}>
               重置演示进度
             </button>
@@ -118,7 +119,9 @@ export function AppShell({
           <div className="topbar__actions">
             <span className="surface-tag">工作分支友好</span>
             <span className="surface-tag">说明书驱动</span>
-            <span className="surface-tag">Mock 数据可联调</span>
+            <span className="surface-tag">
+              {state.authSource === "api" ? "后端联调中" : "Mock 数据可联调"}
+            </span>
           </div>
         </header>
 
