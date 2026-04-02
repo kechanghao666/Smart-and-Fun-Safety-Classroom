@@ -68,8 +68,10 @@ export function StudentLevelPage() {
     );
   }
 
+  const activeLevelId = currentLevel.id;
+
   function finishLevel() {
-    completeLevel(levelId);
+    completeLevel(activeLevelId);
     navigate("/student/theme/road-safety");
   }
 
