@@ -8,6 +8,7 @@ import { StudentAiReportPage } from "./pages/student/StudentAiReportPage";
 import { StudentExamPage } from "./pages/student/StudentExamPage";
 import { StudentHomePage } from "./pages/student/StudentHomePage";
 import { StudentLevelPage } from "./pages/student/StudentLevelPage";
+import { StudentLevelResultPage } from "./pages/student/StudentLevelResultPage";
 import { StudentProfileSetupPage } from "./pages/student/StudentProfileSetupPage";
 import { StudentRecordPage } from "./pages/student/StudentRecordPage";
 import { StudentThemePage } from "./pages/student/StudentThemePage";
@@ -137,6 +138,10 @@ function AppRoutes() {
           <Route path="home" element={<StudentHomePage />} />
           <Route path="theme/road-safety" element={<StudentThemePage />} />
           <Route path="theme/road-safety/level/:levelId" element={<StudentLevelPage />} />
+          <Route
+            path="theme/road-safety/level/:levelId/result"
+            element={<StudentLevelResultPage />}
+          />
           <Route path="theme/road-safety/exam" element={<StudentExamPage />} />
           <Route path="records" element={<StudentRecordPage />} />
           <Route path="ai-report" element={<StudentAiReportPage />} />

@@ -7,7 +7,7 @@ import {
   routeChallengeSteps,
 } from "../../data/mockData";
 import { useAppState } from "../../state/AppState";
-import type { LevelId } from "../../types";
+import type { LevelId, LevelResult } from "../../types";
 
 function isLevelId(value: string | undefined): value is LevelId {
   return value === "level-1" || value === "level-2" || value === "level-3";
@@ -70,9 +70,65 @@ export function StudentLevelPage() {
 
   const activeLevelId = currentLevel.id;
 
+  function buildLevelResult(): LevelResult {
+    const completedAt = new Date().toLocaleString("zh-CN", { hour12: false });
+
+    if (activeLevelId === "level-1") {
+      return {
+        levelId: activeLevelId,
+        score: 100,
+        stars: 3,
+        completedAt,
+        highlight: "你已经能在路口场景中主动识别斑马线、信号灯和危险行为。",
+        caution: "下一关要把“认得出”进一步变成“会判断、会选择”。",
+        aiSummary: "你观察得很仔细，继续保持这种先观察再行动的节奏。",
+      };
+    }
+
+    if (activeLevelId === "level-2") {
+      const scoreMap: Record<number, number> = {
+        3: 100,
+        2: 88,
+        1: 76,
+        0: 60,
+      };
+      const stars = routeSafety >= 3 ? 3 : routeSafety === 2 ? 2 : 1;
+
+      return {
+        levelId: activeLevelId,
+        score: scoreMap[routeSafety] ?? 60,
+        stars,
+        completedAt,
+        highlight:
+          routeSafety >= 2
+            ? "你能在关键节点里保持安全判断，没有被捷径和同伴影响带偏。"
+            : "你顺利完成了路线挑战，已经建立了基本的放学回家安全意识。",
+        caution:
+          routeSafety >= 2
+            ? "继续记住：看到绿灯时，也要同时看车、看路、看盲区。"
+            : "后续要重点强化路口观察和大型车辆盲区判断，减少冒险通过。",
+        aiSummary:
+          routeSafety >= 2
+            ? "你的路线选择很稳，已经能把规则应用到真实情境里了。"
+            : "你完成了挑战，但下一次要更冷静地观察风险，再做决定。",
+      };
+    }
+
+    return {
+      levelId: activeLevelId,
+      score: 100,
+      stars: 3,
+      completedAt,
+      highlight: "你已经能在公交车、私家车和电动车场景中补齐关键安全准备。",
+      caution: "进入考试前，再回顾一次头盔、安全带和候车距离这三个重点。",
+      aiSummary: "你的守护任务完成得很棒，已经具备了更完整的出行防护意识。",
+    };
+  }
+
   function finishLevel() {
-    completeLevel(activeLevelId);
-    navigate("/student/theme/road-safety");
+    const result = buildLevelResult();
+    completeLevel(activeLevelId, result);
+    navigate(`/student/theme/road-safety/level/${activeLevelId}/result`);
   }
 
   const routeStep = routeChallengeSteps[routeIndex];
@@ -85,13 +141,19 @@ export function StudentLevelPage() {
           <h1>{levelMeta.title}</h1>
           <p>{levelMeta.description}</p>
         </div>
-        <button
-          type="button"
-          className="ghost-button"
-          onClick={() => navigate("/student/theme/road-safety")}
-        >
-          返回主题页
-        </button>
+        <div className="level-status-panel">
+          <span className="surface-tag">关卡进度</span>
+          <strong>
+            {state.progress.levels.findIndex((level) => level.id === activeLevelId) + 1} / 3
+          </strong>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => navigate("/student/theme/road-safety")}
+          >
+            返回主题页
+          </button>
+        </div>
       </section>
 
       {levelId === "level-1" ? (
@@ -101,9 +163,17 @@ export function StudentLevelPage() {
               <span className="section-block__eyebrow">热点点击任务</span>
               <h2>依次找出安全位置、交通标志和危险行为</h2>
             </div>
-            <span className="surface-tag">
-              {selectedHotspots.length}/{levelOneTasks.length} 已完成
-            </span>
+            <div className="level-progress-box">
+              <span className="surface-tag">
+                {selectedHotspots.length}/{levelOneTasks.length} 已完成
+              </span>
+              <div className="progress-bar">
+                <span
+                  className="progress-bar__fill"
+                  style={{ width: `${(selectedHotspots.length / levelOneTasks.length) * 100}%` }}
+                />
+              </div>
+            </div>
           </div>
 
           <div className="task-grid">
@@ -144,7 +214,21 @@ export function StudentLevelPage() {
               <span className="section-block__eyebrow">路线推进</span>
               <h2>在关键路口做出更安全的选择</h2>
             </div>
-            <span className="surface-tag">安全值 {routeSafety} / 3</span>
+            <div className="level-progress-box">
+              <span className="surface-tag">安全值 {routeSafety} / 3</span>
+              <div className="progress-bar">
+                <span
+                  className="progress-bar__fill progress-bar__fill--orange"
+                  style={{
+                    width: `${
+                      routeCompleted
+                        ? 100
+                        : (routeIndex / routeChallengeSteps.length) * 100
+                    }%`,
+                  }}
+                />
+              </div>
+            </div>
           </div>
 
           {!routeCompleted ? (
@@ -220,9 +304,19 @@ export function StudentLevelPage() {
               <span className="section-block__eyebrow">守护任务</span>
               <h2>帮不同场景中的角色补齐安全准备</h2>
             </div>
-            <span className="surface-tag">
-              {selectedGuardianTasks.length}/{guardianTasks.length} 已完成
-            </span>
+            <div className="level-progress-box">
+              <span className="surface-tag">
+                {selectedGuardianTasks.length}/{guardianTasks.length} 已完成
+              </span>
+              <div className="progress-bar">
+                <span
+                  className="progress-bar__fill progress-bar__fill--mint"
+                  style={{
+                    width: `${(selectedGuardianTasks.length / guardianTasks.length) * 100}%`,
+                  }}
+                />
+              </div>
+            </div>
           </div>
 
           <div className="task-grid">

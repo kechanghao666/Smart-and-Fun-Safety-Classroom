@@ -7,6 +7,7 @@
   - `/student/home`
   - `/student/theme/road-safety`
   - `/student/theme/road-safety/level/:levelId`
+  - `/student/theme/road-safety/level/:levelId/result`
   - `/student/theme/road-safety/exam`
   - `/student/records`
   - `/student/ai-report`
@@ -35,7 +36,20 @@ interface StudentProgress {
   points: number;
   badges: string[];
   levels: LevelProgress[];
+  levelResults: Partial<Record<LevelId, LevelResult>>;
   exam: ExamProgress;
+}
+```
+
+```ts
+interface LevelResult {
+  levelId: LevelId;
+  score: number;
+  stars: number;
+  completedAt: string;
+  highlight: string;
+  caution: string;
+  aiSummary: string;
 }
 ```
 
@@ -63,6 +77,7 @@ interface AppState {
 - 第一关默认 `available`
 - 第二、三关默认 `locked`
 - 完成前一关后，下一关切为 `available`
+- 每关完成后进入独立结算页 `/student/theme/road-safety/level/:levelId/result`
 - 三关完成后，主题考试切为 `available`
 - 考试提交后切为 `completed`
 - 学生端任意页面切换时更新 `lastVisitedRoute`

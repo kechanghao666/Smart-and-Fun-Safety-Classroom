@@ -114,6 +114,16 @@ export interface ExamProgress {
   wrongQuestionIds: string[];
 }
 
+export interface LevelResult {
+  levelId: LevelId;
+  score: number;
+  stars: number;
+  completedAt: string;
+  highlight: string;
+  caution: string;
+  aiSummary: string;
+}
+
 export interface StudentProgress {
   themeId: string;
   themeTitle: string;
@@ -121,6 +131,7 @@ export interface StudentProgress {
   points: number;
   badges: string[];
   levels: LevelProgress[];
+  levelResults: Partial<Record<LevelId, LevelResult>>;
   exam: ExamProgress;
 }
 

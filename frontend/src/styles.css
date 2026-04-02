@@ -541,6 +541,35 @@ button {
   gap: 12px;
 }
 
+.level-status-panel,
+.level-progress-box {
+  display: grid;
+  gap: 10px;
+  min-width: 180px;
+}
+
+.progress-bar {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(20, 50, 74, 0.08);
+}
+
+.progress-bar__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(120deg, var(--blue), var(--green));
+}
+
+.progress-bar__fill--orange {
+  background: linear-gradient(120deg, var(--orange), var(--blue));
+}
+
+.progress-bar__fill--mint {
+  background: linear-gradient(120deg, var(--green), #58c9a1);
+}
+
 .progress-ring {
   min-width: 140px;
   min-height: 140px;
@@ -672,6 +701,56 @@ button {
   background:
     linear-gradient(180deg, rgba(89, 206, 161, 0.14), rgba(255, 255, 255, 0.84)),
     var(--surface);
+}
+
+.theme-overview-card,
+.result-card {
+  display: grid;
+  gap: 12px;
+}
+
+.exam-card--locked {
+  background:
+    linear-gradient(180deg, rgba(94, 114, 135, 0.08), rgba(255, 255, 255, 0.86)),
+    var(--surface);
+}
+
+.exam-card--unlocked {
+  background:
+    linear-gradient(180deg, rgba(38, 139, 210, 0.12), rgba(255, 255, 255, 0.86)),
+    var(--surface);
+}
+
+.result-medal {
+  min-width: 160px;
+  min-height: 160px;
+  border-radius: 28px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: white;
+  background: linear-gradient(135deg, #f7b733, #fc4a1a);
+  box-shadow: 0 16px 36px rgba(252, 116, 38, 0.24);
+}
+
+.result-medal strong {
+  font-size: 30px;
+}
+
+.result-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(20, 50, 74, 0.28);
+}
+
+.result-modal {
+  width: min(520px, 100%);
+  display: grid;
+  gap: 18px;
 }
 
 .ai-assistant {

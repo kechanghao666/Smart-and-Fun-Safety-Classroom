@@ -12,6 +12,7 @@ import type {
   AppState,
   LevelId,
   LevelProgress,
+  LevelResult,
   StudentProfile,
   UserRole,
 } from "../types";
@@ -37,6 +38,7 @@ function createInitialState(): AppState {
       points: 120,
       badges: ["观察员新星"],
       levels: buildInitialLevels(),
+      levelResults: {},
       exam: {
         status: "locked",
         totalQuestions: examQuestions.length,
@@ -72,6 +74,10 @@ function loadInitialState(): AppState {
         levels: parsed.progress?.levels?.length
           ? parsed.progress.levels
           : fallback.progress.levels,
+        levelResults: {
+          ...fallback.progress.levelResults,
+          ...parsed.progress?.levelResults,
+        },
         exam: {
           ...fallback.progress.exam,
           ...parsed.progress?.exam,
@@ -89,7 +95,7 @@ type AppAction =
   | { type: "saveStudentProfile"; profile: StudentProfile }
   | { type: "setLastVisitedRoute"; route: string }
   | { type: "markLevelInProgress"; levelId: LevelId }
-  | { type: "completeLevel"; levelId: LevelId }
+  | { type: "completeLevel"; levelId: LevelId; result?: LevelResult }
   | { type: "submitExam"; score: number; wrongQuestionIds: string[] }
   | { type: "resetDemo" };
 
@@ -170,7 +176,20 @@ function reducer(state: AppState, action: AppAction): AppState {
     }
 
     if (state.progress.levels[levelIndex]?.status === "completed") {
-      return state;
+      if (!action.result) {
+        return state;
+      }
+
+      return {
+        ...state,
+        progress: {
+          ...state.progress,
+          levelResults: {
+            ...state.progress.levelResults,
+            [action.levelId]: action.result,
+          },
+        },
+      };
     }
 
     const levels = state.progress.levels.map((level, index) => {
@@ -208,6 +227,12 @@ function reducer(state: AppState, action: AppAction): AppState {
         points: state.progress.points + 40,
         badges: nextBadges,
         levels,
+        levelResults: action.result
+          ? {
+              ...state.progress.levelResults,
+              [action.levelId]: action.result,
+            }
+          : state.progress.levelResults,
         exam: {
           ...state.progress.exam,
           status:
@@ -266,7 +291,7 @@ interface AppStateContextValue {
   saveStudentProfile: (profile: StudentProfile) => void;
   setLastVisitedRoute: (route: string) => void;
   markLevelInProgress: (levelId: LevelId) => void;
-  completeLevel: (levelId: LevelId) => void;
+  completeLevel: (levelId: LevelId, result?: LevelResult) => void;
   submitExam: (score: number, wrongQuestionIds: string[]) => void;
   resetDemo: () => void;
 }
@@ -300,7 +325,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     [],
   );
   const completeLevel = useCallback(
-    (levelId: LevelId) => dispatch({ type: "completeLevel", levelId }),
+    (levelId: LevelId, result?: LevelResult) =>
+      dispatch({ type: "completeLevel", levelId, result }),
     [],
   );
   const submitExam = useCallback(
