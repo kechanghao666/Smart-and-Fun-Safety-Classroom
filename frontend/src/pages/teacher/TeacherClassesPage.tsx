@@ -1,7 +1,24 @@
 import { Link } from "react-router-dom";
 import { teacherClassSummaries } from "../../data/mockData";
+import { fetchTeacherDashboard } from "../../services/teacher";
+import { useAppState } from "../../state/AppState";
+import { useApiResource } from "../../utils/useApiResource";
+
+const fallbackClasses = {
+  classSummaries: teacherClassSummaries,
+  students: [],
+};
 
 export function TeacherClassesPage() {
+  const { state } = useAppState();
+  const canUseApi = state.authSource === "api" && Boolean(state.authToken);
+  const { data, error, isLoading, source } = useApiResource({
+    enabled: canUseApi,
+    fallbackData: fallbackClasses,
+    fetcher: () => fetchTeacherDashboard(state.authToken ?? ""),
+    dependencies: [state.authToken],
+  });
+
   return (
     <div className="page-stack">
       <section className="hero-banner hero-banner--teacher">
@@ -12,8 +29,17 @@ export function TeacherClassesPage() {
         </div>
       </section>
 
+      <article className="feedback-box">
+        <strong>{source === "api" ? "班级数据来自后端" : "班级数据来自本地 mock"}</strong>
+        <p>
+          {isLoading
+            ? "正在同步班级概览..."
+            : error || "班级概览页已经预留真实接口读取能力。"}
+        </p>
+      </article>
+
       <section className="card-grid card-grid--two">
-        {teacherClassSummaries.map((classroom) => (
+        {data.classSummaries.map((classroom) => (
           <article key={classroom.id} className="surface-card class-card">
             <div className="row-between">
               <div>
@@ -38,7 +64,7 @@ export function TeacherClassesPage() {
         <div className="section-block__header">
           <div>
             <span className="section-block__eyebrow">教师操作建议</span>
-            <h2>课堂后最适合直接展开的三件事</h2>
+            <h2>课后最适合直接展开的三件事</h2>
           </div>
         </div>
         <ul className="plain-list">

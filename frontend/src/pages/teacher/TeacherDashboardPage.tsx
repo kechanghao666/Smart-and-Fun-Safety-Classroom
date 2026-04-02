@@ -1,10 +1,27 @@
 import { Link } from "react-router-dom";
 import { teacherClassSummaries, teacherStudents } from "../../data/mockData";
+import { fetchTeacherDashboard } from "../../services/teacher";
+import { useAppState } from "../../state/AppState";
+import { useApiResource } from "../../utils/useApiResource";
+
+const fallbackDashboard = {
+  classSummaries: teacherClassSummaries,
+  students: teacherStudents,
+};
 
 export function TeacherDashboardPage() {
-  const completedAll = teacherStudents.filter((student) => student.completedLevels === 3).length;
-  const examCompleted = teacherStudents.filter((student) => student.score !== null).length;
-  const attentionStudents = teacherStudents.filter((student) => student.completedLevels < 3);
+  const { state } = useAppState();
+  const canUseApi = state.authSource === "api" && Boolean(state.authToken);
+  const { data, error, isLoading, source } = useApiResource({
+    enabled: canUseApi,
+    fallbackData: fallbackDashboard,
+    fetcher: () => fetchTeacherDashboard(state.authToken ?? ""),
+    dependencies: [state.authToken],
+  });
+
+  const completedAll = data.students.filter((student) => student.completedLevels === 3).length;
+  const examCompleted = data.students.filter((student) => student.score !== null).length;
+  const attentionStudents = data.students.filter((student) => student.completedLevels < 3);
 
   return (
     <div className="page-stack">
@@ -24,16 +41,25 @@ export function TeacherDashboardPage() {
         </div>
       </section>
 
+      <article className="feedback-box">
+        <strong>{source === "api" ? "当前使用后端教师数据" : "当前使用本地演示数据"}</strong>
+        <p>
+          {isLoading
+            ? "正在同步教师端数据..."
+            : error || "教师首页已经具备真实接口读取位，后端就绪后会自动切换。"}
+        </p>
+      </article>
+
       <section className="card-grid card-grid--three">
         <article className="surface-card stat-card">
           <span>班级人数</span>
-          <strong>{teacherStudents.length}</strong>
-          <p>当前示例班级以三年级道路安全主题学习为主。</p>
+          <strong>{data.students.length}</strong>
+          <p>当前默认聚焦道路安全主题学习，便于教师快速查看整体推进情况。</p>
         </article>
         <article className="surface-card stat-card">
           <span>三关全部完成</span>
           <strong>{completedAll}</strong>
-          <p>可以快速判断班级当前是否已经完成主题学习主链路。</p>
+          <p>可以快速判断班级是否已经完成主题学习的主链路。</p>
         </article>
         <article className="surface-card stat-card">
           <span>考试完成</span>
@@ -47,7 +73,7 @@ export function TeacherDashboardPage() {
           <span className="section-block__eyebrow">班级完成概览</span>
           <h2>先看哪一个班级需要更多课堂支持</h2>
           <div className="bar-list">
-            {teacherClassSummaries.map((classroom) => (
+            {data.classSummaries.map((classroom) => (
               <article key={classroom.id} className="bar-item">
                 <div className="row-between">
                   <strong>{classroom.name}</strong>

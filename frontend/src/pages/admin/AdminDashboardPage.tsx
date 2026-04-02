@@ -1,5 +1,8 @@
 import { Link } from "react-router-dom";
 import { adminModules } from "../../data/mockData";
+import { fetchAdminModules } from "../../services/admin";
+import { useAppState } from "../../state/AppState";
+import { useApiResource } from "../../utils/useApiResource";
 
 const routeByModule: Record<string, string> = {
   theme: "/admin/themes",
@@ -11,6 +14,15 @@ const routeByModule: Record<string, string> = {
 };
 
 export function AdminDashboardPage() {
+  const { state } = useAppState();
+  const canUseApi = state.authSource === "api" && Boolean(state.authToken);
+  const { data, error, isLoading, source } = useApiResource({
+    enabled: canUseApi,
+    fallbackData: adminModules,
+    fetcher: () => fetchAdminModules(state.authToken ?? ""),
+    dependencies: [state.authToken],
+  });
+
   return (
     <div className="page-stack">
       <section className="hero-banner hero-banner--admin">
@@ -21,8 +33,17 @@ export function AdminDashboardPage() {
         </div>
       </section>
 
+      <article className="feedback-box">
+        <strong>{source === "api" ? "后台模块列表来自后端" : "后台模块列表来自本地 mock"}</strong>
+        <p>
+          {isLoading
+            ? "正在同步后台模块..."
+            : error || "管理员首页已经预留真实接口读取能力。"}
+        </p>
+      </article>
+
       <section className="card-grid card-grid--three">
-        {adminModules.map((module) => (
+        {data.map((module) => (
           <article key={module.id} className="surface-card module-link-card">
             <span className="surface-tag">{module.status}</span>
             <h2>{module.title}</h2>

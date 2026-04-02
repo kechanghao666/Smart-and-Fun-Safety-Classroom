@@ -1,22 +1,32 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { teacherStudents } from "../../data/mockData";
+import { fetchTeacherStudents } from "../../services/teacher";
+import { useAppState } from "../../state/AppState";
+import { useApiResource } from "../../utils/useApiResource";
 
 export function TeacherStudentsPage() {
+  const { state } = useAppState();
+  const canUseApi = state.authSource === "api" && Boolean(state.authToken);
+  const { data, error, isLoading, source } = useApiResource({
+    enabled: canUseApi,
+    fallbackData: teacherStudents,
+    fetcher: () => fetchTeacherStudents(state.authToken ?? ""),
+    dependencies: [state.authToken],
+  });
   const [query, setQuery] = useState("");
   const [classFilter, setClassFilter] = useState("all");
   const [examFilter, setExamFilter] = useState("all");
 
-  const classOptions = Array.from(new Set(teacherStudents.map((student) => student.className)));
+  const classOptions = Array.from(new Set(data.map((student) => student.className)));
   const filteredStudents = useMemo(
     () =>
-      teacherStudents.filter((student) => {
+      data.filter((student) => {
         const matchesQuery =
           query.trim().length === 0 ||
           student.name.includes(query.trim()) ||
           student.weakSpot.includes(query.trim());
-        const matchesClass =
-          classFilter === "all" || student.className === classFilter;
+        const matchesClass = classFilter === "all" || student.className === classFilter;
         const matchesExam =
           examFilter === "all" ||
           (examFilter === "completed" && student.score !== null) ||
@@ -24,7 +34,7 @@ export function TeacherStudentsPage() {
 
         return matchesQuery && matchesClass && matchesExam;
       }),
-    [classFilter, examFilter, query],
+    [classFilter, data, examFilter, query],
   );
 
   return (
@@ -36,6 +46,15 @@ export function TeacherStudentsPage() {
           <p>列表页先承担教师的快速检索，再通过学生详情页展开更完整的学习与成长状态。</p>
         </div>
       </section>
+
+      <article className="feedback-box">
+        <strong>{source === "api" ? "学生列表来自后端" : "学生列表来自本地 mock"}</strong>
+        <p>
+          {isLoading
+            ? "正在同步学生列表..."
+            : error || "学生列表页已经预留真实接口读取能力。"}
+        </p>
+      </article>
 
       <section className="surface-card filter-bar">
         <label className="form-field">

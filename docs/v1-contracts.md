@@ -127,3 +127,9 @@ interface AppState {
   - `POST /api/student/levels/:levelId/complete`
   - `POST /api/student/exam/submit`
   - `POST /api/ai/chat`
+- 教师端接口预留：
+  - `GET /api/teacher/dashboard`
+  - `GET /api/teacher/students`
+  - `GET /api/teacher/students/:studentId`
+- 管理员端接口预留：
+  - `GET /api/admin/modules`

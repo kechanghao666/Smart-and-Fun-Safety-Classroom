@@ -1,14 +1,24 @@
-import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { StatusBadge } from "../../components/StatusBadge";
 import { teacherStudentDetails } from "../../data/mockData";
+import { fetchTeacherStudentDetail } from "../../services/teacher";
+import { useAppState } from "../../state/AppState";
+import { useApiResource } from "../../utils/useApiResource";
 
 export function TeacherStudentDetailPage() {
   const { studentId } = useParams();
-  const student = useMemo(
-    () => teacherStudentDetails.find((item) => item.id === studentId),
-    [studentId],
-  );
+  const { state } = useAppState();
+  const canUseApi =
+    state.authSource === "api" && Boolean(state.authToken) && Boolean(studentId);
+  const fallbackStudent =
+    teacherStudentDetails.find((item) => item.id === studentId) ?? null;
+  const { data: student, error, isLoading, source } = useApiResource({
+    enabled: canUseApi,
+    fallbackData: fallbackStudent,
+    fetcher: () => fetchTeacherStudentDetail(state.authToken ?? "", studentId ?? ""),
+    dependencies: [state.authToken, studentId],
+    fallbackMessage: "暂时无法获取学生详情，当前已回退为本地演示数据。",
+  });
 
   if (!student) {
     return (
@@ -34,6 +44,15 @@ export function TeacherStudentDetailPage() {
           </Link>
         </div>
       </section>
+
+      <article className="feedback-box">
+        <strong>{source === "api" ? "学生详情来自后端" : "学生详情来自本地 mock"}</strong>
+        <p>
+          {isLoading
+            ? "正在同步学生详情..."
+            : error || "学生详情页已经预留真实接口读取能力。"}
+        </p>
+      </article>
 
       <section className="card-grid card-grid--three">
         <article className="surface-card stat-card">
