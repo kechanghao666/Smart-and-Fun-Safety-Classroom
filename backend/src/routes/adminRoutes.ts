@@ -1,6 +1,12 @@
 import { Router } from "express";
 import { requireRole } from "../middleware/auth";
 import {
+  createAdminAiCopy,
+  createAdminQuestionBank,
+  createAdminTheme,
+  deleteAdminAiCopy,
+  deleteAdminQuestionBank,
+  deleteAdminTheme,
   getAdminAiCopyFromDb,
   getAdminLevelsFromDb,
   getAdminQuestionBankFromDb,
@@ -36,6 +42,14 @@ adminRouter.get("/themes", async (_request, response, next) => {
   }
 });
 
+adminRouter.post("/themes", async (request, response, next) => {
+  try {
+    response.status(201).json(await createAdminTheme(request.body ?? {}));
+  } catch (error) {
+    next(error);
+  }
+});
+
 adminRouter.get("/levels", async (_request, response, next) => {
   try {
     response.json(await getAdminLevelsFromDb());
@@ -52,9 +66,25 @@ adminRouter.get("/question-bank", async (_request, response, next) => {
   }
 });
 
+adminRouter.post("/question-bank", async (request, response, next) => {
+  try {
+    response.status(201).json(await createAdminQuestionBank(request.body ?? {}));
+  } catch (error) {
+    next(error);
+  }
+});
+
 adminRouter.get("/ai-copy", async (_request, response, next) => {
   try {
     response.json(await getAdminAiCopyFromDb());
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.post("/ai-copy", async (request, response, next) => {
+  try {
+    response.status(201).json(await createAdminAiCopy(request.body ?? {}));
   } catch (error) {
     next(error);
   }
@@ -84,6 +114,14 @@ adminRouter.put("/themes/:id", async (request, response, next) => {
   }
 });
 
+adminRouter.delete("/themes/:id", async (request, response, next) => {
+  try {
+    response.json(await deleteAdminTheme(request.params.id));
+  } catch (error) {
+    next(error);
+  }
+});
+
 adminRouter.put("/levels/:id", async (request, response, next) => {
   try {
     response.json(await updateAdminLevel(request.params.id, request.body ?? {}));
@@ -100,9 +138,25 @@ adminRouter.put("/question-bank/:id", async (request, response, next) => {
   }
 });
 
+adminRouter.delete("/question-bank/:id", async (request, response, next) => {
+  try {
+    response.json(await deleteAdminQuestionBank(request.params.id));
+  } catch (error) {
+    next(error);
+  }
+});
+
 adminRouter.put("/ai-copy/:id", async (request, response, next) => {
   try {
     response.json(await updateAdminAiCopy(request.params.id, request.body ?? {}));
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.delete("/ai-copy/:id", async (request, response, next) => {
+  try {
+    response.json(await deleteAdminAiCopy(request.params.id));
   } catch (error) {
     next(error);
   }

@@ -2,6 +2,7 @@ import { getDb } from "../db/connection";
 import type {
   AiCopyTemplateItem,
   AiCopyTemplateRow,
+  ExamQuestion,
   LevelId,
   LevelManagementItem,
   LevelManagementRow,
@@ -43,6 +44,17 @@ function mapQuestionBankRow(row: QuestionBankRow): QuestionBankManagementItem {
     reviewLevelId: row.review_level_id,
     status: row.status,
   };
+}
+
+function parseStoredOptions(value: string) {
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) && parsed.every((item) => typeof item === "string")
+      ? parsed
+      : [];
+  } catch {
+    return [];
+  }
 }
 
 function mapAiCopyRow(row: AiCopyTemplateRow): AiCopyTemplateItem {
@@ -100,6 +112,43 @@ export async function getAdminThemesFromDb() {
   return rows.map(mapThemeRow);
 }
 
+export async function createAdminTheme(input: ThemeManagementItem) {
+  const db = await getDb();
+  const id = String(input.id ?? "").trim();
+  const title = String(input.title ?? "").trim();
+  const description = String(input.description ?? "").trim();
+  const coverLabel = String(input.coverLabel ?? "").trim();
+
+  if (!id || !title || !description || !coverLabel) {
+    throw new HttpError(400, "主题新增字段不完整。");
+  }
+
+  const existing = await db.get<{ id: string }>(
+    "SELECT id FROM themes WHERE id = ?",
+    id,
+  );
+
+  if (existing) {
+    throw new HttpError(409, "该主题标识已存在。");
+  }
+
+  await db.run(
+    `
+      INSERT INTO themes (id, title, description, cover_label, is_open, sort_order, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `,
+    id,
+    title,
+    description,
+    coverLabel,
+    parseOpenFlag(input.isOpen),
+    parseSortOrder(input.sortOrder),
+    new Date().toISOString(),
+  );
+
+  return getAdminThemesFromDb();
+}
+
 export async function updateAdminTheme(
   id: string,
   input: Partial<ThemeManagementItem>,
@@ -154,6 +203,25 @@ export async function updateAdminTheme(
     id,
   );
 
+  return getAdminThemesFromDb();
+}
+
+export async function deleteAdminTheme(id: string) {
+  if (id === "road-safety") {
+    throw new HttpError(409, "道路安全教育是当前首发主题，不能删除。");
+  }
+
+  const db = await getDb();
+  const existing = await db.get<{ id: string }>(
+    "SELECT id FROM themes WHERE id = ?",
+    id,
+  );
+
+  if (!existing) {
+    throw new HttpError(404, "未找到对应主题。");
+  }
+
+  await db.run("DELETE FROM themes WHERE id = ?", id);
   return getAdminThemesFromDb();
 }
 
@@ -229,6 +297,87 @@ export async function updateAdminLevel(
   return getAdminLevelsFromDb();
 }
 
+function parseQuestionPayload(
+  input: Partial<QuestionBankManagementItem> & Partial<ExamQuestion>,
+  fallback?: QuestionBankRow,
+) {
+  const inputReviewLabel = (input as Partial<ExamQuestion>).reviewLabel;
+  const inputReviewSuggestion = (input as Partial<ExamQuestion>).reviewSuggestion;
+  const inputOptions = (input as Partial<ExamQuestion>).options;
+  const inputCorrectIndex = (input as Partial<ExamQuestion>).correctIndex;
+  const prompt =
+    typeof input.prompt === "string" && input.prompt.trim()
+      ? input.prompt.trim()
+      : fallback?.prompt;
+  const explanation =
+    typeof input.explanation === "string" && input.explanation.trim()
+      ? input.explanation.trim()
+      : fallback?.explanation;
+  const correctLabel =
+    typeof input.correctLabel === "string" && input.correctLabel.trim()
+      ? input.correctLabel.trim()
+      : fallback?.correct_label;
+  const reviewLevelId =
+    input.reviewLevelId !== undefined
+      ? parseReviewLevelId(input.reviewLevelId)
+      : fallback?.review_level_id;
+  const status =
+    input.status !== undefined
+      ? parseQuestionStatus(input.status)
+      : fallback?.status ?? "enabled";
+  const options =
+    Array.isArray(inputOptions) && inputOptions.every((item) => typeof item === "string")
+      ? inputOptions
+      : fallback
+        ? parseStoredOptions(fallback.options_json)
+        : undefined;
+  const correctIndexRaw =
+    typeof inputCorrectIndex === "number"
+      ? inputCorrectIndex
+      : fallback?.correct_index;
+  const reviewLabel =
+    typeof inputReviewLabel === "string" && inputReviewLabel.trim()
+      ? inputReviewLabel.trim()
+      : fallback?.review_label;
+  const reviewSuggestion =
+    typeof inputReviewSuggestion === "string" && inputReviewSuggestion.trim()
+      ? inputReviewSuggestion.trim()
+      : fallback?.review_suggestion;
+
+  if (!prompt || !explanation || !correctLabel || !reviewLevelId) {
+    throw new HttpError(400, "题库字段不完整。");
+  }
+
+  if (!options || !options.length || options.some((item) => !item.trim())) {
+    throw new HttpError(400, "题目选项不能为空。");
+  }
+
+  if (
+    typeof correctIndexRaw !== "number" ||
+    !Number.isInteger(correctIndexRaw) ||
+    correctIndexRaw < 0 ||
+    correctIndexRaw >= options.length
+  ) {
+    throw new HttpError(400, "正确答案索引不合法。");
+  }
+
+  if (!reviewLabel || !reviewSuggestion) {
+    throw new HttpError(400, "错题回看字段不完整。");
+  }
+
+  return {
+    prompt,
+    explanation,
+    correctLabel,
+    reviewLevelId,
+    status,
+    options,
+    correctIndex: correctIndexRaw,
+    reviewLabel,
+    reviewSuggestion,
+  };
+}
+
 export async function getAdminQuestionBankFromDb() {
   const db = await getDb();
   const rows = await db.all<QuestionBankRow[]>(
@@ -244,9 +393,54 @@ export async function getAdminQuestionBankFromDb() {
   return rows.map(mapQuestionBankRow);
 }
 
+export async function createAdminQuestionBank(
+  input: Partial<QuestionBankManagementItem> & Partial<ExamQuestion>,
+) {
+  const db = await getDb();
+  const id = String(input.id ?? "").trim();
+
+  if (!id) {
+    throw new HttpError(400, "题目编号不能为空。");
+  }
+
+  const existing = await db.get<{ id: string }>(
+    "SELECT id FROM question_bank WHERE id = ?",
+    id,
+  );
+
+  if (existing) {
+    throw new HttpError(409, "该题目编号已存在。");
+  }
+
+  const parsed = parseQuestionPayload(input);
+
+  await db.run(
+    `
+      INSERT INTO question_bank (
+        id, prompt, options_json, correct_index, correct_label, explanation,
+        review_level_id, review_label, review_suggestion, status, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    id,
+    parsed.prompt,
+    JSON.stringify(parsed.options),
+    parsed.correctIndex,
+    parsed.correctLabel,
+    parsed.explanation,
+    parsed.reviewLevelId,
+    parsed.reviewLabel,
+    parsed.reviewSuggestion,
+    parsed.status,
+    new Date().toISOString(),
+  );
+
+  return getAdminQuestionBankFromDb();
+}
+
 export async function updateAdminQuestionBank(
   id: string,
-  input: Partial<QuestionBankManagementItem>,
+  input: Partial<QuestionBankManagementItem> & Partial<ExamQuestion>,
 ) {
   const db = await getDb();
   const existing = await db.get<QuestionBankRow>(
@@ -264,42 +458,52 @@ export async function updateAdminQuestionBank(
     throw new HttpError(404, "未找到对应题目。");
   }
 
-  const next = {
-    prompt:
-      typeof input.prompt === "string" && input.prompt.trim()
-        ? input.prompt.trim()
-        : existing.prompt,
-    correctLabel:
-      typeof input.correctLabel === "string" && input.correctLabel.trim()
-        ? input.correctLabel.trim()
-        : existing.correct_label,
-    explanation:
-      typeof input.explanation === "string" && input.explanation.trim()
-        ? input.explanation.trim()
-        : existing.explanation,
-    reviewLevelId:
-      input.reviewLevelId === undefined
-        ? existing.review_level_id
-        : parseReviewLevelId(input.reviewLevelId),
-    status:
-      input.status === undefined ? existing.status : parseQuestionStatus(input.status),
-  };
+  const next = parseQuestionPayload(input, existing);
 
   await db.run(
     `
       UPDATE question_bank
-      SET prompt = ?, correct_label = ?, explanation = ?, review_level_id = ?, status = ?, updated_at = ?
+      SET
+        prompt = ?,
+        options_json = ?,
+        correct_index = ?,
+        correct_label = ?,
+        explanation = ?,
+        review_level_id = ?,
+        review_label = ?,
+        review_suggestion = ?,
+        status = ?,
+        updated_at = ?
       WHERE id = ?
     `,
     next.prompt,
+    JSON.stringify(next.options),
+    next.correctIndex,
     next.correctLabel,
     next.explanation,
     next.reviewLevelId,
+    next.reviewLabel,
+    next.reviewSuggestion,
     next.status,
     new Date().toISOString(),
     id,
   );
 
+  return getAdminQuestionBankFromDb();
+}
+
+export async function deleteAdminQuestionBank(id: string) {
+  const db = await getDb();
+  const existing = await db.get<{ id: string }>(
+    "SELECT id FROM question_bank WHERE id = ?",
+    id,
+  );
+
+  if (!existing) {
+    throw new HttpError(404, "未找到对应题目。");
+  }
+
+  await db.run("DELETE FROM question_bank WHERE id = ?", id);
   return getAdminQuestionBankFromDb();
 }
 
@@ -314,6 +518,43 @@ export async function getAdminAiCopyFromDb() {
   );
 
   return rows.map(mapAiCopyRow);
+}
+
+export async function createAdminAiCopy(input: AiCopyTemplateItem) {
+  const db = await getDb();
+  const id = String(input.id ?? "").trim();
+  const category = String(input.category ?? "").trim();
+  const title = String(input.title ?? "").trim();
+  const scene = String(input.scene ?? "").trim();
+  const promptText = String(input.promptText ?? "").trim();
+
+  if (!id || !category || !title || !scene || !promptText) {
+    throw new HttpError(400, "AI 文案模板字段不完整。");
+  }
+
+  const existing = await db.get<{ id: string }>(
+    "SELECT id FROM ai_copy_templates WHERE id = ?",
+    id,
+  );
+
+  if (existing) {
+    throw new HttpError(409, "该 AI 文案模板标识已存在。");
+  }
+
+  await db.run(
+    `
+      INSERT INTO ai_copy_templates (id, category, title, scene, prompt_text, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `,
+    id,
+    category,
+    title,
+    scene,
+    promptText,
+    new Date().toISOString(),
+  );
+
+  return getAdminAiCopyFromDb();
 }
 
 export async function updateAdminAiCopy(
@@ -367,5 +608,20 @@ export async function updateAdminAiCopy(
     id,
   );
 
+  return getAdminAiCopyFromDb();
+}
+
+export async function deleteAdminAiCopy(id: string) {
+  const db = await getDb();
+  const existing = await db.get<{ id: string }>(
+    "SELECT id FROM ai_copy_templates WHERE id = ?",
+    id,
+  );
+
+  if (!existing) {
+    throw new HttpError(404, "未找到对应 AI 文案模板。");
+  }
+
+  await db.run("DELETE FROM ai_copy_templates WHERE id = ?", id);
   return getAdminAiCopyFromDb();
 }

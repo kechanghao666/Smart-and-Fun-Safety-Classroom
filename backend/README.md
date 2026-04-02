@@ -114,16 +114,23 @@ npm --prefix backend run start
 
 写接口：
 
+- `POST /api/admin/themes`
 - `PUT /api/admin/themes/:id`
+- `DELETE /api/admin/themes/:id`
 - `PUT /api/admin/levels/:id`
+- `POST /api/admin/question-bank`
 - `PUT /api/admin/question-bank/:id`
+- `DELETE /api/admin/question-bank/:id`
+- `POST /api/admin/ai-copy`
 - `PUT /api/admin/ai-copy/:id`
+- `DELETE /api/admin/ai-copy/:id`
 
 说明：
 
 - 主题、关卡、题库、AI 文案现在都已落到 SQLite。
 - `question-bank` 的更新会影响考试判分和错题回看基础数据。
 - `ai-copy` 的更新会影响 AI 助手 fallback 文案。
+- `level-1/2/3` 是 v1 固定三关，因此目前只开放更新，不开放新增/删除。
 
 ## 鉴权方式
 

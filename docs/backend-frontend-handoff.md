@@ -232,16 +232,23 @@ GET http://127.0.0.1:3001/api/health
 
 写接口：
 
+- `POST /api/admin/themes`
 - `PUT /api/admin/themes/:id`
+- `DELETE /api/admin/themes/:id`
 - `PUT /api/admin/levels/:id`
+- `POST /api/admin/question-bank`
 - `PUT /api/admin/question-bank/:id`
+- `DELETE /api/admin/question-bank/:id`
+- `POST /api/admin/ai-copy`
 - `PUT /api/admin/ai-copy/:id`
+- `DELETE /api/admin/ai-copy/:id`
 
 说明：
 
 - 这些内容现在已经落到 SQLite，不再只是静态返回
 - 题库和 AI 文案的更新会影响后端实际运行结果
 - 目前管理员写接口走“部分字段更新”，前端提交需要只传当前表单里真正修改的字段即可
+- `level-1`、`level-2`、`level-3` 是 v1 固定三关，当前只开放更新接口，不开放新增/删除，避免破坏学生主链路
 
 ## 前端接入注意点
 
@@ -250,10 +257,11 @@ GET http://127.0.0.1:3001/api/health
 - `complete level` 接口返回的是 `{ progress, result }`，不要只取 `progress`
 - 错题结果请使用 `wrongQuestionIds` 和题目自身的 `reviewLevelId` / `reviewLabel` / `reviewSuggestion`
 - 管理员内容如果做保存按钮，可以直接开始接 `PUT` 接口
+- 如果要做“新增/删除”按钮，当前可直接接主题、题库、AI 文案的 `POST/DELETE`
 - 真实 Spark 还没做联机验收，所以如果你看到 AI 结果比较模板化，这是当前预期
 
 ## 已知未完成项
 
 - Spark Lite 真实密钥联机验证还没做
-- 管理员端还没有新增/删除接口，这一轮先补了读取和更新
+- 关卡管理目前仍是“固定三关，只允许更新”，这是按说明书约束保留的
 - 教师/管理员统计仍以首版展示型数据为主，还没做更完整的动态分析
