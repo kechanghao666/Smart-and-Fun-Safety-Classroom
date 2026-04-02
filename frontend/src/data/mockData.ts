@@ -1,14 +1,22 @@
 import type {
   AdminModuleCard,
+  AdminStatMetric,
+  AdminUserSummary,
   AiKnowledgeItem,
+  AiCopyTemplateItem,
   AvatarOption,
   DemoAccount,
   ExamQuestion,
   GuardianTask,
   LevelBlueprint,
+  LevelManagementItem,
+  QuestionBankManagementItem,
   RouteChallengeStep,
   StudentStage,
+  TeacherClassSummary,
+  TeacherStudentDetail,
   TeacherStudentSummary,
+  ThemeManagementItem,
   ThemeCard,
 } from "../types";
 
@@ -332,6 +340,290 @@ export const adminModules: AdminModuleCard[] = [
     description: "查看主题访问量、完成率、考试成绩和异常提醒。",
     ownerSuggestion: "后台 / 数据分析",
     status: "待接口",
+  },
+];
+
+export const teacherClassSummaries: TeacherClassSummary[] = [
+  {
+    id: "class-3-2",
+    name: "三年级（2）班",
+    studentCount: 32,
+    completedRate: 78,
+    examCompletionRate: 52,
+    focusLabel: "放学路线判断仍需强化",
+  },
+  {
+    id: "class-3-3",
+    name: "三年级（3）班",
+    studentCount: 31,
+    completedRate: 65,
+    examCompletionRate: 48,
+    focusLabel: "公交车盲区理解偏弱",
+  },
+];
+
+export const teacherStudentDetails: TeacherStudentDetail[] = [
+  {
+    id: "stu-1",
+    name: "李小安",
+    className: "三年级（2）班",
+    completedLevels: 3,
+    examStatus: "已完成考试",
+    score: 100,
+    lastActiveAt: "今天 09:32",
+    weakSpot: "整体表现稳定，可继续强化乘车礼仪。",
+    growthStage: "安全守护期",
+    growthSummary: "已经完成三关与考试，成长阶段和学习节奏都比较稳定。",
+    motivationLabel: "适合承担课堂示范任务",
+    levelStatuses: [
+      {
+        levelId: "level-1",
+        title: "第一关：城市交通观察员",
+        status: "completed",
+        score: 100,
+        note: "观察力稳定，热点识别准确。",
+      },
+      {
+        levelId: "level-2",
+        title: "第二关：放学回家路线挑战",
+        status: "completed",
+        score: 100,
+        note: "路线选择稳健，能主动规避风险。",
+      },
+      {
+        levelId: "level-3",
+        title: "第三关：安全出行守护任务",
+        status: "completed",
+        score: 100,
+        note: "乘车防护意识完整。",
+      },
+    ],
+    wrongTopics: [],
+    recommendations: ["继续维持稳定节奏", "可作为课堂示范学生分享安全观察方法"],
+  },
+  {
+    id: "stu-2",
+    name: "周乐乐",
+    className: "三年级（2）班",
+    completedLevels: 2,
+    examStatus: "已解锁未考试",
+    score: null,
+    lastActiveAt: "今天 10:05",
+    weakSpot: "路线判断易受同伴影响，需要加强独立安全选择。",
+    growthStage: "守护进阶期",
+    growthSummary: "前两关推进较快，但还缺最后一关和考试收口。",
+    motivationLabel: "需要鼓励完成完整闭环",
+    levelStatuses: [
+      {
+        levelId: "level-1",
+        title: "第一关：城市交通观察员",
+        status: "completed",
+        score: 96,
+        note: "基础观察已经建立。",
+      },
+      {
+        levelId: "level-2",
+        title: "第二关：放学回家路线挑战",
+        status: "completed",
+        score: 82,
+        note: "路线判断有时会受外界干扰。",
+      },
+      {
+        levelId: "level-3",
+        title: "第三关：安全出行守护任务",
+        status: "available",
+        score: null,
+        note: "进入后可继续完成本轮学习闭环。",
+      },
+    ],
+    wrongTopics: ["尚未进入主题考试"],
+    recommendations: ["提醒优先完成第三关", "教师课后追问大型车辆盲区判断逻辑"],
+  },
+  {
+    id: "stu-3",
+    name: "陈晓雨",
+    className: "三年级（2）班",
+    completedLevels: 1,
+    examStatus: "未解锁考试",
+    score: null,
+    lastActiveAt: "昨天 16:40",
+    weakSpot: "对公交车盲区理解还不稳定。",
+    growthStage: "安全萌芽期",
+    growthSummary: "仍在建立基础观察习惯，需要从关卡复习里持续巩固。",
+    motivationLabel: "需要分段鼓励和即时反馈",
+    levelStatuses: [
+      {
+        levelId: "level-1",
+        title: "第一关：城市交通观察员",
+        status: "completed",
+        score: 88,
+        note: "已经通过基础识别训练。",
+      },
+      {
+        levelId: "level-2",
+        title: "第二关：放学回家路线挑战",
+        status: "available",
+        score: null,
+        note: "建议继续完成路线判断训练。",
+      },
+      {
+        levelId: "level-3",
+        title: "第三关：安全出行守护任务",
+        status: "locked",
+        score: null,
+        note: "完成第二关后自动解锁。",
+      },
+    ],
+    wrongTopics: ["考试尚未解锁"],
+    recommendations: ["先回到第二关继续学习", "加强公交车停靠与盲区场景口头问答"],
+  },
+];
+
+export const themeManagementItems: ThemeManagementItem[] = [
+  {
+    id: "road-safety",
+    title: "道路安全教育",
+    description: "当前首发主题，包含三关闯关学习与主题考试。",
+    coverLabel: "蓝天斑马线封面",
+    isOpen: true,
+    sortOrder: 1,
+  },
+  {
+    id: "campus-safety",
+    title: "校园安全教育",
+    description: "覆盖课间活动、紧急集合和校园设施安全。",
+    coverLabel: "校园操场封面",
+    isOpen: false,
+    sortOrder: 2,
+  },
+];
+
+export const levelManagementItems: LevelManagementItem[] = [
+  {
+    id: "level-1",
+    title: "第一关：城市交通观察员",
+    focus: "观察与识别",
+    duration: "约 15 分钟",
+    rewardLabel: "观察员徽章 + 40 积分",
+    feedbackStyle: "强调先观察再行动",
+  },
+  {
+    id: "level-2",
+    title: "第二关：放学回家路线挑战",
+    focus: "路线判断",
+    duration: "约 15 分钟",
+    rewardLabel: "路线先锋徽章 + 40 积分",
+    feedbackStyle: "强调关键节点风险判断",
+  },
+  {
+    id: "level-3",
+    title: "第三关：安全出行守护任务",
+    focus: "乘车防护",
+    duration: "约 15 分钟",
+    rewardLabel: "守护达人徽章 + 40 积分",
+    feedbackStyle: "强调头盔、安全带和候车距离",
+  },
+];
+
+export const questionBankManagementItems: QuestionBankManagementItem[] = [
+  {
+    id: "q-1",
+    prompt: "过马路时，下面哪种做法最安全？",
+    correctLabel: "走斑马线并观察信号灯和车辆",
+    explanation: "需要同时看灯、看车、看路。",
+    reviewLevelId: "level-1",
+    status: "enabled",
+  },
+  {
+    id: "q-2",
+    prompt: "乘坐私家车时，出发前最重要的动作是什么？",
+    correctLabel: "系好安全带",
+    explanation: "系安全带是车内最基础的安全动作。",
+    reviewLevelId: "level-3",
+    status: "enabled",
+  },
+  {
+    id: "q-3",
+    prompt: "遇到公交车刚靠站时，正确做法是？",
+    correctLabel: "避开盲区，确认安全后再通过",
+    explanation: "需要避开大型车辆前方和侧方盲区。",
+    reviewLevelId: "level-2",
+    status: "enabled",
+  },
+];
+
+export const aiCopyTemplateItems: AiCopyTemplateItem[] = [
+  {
+    id: "copy-welcome",
+    category: "欢迎语",
+    title: "学生首页欢迎",
+    scene: "welcome",
+    promptText: "欢迎回来，今天继续和我一起完成道路安全学习吧。",
+  },
+  {
+    id: "copy-hint",
+    category: "关卡提示",
+    title: "第二关卡提示",
+    scene: "hint",
+    promptText: "先看清楚路口和车辆，再做路线选择，不要被捷径带偏。",
+  },
+  {
+    id: "copy-report",
+    category: "结果卡片",
+    title: "考试完成总结",
+    scene: "report",
+    promptText: "根据关卡完成情况、错题与积分变化，生成简短总结与下一步建议。",
+  },
+];
+
+export const adminUserSummaries: AdminUserSummary[] = [
+  {
+    id: "user-student-001",
+    name: "student001",
+    role: "student",
+    status: "active",
+    lastActiveAt: "今天 10:05",
+    note: "学生演示账号",
+  },
+  {
+    id: "user-teacher-001",
+    name: "teacher001",
+    role: "teacher",
+    status: "active",
+    lastActiveAt: "今天 09:10",
+    note: "教师演示账号",
+  },
+  {
+    id: "user-admin-001",
+    name: "admin001",
+    role: "admin",
+    status: "active",
+    lastActiveAt: "今天 08:58",
+    note: "管理员演示账号",
+  },
+];
+
+export const adminStatMetrics: AdminStatMetric[] = [
+  {
+    id: "visits",
+    label: "主题访问量",
+    value: "1,248",
+    trend: "较上周 +12%",
+    accent: "sky",
+  },
+  {
+    id: "completion",
+    label: "三关完成率",
+    value: "78%",
+    trend: "较上周 +8%",
+    accent: "mint",
+  },
+  {
+    id: "exam",
+    label: "考试平均分",
+    value: "86",
+    trend: "较上周 +4 分",
+    accent: "orange",
   },
 ];
 

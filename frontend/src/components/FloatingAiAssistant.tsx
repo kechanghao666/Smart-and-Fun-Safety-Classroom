@@ -1,29 +1,11 @@
+import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
-import { aiKnowledgeBase } from "../data/mockData";
-
-interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  text: string;
-}
-
-function getAiReply(input: string) {
-  const normalized = input.trim().toLowerCase();
-  const hit = aiKnowledgeBase.find((item) =>
-    item.keywords.some((keyword) => normalized.includes(keyword.toLowerCase())),
-  );
-
-  if (hit) {
-    return hit.answer;
-  }
-
-  return "我当前只回答道路安全主题相关的问题。你可以试试问我“为什么要走斑马线”或“公交车盲区是什么”。";
-}
+import { buildAiQuickPrompts, getAiReply, type AiChatMessage } from "../utils/aiAssistant";
 
 export function FloatingAiAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([
+  const [messages, setMessages] = useState<AiChatMessage[]>([
     {
       id: "welcome",
       role: "assistant",
@@ -31,7 +13,7 @@ export function FloatingAiAssistant() {
     },
   ]);
 
-  const quickPrompts = useMemo(() => aiKnowledgeBase.slice(0, 3), []);
+  const quickPrompts = useMemo(() => buildAiQuickPrompts(3), []);
 
   function ask(question: string) {
     const trimmed = question.trim();
@@ -90,6 +72,12 @@ export function FloatingAiAssistant() {
                 {prompt.label}
               </button>
             ))}
+          </div>
+
+          <div className="ai-panel__meta-actions">
+            <Link className="ghost-button link-button" to="/student/ai">
+              打开独立问答页
+            </Link>
           </div>
 
           <form

@@ -102,12 +102,98 @@ export interface TeacherStudentSummary {
   weakSpot: string;
 }
 
+export interface TeacherClassSummary {
+  id: string;
+  name: string;
+  studentCount: number;
+  completedRate: number;
+  examCompletionRate: number;
+  focusLabel: string;
+}
+
+export interface TeacherStudentLevelStatus {
+  levelId: LevelId;
+  title: string;
+  status: LearningStatus;
+  score: number | null;
+  note: string;
+}
+
+export interface TeacherStudentDetail {
+  id: string;
+  name: string;
+  className: string;
+  completedLevels: number;
+  examStatus: string;
+  score: number | null;
+  lastActiveAt: string;
+  weakSpot: string;
+  growthStage: string;
+  growthSummary: string;
+  motivationLabel: string;
+  levelStatuses: TeacherStudentLevelStatus[];
+  wrongTopics: string[];
+  recommendations: string[];
+}
+
 export interface AdminModuleCard {
   id: string;
   title: string;
   description: string;
   ownerSuggestion: string;
   status: string;
+}
+
+export interface ThemeManagementItem {
+  id: string;
+  title: string;
+  description: string;
+  coverLabel: string;
+  isOpen: boolean;
+  sortOrder: number;
+}
+
+export interface LevelManagementItem {
+  id: LevelId;
+  title: string;
+  focus: string;
+  duration: string;
+  rewardLabel: string;
+  feedbackStyle: string;
+}
+
+export interface QuestionBankManagementItem {
+  id: string;
+  prompt: string;
+  correctLabel: string;
+  explanation: string;
+  reviewLevelId: LevelId;
+  status: "enabled" | "draft";
+}
+
+export interface AiCopyTemplateItem {
+  id: string;
+  category: string;
+  title: string;
+  scene: string;
+  promptText: string;
+}
+
+export interface AdminUserSummary {
+  id: string;
+  name: string;
+  role: UserRole;
+  status: "active" | "paused";
+  lastActiveAt: string;
+  note: string;
+}
+
+export interface AdminStatMetric {
+  id: string;
+  label: string;
+  value: string;
+  trend: string;
+  accent: ThemeAccent;
 }
 
 export interface ExamProgress {

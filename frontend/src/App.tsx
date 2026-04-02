@@ -3,7 +3,14 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-route
 import { AppShell } from "./components/AppShell";
 import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { AdminAiCopyPage } from "./pages/admin/AdminAiCopyPage";
 import { AdminDashboardPage } from "./pages/admin/AdminDashboardPage";
+import { AdminLevelsPage } from "./pages/admin/AdminLevelsPage";
+import { AdminQuestionBankPage } from "./pages/admin/AdminQuestionBankPage";
+import { AdminStatsPage } from "./pages/admin/AdminStatsPage";
+import { AdminThemesPage } from "./pages/admin/AdminThemesPage";
+import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
+import { StudentAiPage } from "./pages/student/StudentAiPage";
 import { StudentAiReportPage } from "./pages/student/StudentAiReportPage";
 import { StudentExamPage } from "./pages/student/StudentExamPage";
 import { StudentGrowthPage } from "./pages/student/StudentGrowthPage";
@@ -13,6 +20,7 @@ import { StudentLevelResultPage } from "./pages/student/StudentLevelResultPage";
 import { StudentProfileSetupPage } from "./pages/student/StudentProfileSetupPage";
 import { StudentRecordPage } from "./pages/student/StudentRecordPage";
 import { StudentThemePage } from "./pages/student/StudentThemePage";
+import { TeacherClassesPage } from "./pages/teacher/TeacherClassesPage";
 import { TeacherDashboardPage } from "./pages/teacher/TeacherDashboardPage";
 import { TeacherStudentDetailPage } from "./pages/teacher/TeacherStudentDetailPage";
 import { TeacherStudentsPage } from "./pages/teacher/TeacherStudentsPage";
@@ -144,6 +152,7 @@ function AppRoutes() {
             element={<StudentLevelResultPage />}
           />
           <Route path="theme/road-safety/exam" element={<StudentExamPage />} />
+          <Route path="ai" element={<StudentAiPage />} />
           <Route path="growth" element={<StudentGrowthPage />} />
           <Route path="records" element={<StudentRecordPage />} />
           <Route path="ai-report" element={<StudentAiReportPage />} />
@@ -158,6 +167,7 @@ function AppRoutes() {
           }
         >
           <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="classes" element={<TeacherClassesPage />} />
           <Route path="dashboard" element={<TeacherDashboardPage />} />
           <Route path="students" element={<TeacherStudentsPage />} />
           <Route path="students/:studentId" element={<TeacherStudentDetailPage />} />
@@ -173,6 +183,12 @@ function AppRoutes() {
         >
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="themes" element={<AdminThemesPage />} />
+          <Route path="levels" element={<AdminLevelsPage />} />
+          <Route path="question-bank" element={<AdminQuestionBankPage />} />
+          <Route path="ai-copy" element={<AdminAiCopyPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="stats" element={<AdminStatsPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

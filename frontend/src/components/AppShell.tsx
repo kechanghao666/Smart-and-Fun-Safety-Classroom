@@ -13,15 +13,25 @@ const navByRole: Record<UserRole, NavItem[]> = {
   student: [
     { to: "/student/home", label: "学生首页" },
     { to: "/student/theme/road-safety", label: "主题详情" },
+    { to: "/student/ai", label: "AI 问答" },
     { to: "/student/growth", label: "成长档案" },
     { to: "/student/records", label: "学习记录" },
     { to: "/student/ai-report", label: "AI 结果卡片" },
   ],
   teacher: [
+    { to: "/teacher/classes", label: "班级概览" },
     { to: "/teacher/dashboard", label: "教师首页" },
     { to: "/teacher/students", label: "班级学生列表" },
   ],
-  admin: [{ to: "/admin/dashboard", label: "管理员后台" }],
+  admin: [
+    { to: "/admin/dashboard", label: "后台首页" },
+    { to: "/admin/themes", label: "主题管理" },
+    { to: "/admin/levels", label: "关卡管理" },
+    { to: "/admin/question-bank", label: "题库管理" },
+    { to: "/admin/ai-copy", label: "AI 文案" },
+    { to: "/admin/users", label: "用户管理" },
+    { to: "/admin/stats", label: "数据统计" },
+  ],
 };
 
 const roleNameMap: Record<UserRole, string> = {

@@ -81,6 +81,13 @@ export function StudentHomePage() {
           >
             查看成长档案
           </button>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => navigate("/student/ai")}
+          >
+            打开 AI 问答
+          </button>
         </div>
       </section>
 

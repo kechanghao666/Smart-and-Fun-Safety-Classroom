@@ -9,15 +9,23 @@
   - `/student/theme/road-safety/level/:levelId`
   - `/student/theme/road-safety/level/:levelId/result`
   - `/student/theme/road-safety/exam`
+  - `/student/ai`
   - `/student/growth`
   - `/student/records`
   - `/student/ai-report`
 - 教师端
+  - `/teacher/classes`
   - `/teacher/dashboard`
   - `/teacher/students`
   - `/teacher/students/:studentId`
 - 管理员端
   - `/admin/dashboard`
+  - `/admin/themes`
+  - `/admin/levels`
+  - `/admin/question-bank`
+  - `/admin/ai-copy`
+  - `/admin/users`
+  - `/admin/stats`
 
 ## 共享状态枚举
 
