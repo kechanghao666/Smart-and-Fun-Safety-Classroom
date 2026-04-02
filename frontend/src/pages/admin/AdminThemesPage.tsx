@@ -1,18 +1,43 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { themeManagementItems } from "../../data/mockData";
+import { fetchAdminThemes } from "../../services/admin";
+import { useAppState } from "../../state/AppState";
 import type { ThemeManagementItem } from "../../types";
+import { useApiHydration } from "../../utils/useApiHydration";
 import { usePersistedState } from "../../utils/usePersistedState";
 
 export function AdminThemesPage() {
+  const { state } = useAppState();
   const [themes, setThemes] = usePersistedState<ThemeManagementItem[]>(
     "admin-theme-management",
     themeManagementItems,
   );
+  const canUseApi = state.authSource === "api" && Boolean(state.authToken);
   const [selectedId, setSelectedId] = useState(themes[0]?.id ?? "");
   const selectedTheme = useMemo(
     () => themes.find((item) => item.id === selectedId) ?? themes[0] ?? null,
     [selectedId, themes],
   );
+  const applyThemes = useCallback(
+    (items: ThemeManagementItem[]) => {
+      setThemes(items);
+      setSelectedId((current) => {
+        if (current && items.some((item) => item.id === current)) {
+          return current;
+        }
+
+        return items[0]?.id ?? "";
+      });
+    },
+    [setThemes],
+  );
+  const { error, isLoading, source } = useApiHydration({
+    enabled: canUseApi,
+    fetcher: () => fetchAdminThemes(state.authToken ?? ""),
+    applyData: applyThemes,
+    dependencies: [state.authToken],
+    fallbackMessage: "暂时无法获取主题管理数据，当前继续使用本地演示内容。",
+  });
 
   function updateTheme<K extends keyof ThemeManagementItem>(
     id: string,
@@ -33,6 +58,15 @@ export function AdminThemesPage() {
           <p>当前为前端可编辑原型，改动会持久化到浏览器本地存储，方便多人演示。</p>
         </div>
       </section>
+
+      <article className="feedback-box">
+        <strong>{source === "api" ? "主题列表已从后端同步" : "主题列表正在使用本地演示数据"}</strong>
+        <p>
+          {isLoading
+            ? "正在同步主题管理数据..."
+            : error || "即使后端尚未完成，当前页也能继续进行本地编辑演示。"}
+        </p>
+      </article>
 
       <section className="management-layout">
         <div className="page-stack">

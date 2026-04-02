@@ -1,19 +1,44 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { aiCopyTemplateItems } from "../../data/mockData";
+import { fetchAdminAiCopy } from "../../services/admin";
+import { useAppState } from "../../state/AppState";
 import type { AiCopyTemplateItem } from "../../types";
+import { useApiHydration } from "../../utils/useApiHydration";
 import { usePersistedState } from "../../utils/usePersistedState";
 
 export function AdminAiCopyPage() {
+  const { state } = useAppState();
   const [templates, setTemplates] = usePersistedState<AiCopyTemplateItem[]>(
     "admin-ai-copy",
     aiCopyTemplateItems,
   );
+  const canUseApi = state.authSource === "api" && Boolean(state.authToken);
   const [selectedId, setSelectedId] = useState(templates[0]?.id ?? "");
   const categories = Array.from(new Set(templates.map((item) => item.category)));
   const selectedTemplate = useMemo(
     () => templates.find((item) => item.id === selectedId) ?? templates[0] ?? null,
     [selectedId, templates],
   );
+  const applyTemplates = useCallback(
+    (items: AiCopyTemplateItem[]) => {
+      setTemplates(items);
+      setSelectedId((current) => {
+        if (current && items.some((item) => item.id === current)) {
+          return current;
+        }
+
+        return items[0]?.id ?? "";
+      });
+    },
+    [setTemplates],
+  );
+  const { error, isLoading, source } = useApiHydration({
+    enabled: canUseApi,
+    fetcher: () => fetchAdminAiCopy(state.authToken ?? ""),
+    applyData: applyTemplates,
+    dependencies: [state.authToken],
+    fallbackMessage: "暂时无法获取 AI 文案模板，当前继续使用本地演示内容。",
+  });
 
   function updateTemplate<K extends keyof AiCopyTemplateItem>(
     id: string,
@@ -34,6 +59,15 @@ export function AdminAiCopyPage() {
           <p>本轮保持“模板优先、真实模型补充问答”的实现策略。</p>
         </div>
       </section>
+
+      <article className="feedback-box">
+        <strong>{source === "api" ? "AI 模板已从后端同步" : "AI 模板正在使用本地演示数据"}</strong>
+        <p>
+          {isLoading
+            ? "正在同步 AI 文案模板..."
+            : error || "当前页会优先保留模板编辑体验，等待后端保存能力接入。"}
+        </p>
+      </article>
 
       <section className="surface-card">
         <span className="section-block__eyebrow">文案分类</span>

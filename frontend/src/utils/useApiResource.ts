@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ApiError } from "../services/http";
 
 interface UseApiResourceOptions<T> {
@@ -20,6 +20,9 @@ export function useApiResource<T>({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [source, setSource] = useState<"mock" | "api">(enabled ? "api" : "mock");
+  const fetcherRef = useRef(fetcher);
+
+  fetcherRef.current = fetcher;
 
   useEffect(() => {
     let cancelled = false;
@@ -38,7 +41,7 @@ export function useApiResource<T>({
     setError("");
     setSource("api");
 
-    void fetcher()
+    void fetcherRef.current()
       .then((result) => {
         if (cancelled) {
           return;
@@ -67,7 +70,7 @@ export function useApiResource<T>({
     return () => {
       cancelled = true;
     };
-  }, [enabled, fallbackData, fetcher, fallbackMessage, ...dependencies]);
+  }, [enabled, fallbackData, fallbackMessage, ...dependencies]);
 
   return {
     data,
@@ -76,4 +79,3 @@ export function useApiResource<T>({
     source,
   };
 }
-

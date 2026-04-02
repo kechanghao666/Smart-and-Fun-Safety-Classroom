@@ -134,3 +134,9 @@ interface AppState {
   - `GET /api/teacher/students/:studentId`
 - 管理员端接口预留：
   - `GET /api/admin/modules`
+  - `GET /api/admin/themes`
+  - `GET /api/admin/levels`
+  - `GET /api/admin/question-bank`
+  - `GET /api/admin/ai-copy`
+  - `GET /api/admin/users`
+  - `GET /api/admin/stats`

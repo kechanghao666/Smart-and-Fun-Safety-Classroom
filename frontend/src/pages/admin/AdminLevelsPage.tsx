@@ -1,18 +1,43 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { levelManagementItems } from "../../data/mockData";
+import { fetchAdminLevels } from "../../services/admin";
+import { useAppState } from "../../state/AppState";
 import type { LevelManagementItem } from "../../types";
+import { useApiHydration } from "../../utils/useApiHydration";
 import { usePersistedState } from "../../utils/usePersistedState";
 
 export function AdminLevelsPage() {
+  const { state } = useAppState();
   const [levels, setLevels] = usePersistedState<LevelManagementItem[]>(
     "admin-level-management",
     levelManagementItems,
   );
+  const canUseApi = state.authSource === "api" && Boolean(state.authToken);
   const [selectedId, setSelectedId] = useState(levels[0]?.id ?? "level-1");
   const selectedLevel = useMemo(
     () => levels.find((item) => item.id === selectedId) ?? levels[0] ?? null,
     [levels, selectedId],
   );
+  const applyLevels = useCallback(
+    (items: LevelManagementItem[]) => {
+      setLevels(items);
+      setSelectedId((current) => {
+        if (current && items.some((item) => item.id === current)) {
+          return current;
+        }
+
+        return items[0]?.id ?? "level-1";
+      });
+    },
+    [setLevels],
+  );
+  const { error, isLoading, source } = useApiHydration({
+    enabled: canUseApi,
+    fetcher: () => fetchAdminLevels(state.authToken ?? ""),
+    applyData: applyLevels,
+    dependencies: [state.authToken],
+    fallbackMessage: "暂时无法获取关卡管理数据，当前继续使用本地演示内容。",
+  });
 
   function updateLevel<K extends keyof LevelManagementItem>(
     id: LevelManagementItem["id"],
@@ -33,6 +58,15 @@ export function AdminLevelsPage() {
           <p>这一页对应说明书里的关卡内容后台，前端先提供可编辑原型结构。</p>
         </div>
       </section>
+
+      <article className="feedback-box">
+        <strong>{source === "api" ? "关卡配置已从后端同步" : "关卡配置正在使用本地演示数据"}</strong>
+        <p>
+          {isLoading
+            ? "正在同步关卡管理数据..."
+            : error || "当前页会在保留本地可编辑能力的同时等待后端保存接口接入。"}
+        </p>
+      </article>
 
       <section className="management-layout">
         <div className="page-stack">

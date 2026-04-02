@@ -1,18 +1,43 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { questionBankManagementItems } from "../../data/mockData";
+import { fetchAdminQuestionBank } from "../../services/admin";
+import { useAppState } from "../../state/AppState";
 import type { LevelId, QuestionBankManagementItem } from "../../types";
+import { useApiHydration } from "../../utils/useApiHydration";
 import { usePersistedState } from "../../utils/usePersistedState";
 
 export function AdminQuestionBankPage() {
+  const { state } = useAppState();
   const [questions, setQuestions] = usePersistedState<QuestionBankManagementItem[]>(
     "admin-question-bank",
     questionBankManagementItems,
   );
+  const canUseApi = state.authSource === "api" && Boolean(state.authToken);
   const [selectedId, setSelectedId] = useState(questions[0]?.id ?? "");
   const selectedQuestion = useMemo(
     () => questions.find((item) => item.id === selectedId) ?? questions[0] ?? null,
     [questions, selectedId],
   );
+  const applyQuestions = useCallback(
+    (items: QuestionBankManagementItem[]) => {
+      setQuestions(items);
+      setSelectedId((current) => {
+        if (current && items.some((item) => item.id === current)) {
+          return current;
+        }
+
+        return items[0]?.id ?? "";
+      });
+    },
+    [setQuestions],
+  );
+  const { error, isLoading, source } = useApiHydration({
+    enabled: canUseApi,
+    fetcher: () => fetchAdminQuestionBank(state.authToken ?? ""),
+    applyData: applyQuestions,
+    dependencies: [state.authToken],
+    fallbackMessage: "暂时无法获取题库数据，当前继续使用本地演示内容。",
+  });
 
   function updateQuestion<K extends keyof QuestionBankManagementItem>(
     id: string,
@@ -33,6 +58,15 @@ export function AdminQuestionBankPage() {
           <p>题库结构已经对齐学生端考试页和错题回看需求。</p>
         </div>
       </section>
+
+      <article className="feedback-box">
+        <strong>{source === "api" ? "题库列表已从后端同步" : "题库列表正在使用本地演示数据"}</strong>
+        <p>
+          {isLoading
+            ? "正在同步题库数据..."
+            : error || "当前页保留了本地编辑能力，方便先和考试页结构联调。"}
+        </p>
+      </article>
 
       <section className="management-layout">
         <div className="page-stack">

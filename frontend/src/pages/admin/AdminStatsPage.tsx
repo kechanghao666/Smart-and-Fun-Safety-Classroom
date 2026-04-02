@@ -1,6 +1,23 @@
 import { adminStatMetrics, teacherClassSummaries } from "../../data/mockData";
+import { fetchAdminStats } from "../../services/admin";
+import { useAppState } from "../../state/AppState";
+import { useApiResource } from "../../utils/useApiResource";
+
+const fallbackStats = {
+  metrics: adminStatMetrics,
+  classSummaries: teacherClassSummaries,
+};
 
 export function AdminStatsPage() {
+  const { state } = useAppState();
+  const canUseApi = state.authSource === "api" && Boolean(state.authToken);
+  const { data, error, isLoading, source } = useApiResource({
+    enabled: canUseApi,
+    fallbackData: fallbackStats,
+    fetcher: () => fetchAdminStats(state.authToken ?? ""),
+    dependencies: [state.authToken],
+  });
+
   return (
     <div className="page-stack">
       <section className="hero-banner hero-banner--admin">
@@ -11,8 +28,17 @@ export function AdminStatsPage() {
         </div>
       </section>
 
+      <article className="feedback-box">
+        <strong>{source === "api" ? "统计数据来自后端" : "统计数据来自本地 mock"}</strong>
+        <p>
+          {isLoading
+            ? "正在同步统计数据..."
+            : error || "数据统计页已经预留真实接口读取能力。"}
+        </p>
+      </article>
+
       <section className="card-grid card-grid--three">
-        {adminStatMetrics.map((metric) => (
+        {data.metrics.map((metric) => (
           <article
             key={metric.id}
             className={`surface-card report-card report-card--${metric.accent}`}
@@ -33,7 +59,7 @@ export function AdminStatsPage() {
         </div>
 
         <div className="bar-list">
-          {teacherClassSummaries.map((classroom) => (
+          {data.classSummaries.map((classroom) => (
             <article key={classroom.id} className="bar-item">
               <div className="row-between">
                 <strong>{classroom.name}</strong>

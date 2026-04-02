@@ -1,14 +1,25 @@
 import { useMemo, useState } from "react";
 import { adminUserSummaries } from "../../data/mockData";
+import { fetchAdminUsers } from "../../services/admin";
+import { useAppState } from "../../state/AppState";
+import { useApiResource } from "../../utils/useApiResource";
 
 export function AdminUsersPage() {
+  const { state } = useAppState();
+  const canUseApi = state.authSource === "api" && Boolean(state.authToken);
+  const { data, error, isLoading, source } = useApiResource({
+    enabled: canUseApi,
+    fallbackData: adminUserSummaries,
+    fetcher: () => fetchAdminUsers(state.authToken ?? ""),
+    dependencies: [state.authToken],
+  });
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
   const filteredUsers = useMemo(
     () =>
-      adminUserSummaries.filter((user) => {
+      data.filter((user) => {
         const matchesQuery =
           query.trim().length === 0 ||
           user.name.includes(query.trim()) ||
@@ -18,7 +29,7 @@ export function AdminUsersPage() {
 
         return matchesQuery && matchesRole && matchesStatus;
       }),
-    [query, roleFilter, statusFilter],
+    [data, query, roleFilter, statusFilter],
   );
 
   return (
@@ -30,6 +41,15 @@ export function AdminUsersPage() {
           <p>当前原型侧重管理视图与筛选结构，为后续真实后端接入预留位置。</p>
         </div>
       </section>
+
+      <article className="feedback-box">
+        <strong>{source === "api" ? "用户列表来自后端" : "用户列表来自本地 mock"}</strong>
+        <p>
+          {isLoading
+            ? "正在同步用户列表..."
+            : error || "用户管理页已经具备真实接口读取位。"}
+        </p>
+      </article>
 
       <section className="surface-card filter-bar">
         <label className="form-field">
