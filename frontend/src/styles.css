@@ -665,6 +665,13 @@ button {
   gap: 14px;
 }
 
+.level-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+  gap: 24px;
+  align-items: start;
+}
+
 .task-grid,
 .option-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -694,6 +701,33 @@ button {
   padding: 18px;
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid var(--line);
+}
+
+.level-support-card {
+  display: grid;
+  gap: 16px;
+}
+
+.level-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.level-checklist__item {
+  display: grid;
+  gap: 6px;
+  border-radius: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.level-checklist__item--done {
+  border-color: rgba(24, 160, 111, 0.3);
+  background: rgba(24, 160, 111, 0.1);
 }
 
 .data-table {
@@ -1212,6 +1246,7 @@ button {
   .filter-bar,
   .management-layout,
   .editor-grid,
+  .level-layout,
   .ai-study-layout {
     grid-template-columns: 1fr;
   }
