@@ -1,93 +1,127 @@
-import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { examQuestions } from "../../data/mockData";
 import { useAppState } from "../../state/AppState";
+import { buildStudentAiReport } from "../../utils/studentAiReport";
 
 export function StudentAiReportPage() {
   const { state } = useAppState();
-  const completedLevels = state.progress.levels.filter(
-    (level) => level.status === "completed",
-  ).length;
-
-  const wrongQuestionDetails = useMemo(
-    () =>
-      examQuestions.filter((question) =>
-        state.progress.exam.wrongQuestionIds.includes(question.id),
-      ),
-    [state.progress.exam.wrongQuestionIds],
-  );
-
-  const reviewTargets = useMemo(
-    () => Array.from(new Set(wrongQuestionDetails.map((question) => question.reviewLabel))),
-    [wrongQuestionDetails],
-  );
+  const report = buildStudentAiReport(state);
 
   return (
     <div className="page-stack">
       <section className="hero-banner hero-banner--report">
         <div>
           <span className="hero-banner__eyebrow">AI 学习结果卡片</span>
-          <h1>把“完成了什么、做得如何、下一步做什么”放在一页里</h1>
-          <p>
-            当前结果页继续采用“数据 + 模板”的轻量方式生成，方便后续无缝替换成真实后端接口。
-          </p>
+          <h1>{report.headline}</h1>
+          <p>{report.summary}</p>
+        </div>
+        <div className="result-medal result-medal--report">
+          <strong>{report.scoreLabel}</strong>
+          <span>{report.scoreCaption}</span>
         </div>
       </section>
 
-      <section className="card-grid card-grid--two">
+      <section className="card-grid card-grid--three">
         <article className="surface-card report-card report-card--blue">
-          <span className="section-block__eyebrow">完成情况</span>
-          <h2>{completedLevels} / 3 关已完成</h2>
-          <p>
-            主题考试
-            {state.progress.exam.status === "completed"
-              ? "已完成"
-              : state.progress.exam.status === "available"
-                ? "已解锁"
-                : "未解锁"}
-            ，当前积分为 {state.progress.points}。
-          </p>
+          <span className="section-block__eyebrow">学习进度</span>
+          <h2>{report.progressLabel}</h2>
+          <p>{report.encouragement}</p>
         </article>
 
         <article className="surface-card report-card report-card--mint">
-          <span className="section-block__eyebrow">表现情况</span>
-          <h2>
-            {state.progress.exam.score === null
-              ? "已建立闯关基础"
-              : `考试成绩 ${state.progress.exam.score} 分`}
-          </h2>
-          <p>
-            {wrongQuestionDetails.length === 0
-              ? "你在交通观察、路线判断和乘车安全上的表现都比较稳定。"
-              : `建议优先回顾：${wrongQuestionDetails.map((question) => question.prompt).join("、")}`}
-          </p>
+          <span className="section-block__eyebrow">成长结果</span>
+          <h2>{report.growthLabel}</h2>
+          <p>当前积分 {state.progress.points}，成长值、星级和徽章都会继续累计。</p>
         </article>
 
         <article className="surface-card report-card report-card--orange">
-          <span className="section-block__eyebrow">下一步建议</span>
-          <h2>推荐的后续动作</h2>
-          <ul className="plain-list">
-            <li>如果考试未完成，先完成主题考试</li>
-            <li>
-              {reviewTargets.length > 0
-                ? `优先回看：${reviewTargets.join("、")}`
-                : "如果有错题，先查看解析再回到对应关卡复习"}
-            </li>
-            <li>继续提问 AI 助手，巩固“斑马线、盲区、头盔”三个重点</li>
-          </ul>
-        </article>
-
-        <article className="surface-card report-card report-card--green">
           <span className="section-block__eyebrow">激励展示</span>
           <h2>已获得徽章</h2>
-          <div className="chip-row">
-            {state.progress.badges.map((badge) => (
-              <span key={badge} className="quick-chip quick-chip--static">
-                {badge}
-              </span>
+          <ul className="plain-list">
+            {report.badges.map((badge) => (
+              <li key={badge}>{badge}</li>
+            ))}
+          </ul>
+        </article>
+      </section>
+
+      <section className="card-grid card-grid--two">
+        <article className="surface-card report-panel">
+          <span className="section-block__eyebrow">这轮亮点</span>
+          <h2>你已经做得不错的地方</h2>
+          <div className="page-stack page-stack--compact">
+            {report.strengths.map((strength) => (
+              <article key={strength} className="feedback-box">
+                <strong>亮点</strong>
+                <p>{strength}</p>
+              </article>
             ))}
           </div>
         </article>
+
+        <article className="surface-card report-panel">
+          <span className="section-block__eyebrow">需要补强</span>
+          <h2>把下一步复习说清楚</h2>
+          <div className="page-stack page-stack--compact">
+            {report.focusAreas.map((item) => (
+              <article key={item.id} className="report-focus-item">
+                <div className="row-between">
+                  <div>
+                    <strong>{item.title}</strong>
+                    <p>{item.suggestion}</p>
+                  </div>
+                  <Link className="ghost-button link-button" to={item.href}>
+                    {item.ctaLabel}
+                  </Link>
+                </div>
+                <ul className="plain-list">
+                  {item.prompts.map((prompt) => (
+                    <li key={prompt}>{prompt}</li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </article>
+      </section>
+
+      <section className="surface-card">
+        <div className="section-block__header">
+          <div>
+            <span className="section-block__eyebrow">学习里程碑</span>
+            <h2>把结果、成长和激励放到同一页</h2>
+          </div>
+        </div>
+
+        <div className="card-grid card-grid--two">
+          {report.milestones.map((milestone) => (
+            <article key={milestone.id} className="report-milestone-card">
+              <span className="section-block__eyebrow">{milestone.label}</span>
+              <h3>{milestone.value}</h3>
+              <p>{milestone.note}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="surface-card">
+        <div className="section-block__header">
+          <div>
+            <span className="section-block__eyebrow">后续动作</span>
+            <h2>看完结果页之后，下一步怎么走</h2>
+          </div>
+        </div>
+
+        <div className="card-grid card-grid--three">
+          {report.actions.map((action) => (
+            <article key={action.id} className="report-action-card">
+              <strong>{action.title}</strong>
+              <p>{action.detail}</p>
+              <Link className="ghost-button link-button" to={action.href}>
+                {action.ctaLabel}
+              </Link>
+            </article>
+          ))}
+        </div>
       </section>
 
       <div className="button-row">

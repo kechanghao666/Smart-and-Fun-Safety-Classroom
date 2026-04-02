@@ -752,6 +752,33 @@ button {
   font-size: 30px;
 }
 
+.result-medal--report {
+  background:
+    linear-gradient(180deg, rgba(38, 139, 210, 0.18), rgba(89, 206, 161, 0.22)),
+    rgba(255, 255, 255, 0.72);
+}
+
+.report-panel,
+.report-action-card,
+.report-milestone-card,
+.report-focus-item {
+  display: grid;
+  gap: 14px;
+}
+
+.page-stack--compact {
+  gap: 14px;
+}
+
+.report-focus-item,
+.report-action-card,
+.report-milestone-card {
+  border-radius: 22px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.72);
+}
+
 .result-modal-backdrop {
   position: fixed;
   inset: 0;
