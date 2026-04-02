@@ -67,6 +67,16 @@ npm run dev
 - `docs/m0-setup-baseline.md`
 - `docs/collaboration-guide.md`
 - `docs/v1-contracts.md`
+- `docs/project-1.0-implementation-plan.md`
+
+## 当前执行计划
+
+- 当前正式协作基线见 [docs/project-1.0-implementation-plan.md](docs/project-1.0-implementation-plan.md)
+- 该文档已明确约定：
+  - 项目以功能说明书和界面说明书为唯一产品真源
+  - 前端由项目发起人负责
+  - 后端由协作同事负责
+  - 所有实现以 `project-1.0` 为共同工作分支推进
 
 ---
 
