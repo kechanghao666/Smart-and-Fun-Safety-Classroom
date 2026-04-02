@@ -1,6 +1,15 @@
-import type { ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { FloatingAiAssistant } from "./FloatingAiAssistant";
+import { fetchStudentProgress } from "../services/student";
+import { ApiError } from "../services/http";
 import { useAppState } from "../state/AppState";
 import type { UserRole } from "../types";
 
@@ -47,9 +56,115 @@ export function AppShell({
   role: UserRole;
   banner?: ReactNode;
 }) {
-  const { resetDemo, signOut, state } = useAppState();
+  const { replaceProgress, resetDemo, signOut, state } = useAppState();
   const navigate = useNavigate();
   const navItems = navByRole[role];
+  const canSyncStudentProgress =
+    role === "student" && state.authSource === "api" && Boolean(state.authToken);
+  const syncRequestRef = useRef(0);
+  const lastVisitedRouteRef = useRef(state.progress.lastVisitedRoute);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState("");
+  const [lastSyncedAt, setLastSyncedAt] = useState("");
+
+  useEffect(() => {
+    lastVisitedRouteRef.current = state.progress.lastVisitedRoute;
+  }, [state.progress.lastVisitedRoute]);
+
+  const syncStudentProgress = useCallback(
+    async (silent = false) => {
+      if (!canSyncStudentProgress) {
+        return;
+      }
+
+      const requestId = syncRequestRef.current + 1;
+      syncRequestRef.current = requestId;
+
+      if (!silent) {
+        setIsSyncing(true);
+      }
+
+      try {
+        const progress = await fetchStudentProgress(state.authToken ?? "");
+
+        if (syncRequestRef.current !== requestId) {
+          return;
+        }
+
+        replaceProgress({
+          ...progress,
+          lastVisitedRoute:
+            lastVisitedRouteRef.current || progress.lastVisitedRoute,
+        });
+        setSyncMessage("");
+        setLastSyncedAt(
+          new Intl.DateTimeFormat("zh-CN", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          }).format(new Date()),
+        );
+      } catch (error) {
+        if (syncRequestRef.current !== requestId) {
+          return;
+        }
+
+        setSyncMessage(
+          error instanceof ApiError
+            ? error.message
+            : "暂时无法同步学生进度，当前继续使用本地已保存的学习状态。",
+        );
+      } finally {
+        if (!silent && syncRequestRef.current === requestId) {
+          setIsSyncing(false);
+        }
+      }
+    },
+    [
+      canSyncStudentProgress,
+      replaceProgress,
+      state.authToken,
+    ],
+  );
+
+  useEffect(() => {
+    if (!canSyncStudentProgress) {
+      setIsSyncing(false);
+      setSyncMessage("");
+      setLastSyncedAt("");
+      return;
+    }
+
+    void syncStudentProgress();
+  }, [canSyncStudentProgress, syncStudentProgress]);
+
+  useEffect(() => {
+    if (!canSyncStudentProgress) {
+      return;
+    }
+
+    const handleFocus = () => {
+      void syncStudentProgress(true);
+    };
+
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [canSyncStudentProgress, syncStudentProgress]);
+
+  const syncSummary = useMemo(() => {
+    if (syncMessage) {
+      return syncMessage;
+    }
+
+    if (lastSyncedAt) {
+      return `最近同步时间：${lastSyncedAt}`;
+    }
+
+    return "进入学生端后会自动向后端拉取最新学习进度。";
+  }, [lastSyncedAt, syncMessage]);
 
   return (
     <div className={`app-shell app-shell--${role}`}>
@@ -126,6 +241,31 @@ export function AppShell({
         </header>
 
         {banner}
+        {canSyncStudentProgress ? (
+          <article className="feedback-box">
+            <div className="row-between">
+              <div>
+                <strong>{isSyncing ? "正在同步学生进度..." : "学生端已连接后端"}</strong>
+                <p>{syncSummary}</p>
+              </div>
+              <div className="button-row">
+                <span className="surface-tag">
+                  {isSyncing ? "同步中" : lastSyncedAt ? "已同步" : "待同步"}
+                </span>
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => {
+                    void syncStudentProgress();
+                  }}
+                  disabled={isSyncing}
+                >
+                  {isSyncing ? "同步中..." : "刷新进度"}
+                </button>
+              </div>
+            </div>
+          </article>
+        ) : null}
         <main className="content-area">
           <Outlet />
         </main>
