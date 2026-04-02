@@ -1138,6 +1138,67 @@ button {
   gap: 14px;
 }
 
+.admin-tab-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.admin-tab {
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: rgba(20, 50, 74, 0.06);
+  color: #24425c;
+  border: 1px solid transparent;
+}
+
+.admin-tab--active {
+  background: linear-gradient(120deg, rgba(38, 139, 210, 0.16), rgba(24, 160, 111, 0.14));
+  border-color: rgba(38, 139, 210, 0.22);
+  font-weight: 700;
+}
+
+.admin-preview-card,
+.question-preview-option {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-preview-card {
+  min-height: 180px;
+}
+
+.admin-preview-card--theme {
+  background:
+    linear-gradient(180deg, rgba(38, 139, 210, 0.08), rgba(255, 255, 255, 0.88)),
+    var(--surface);
+}
+
+.admin-preview-card--level {
+  background:
+    linear-gradient(180deg, rgba(240, 147, 43, 0.08), rgba(255, 255, 255, 0.88)),
+    var(--surface);
+}
+
+.admin-preview-card--question {
+  background:
+    linear-gradient(180deg, rgba(24, 160, 111, 0.08), rgba(255, 255, 255, 0.88)),
+    var(--surface);
+}
+
+.admin-preview-card--ai {
+  background:
+    linear-gradient(180deg, rgba(38, 139, 210, 0.08), rgba(24, 160, 111, 0.08)),
+    var(--surface);
+}
+
+.question-preview-option {
+  border-radius: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.78);
+}
+
 .editor-status-bar__header {
   align-items: flex-start;
 }

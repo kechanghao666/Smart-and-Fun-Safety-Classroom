@@ -27,7 +27,7 @@ export function TeacherStudentDetailPage() {
 
   if (!student) {
     return (
-      <section className="surface-card">
+      <section className="surface-card empty-state-card">
         <h2>未找到学生信息</h2>
       </section>
     );
@@ -92,14 +92,41 @@ export function TeacherStudentDetailPage() {
         <article className="surface-card stat-card">
           <span>跟进等级</span>
           <strong>{attentionLabel}</strong>
-          <p>结合关卡完成、考试状态和薄弱点做出的前端分析判断。</p>
+          <p>综合关卡完成、考试状态和薄弱点得出的前端分析等级。</p>
+        </article>
+      </section>
+
+      <section className="card-grid card-grid--two">
+        <article className="surface-card">
+          <span className="section-block__eyebrow">学习闭环概览</span>
+          <h2>先判断学生停在了哪一步</h2>
+          <div className="page-stack">
+            <article className="teacher-analysis-card">
+              <strong>当前状态</strong>
+              <p>已完成 {student.completedLevels} / 3 关，考试状态为“{student.examStatus}”。</p>
+            </article>
+            <article className="teacher-analysis-card">
+              <strong>当前薄弱点</strong>
+              <p>{student.weakSpot}</p>
+            </article>
+          </div>
+        </article>
+
+        <article className="surface-card">
+          <span className="section-block__eyebrow">考试与风险</span>
+          <h2>课后需要重点追问的内容</h2>
+          <ul className="plain-list">
+            {wrongTopics.map((topic) => (
+              <li key={topic}>{topic}</li>
+            ))}
+          </ul>
         </article>
       </section>
 
       <section className="card-grid card-grid--two">
         <article className="surface-card">
           <span className="section-block__eyebrow">关卡表现</span>
-          <h2>看每一关卡在什么阶段停住了</h2>
+          <h2>逐关查看停留点和表现</h2>
           <div className="page-stack">
             {student.levelStatuses.map((level) => (
               <article key={level.levelId} className="teacher-analysis-card">
@@ -117,20 +144,7 @@ export function TeacherStudentDetailPage() {
         </article>
 
         <article className="surface-card">
-          <span className="section-block__eyebrow">风险与薄弱点</span>
-          <h2>教师课后跟进重点</h2>
-          <ul className="plain-list">
-            <li>当前薄弱点：{student.weakSpot}</li>
-            {wrongTopics.map((topic) => (
-              <li key={topic}>错题 / 风险：{topic}</li>
-            ))}
-          </ul>
-        </article>
-      </section>
-
-      <section className="card-grid card-grid--two">
-        <article className="surface-card">
-          <span className="section-block__eyebrow">成长与激励</span>
+          <span className="section-block__eyebrow">成长状态</span>
           <h2>把学习结果转成可持续推进的反馈</h2>
           <div className="page-stack">
             <article className="teacher-analysis-card">
@@ -143,10 +157,12 @@ export function TeacherStudentDetailPage() {
             </article>
           </div>
         </article>
+      </section>
 
+      <section className="card-grid card-grid--two">
         <article className="surface-card">
           <span className="section-block__eyebrow">建议动作</span>
-          <h2>教师下一步最值得执行的跟进</h2>
+          <h2>教师下一步最值得执行的动作</h2>
           <div className="page-stack">
             {suggestedActions.map((item) => (
               <article key={item} className="teacher-action-card">
@@ -154,6 +170,13 @@ export function TeacherStudentDetailPage() {
                 <p>{item}</p>
               </article>
             ))}
+          </div>
+        </article>
+
+        <article className="surface-card">
+          <span className="section-block__eyebrow">补充建议</span>
+          <h2>和课堂复习结合的补充追问</h2>
+          <div className="page-stack">
             {student.recommendations.map((item) => (
               <article key={item} className="feedback-box">
                 <strong>补充建议</strong>

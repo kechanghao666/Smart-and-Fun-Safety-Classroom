@@ -48,8 +48,8 @@ export function AdminThemesPage() {
       <section className="hero-banner hero-banner--admin">
         <div>
           <span className="hero-banner__eyebrow">主题管理</span>
-          <h1>维护主题名称、封面、简介、开放状态与排序</h1>
-          <p>这一页负责管理主题入口信息，并决定哪些主题会对教师端和学生端开放。</p>
+          <h1>维护主题列表、开放状态与学生端展示预览</h1>
+          <p>这一页对应说明书中的“列表 + 编辑区 + 预览卡”结构，用来统一管理主题入口的展示效果和开放顺序。</p>
         </div>
       </section>
 
@@ -75,12 +75,12 @@ export function AdminThemesPage() {
         <article className="surface-card stat-card admin-summary-card">
           <span>开放中</span>
           <strong>{openCount}</strong>
-          <p>开放状态会影响学生端主题列表和教师端统计口径。</p>
+          <p>开放状态会直接影响学生端主题卡入口和教师端统计范围。</p>
         </article>
         <article className="surface-card stat-card admin-summary-card">
           <span>待开放</span>
           <strong>{closedCount}</strong>
-          <p>未开放主题可以先维护封面和简介，再决定正式上线时间。</p>
+          <p>未开放主题可以先维护封面、简介和排序，再决定正式上线时间。</p>
         </article>
       </section>
 
@@ -103,7 +103,9 @@ export function AdminThemesPage() {
                   <span className="surface-tag">{theme.isOpen ? "开放中" : "待开放"}</span>
                 </div>
                 <p>{theme.description}</p>
-                <span className="inline-note">封面标签：{theme.coverLabel}</span>
+                <span className="inline-note">
+                  封面标签：{theme.coverLabel} · 排序 {theme.sortOrder}
+                </span>
               </button>
             ))
           ) : (
@@ -115,87 +117,120 @@ export function AdminThemesPage() {
         </div>
 
         {selectedTheme ? (
-          <article className="surface-card editor-panel">
-            <span className="section-block__eyebrow">编辑主题</span>
-            <h2>{selectedTheme.title}</h2>
-            <div className="chip-row">
-              <span className="surface-tag">{selectedTheme.isOpen ? "已开放" : "未开放"}</span>
-              <span className="surface-tag">排序 {selectedTheme.sortOrder}</span>
-              <span className="surface-tag">{selectedTheme.coverLabel}</span>
-            </div>
-            <div className="editor-grid">
-              <label className="form-field">
-                <span>主题名称</span>
-                <input
-                  value={selectedTheme.title}
-                  onChange={(event) =>
-                    updateTheme(selectedTheme.id, "title", event.target.value)
-                  }
-                />
-              </label>
-              <label className="form-field">
-                <span>封面标签</span>
-                <input
-                  value={selectedTheme.coverLabel}
-                  onChange={(event) =>
-                    updateTheme(selectedTheme.id, "coverLabel", event.target.value)
-                  }
-                />
-              </label>
-              <label className="form-field form-field--wide">
-                <span>主题简介</span>
-                <textarea
-                  rows={4}
-                  value={selectedTheme.description}
-                  onChange={(event) =>
-                    updateTheme(selectedTheme.id, "description", event.target.value)
-                  }
-                />
-              </label>
-              <label className="form-field">
-                <span>排序</span>
-                <input
-                  type="number"
-                  value={selectedTheme.sortOrder}
-                  onChange={(event) => {
-                    const nextValue = Number(event.target.value);
-                    updateTheme(
-                      selectedTheme.id,
-                      "sortOrder",
-                      Number.isNaN(nextValue) ? 0 : nextValue,
-                    );
-                  }}
-                />
-              </label>
-              <label className="form-field">
-                <span>开放状态</span>
-                <select
-                  value={selectedTheme.isOpen ? "open" : "closed"}
-                  onChange={(event) =>
-                    updateTheme(selectedTheme.id, "isOpen", event.target.value === "open")
-                  }
-                >
-                  <option value="open">开放</option>
-                  <option value="closed">关闭</option>
-                </select>
-              </label>
-            </div>
+          <div className="page-stack">
+            <article className="surface-card editor-panel">
+              <span className="section-block__eyebrow">编辑主题</span>
+              <h2>{selectedTheme.title}</h2>
+              <div className="chip-row">
+                <span className="surface-tag">{selectedTheme.isOpen ? "已开放" : "未开放"}</span>
+                <span className="surface-tag">排序 {selectedTheme.sortOrder}</span>
+                <span className="surface-tag">{selectedTheme.coverLabel}</span>
+              </div>
 
-            <div className="card-grid card-grid--two">
-              <article className="feedback-box">
-                <strong>页面联动</strong>
-                <p>开放状态会影响学生端主题卡入口，排序会影响主题展示顺序。</p>
+              <div className="editor-grid">
+                <label className="form-field">
+                  <span>主题名称</span>
+                  <input
+                    value={selectedTheme.title}
+                    onChange={(event) =>
+                      updateTheme(selectedTheme.id, "title", event.target.value)
+                    }
+                  />
+                </label>
+
+                <label className="form-field">
+                  <span>封面标签</span>
+                  <input
+                    value={selectedTheme.coverLabel}
+                    onChange={(event) =>
+                      updateTheme(selectedTheme.id, "coverLabel", event.target.value)
+                    }
+                  />
+                </label>
+
+                <label className="form-field form-field--wide">
+                  <span>主题简介</span>
+                  <textarea
+                    rows={4}
+                    value={selectedTheme.description}
+                    onChange={(event) =>
+                      updateTheme(selectedTheme.id, "description", event.target.value)
+                    }
+                  />
+                </label>
+
+                <label className="form-field">
+                  <span>排序</span>
+                  <input
+                    type="number"
+                    value={selectedTheme.sortOrder}
+                    onChange={(event) => {
+                      const nextValue = Number(event.target.value);
+                      updateTheme(
+                        selectedTheme.id,
+                        "sortOrder",
+                        Number.isNaN(nextValue) ? 0 : nextValue,
+                      );
+                    }}
+                  />
+                </label>
+
+                <label className="form-field">
+                  <span>开放状态</span>
+                  <select
+                    value={selectedTheme.isOpen ? "open" : "closed"}
+                    onChange={(event) =>
+                      updateTheme(selectedTheme.id, "isOpen", event.target.value === "open")
+                    }
+                  >
+                    <option value="open">开放</option>
+                    <option value="closed">关闭</option>
+                  </select>
+                </label>
+              </div>
+            </article>
+
+            <section className="card-grid card-grid--two">
+              <article className="surface-card admin-preview-card admin-preview-card--theme">
+                <span className="section-block__eyebrow">学生端预览</span>
+                <div className="theme-card theme-card--sky">
+                  <div className="theme-card__top">
+                    <span className="surface-tag">
+                      {selectedTheme.isOpen ? "当前开放主题" : "正在开发中"}
+                    </span>
+                    <span className="surface-tag">
+                      {selectedTheme.isOpen ? "可进入" : "敬请期待"}
+                    </span>
+                  </div>
+                  <h3>{selectedTheme.title}</h3>
+                  <p>{selectedTheme.description}</p>
+                  <button type="button" className={selectedTheme.isOpen ? "primary-button" : "ghost-button"}>
+                    {selectedTheme.isOpen ? "进入主题" : "敬请期待"}
+                  </button>
+                </div>
               </article>
-              <article className="feedback-box">
-                <strong>保存说明</strong>
-                <p>保存只会写入当前浏览器的本地工作稿，不会直接修改服务器配置。</p>
-              </article>
-            </div>
-          </article>
+
+              <div className="page-stack">
+                <article className="surface-card admin-preview-card">
+                  <span className="section-block__eyebrow">页面联动</span>
+                  <ul className="plain-list">
+                    <li>开放状态会影响学生端主题卡是否点亮。</li>
+                    <li>排序会影响主题卡片在首页中的展示先后。</li>
+                    <li>封面标签会作为主题卡顶部辅助信息展示。</li>
+                  </ul>
+                </article>
+
+                <article className="surface-card admin-preview-card">
+                  <span className="section-block__eyebrow">保存说明</span>
+                  <p>当前保存只会写入本地工作稿，方便前端继续演示和联调，不会直接改动服务器主题配置。</p>
+                </article>
+              </div>
+            </section>
+          </div>
         ) : (
           <article className="surface-card empty-state-card">
             <strong>请选择一个主题</strong>
-            <p>左侧选中主题后，就可以在这里维护标题、封面和开放状态。</p>
+            <p>左侧选中主题后，就可以在这里维护标题、封面、开放状态和学生端预览。</p>
           </article>
         )}
       </section>

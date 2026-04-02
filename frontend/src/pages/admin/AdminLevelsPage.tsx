@@ -3,8 +3,29 @@ import { AdminEditorStatusBar } from "../../components/AdminEditorStatusBar";
 import { levelManagementItems } from "../../data/mockData";
 import { fetchAdminLevels } from "../../services/admin";
 import { useAppState } from "../../state/AppState";
-import type { LevelManagementItem } from "../../types";
+import type { LevelId, LevelManagementItem } from "../../types";
 import { useEditableAdminResource } from "../../utils/useEditableAdminResource";
+
+const levelStructureMap: Record<
+  LevelId,
+  { title: string; areas: string[]; teachingTip: string }
+> = {
+  "level-1": {
+    title: "顶部状态栏 + 左任务区 + 中间场景区",
+    areas: ["任务清单", "交通场景热点", "即时观察反馈"],
+    teachingTip: "第一关重点是先观察，再点击关键安全点位。",
+  },
+  "level-2": {
+    title: "顶部状态条 + 地图主视图 + 底部事件卡",
+    areas: ["路线地图", "节点事件卡", "安全值反馈"],
+    teachingTip: "第二关重点是逐节点判断，保持路线选择的连贯性。",
+  },
+  "level-3": {
+    title: "顶部步骤状态栏 + 中间主场景 + 底部操作区",
+    areas: ["守护步骤", "主场景任务", "操作确认区"],
+    teachingTip: "第三关重点是把乘车防护动作补齐，不漏掉关键准备。",
+  },
+};
 
 export function AdminLevelsPage() {
   const { state } = useAppState();
@@ -31,9 +52,8 @@ export function AdminLevelsPage() {
     [levels, selectedId],
   );
   const rewardConfiguredCount = levels.filter((item) => item.rewardLabel.trim().length > 0).length;
-  const feedbackConfiguredCount = levels.filter(
-    (item) => item.feedbackStyle.trim().length > 0,
-  ).length;
+  const feedbackConfiguredCount = levels.filter((item) => item.feedbackStyle.trim().length > 0).length;
+  const selectedStructure = selectedLevel ? levelStructureMap[selectedLevel.id] : null;
 
   function updateLevel<K extends keyof LevelManagementItem>(
     id: LevelManagementItem["id"],
@@ -50,8 +70,8 @@ export function AdminLevelsPage() {
       <section className="hero-banner hero-banner--admin">
         <div>
           <span className="hero-banner__eyebrow">关卡内容管理</span>
-          <h1>维护关卡焦点、时长、奖励和反馈风格</h1>
-          <p>这里控制三关学习的标题、奖励、反馈语气和内容节奏，是学生主链路的核心配置区。</p>
+          <h1>以双栏工作台维护关卡结构、奖励和反馈风格</h1>
+          <p>这一页对应说明书中的“关卡列表 + 场景配置区”结构，用来收口学生端三关的教学节奏和界面框架。</p>
         </div>
       </section>
 
@@ -72,7 +92,7 @@ export function AdminLevelsPage() {
         <article className="surface-card stat-card admin-summary-card">
           <span>关卡总数</span>
           <strong>{levels.length}</strong>
-          <p>当前首版固定为三关闯关学习，对应观察、判断和防护三类能力。</p>
+          <p>首版固定为三关学习，对应观察、判断和防护三类能力。</p>
         </article>
         <article className="surface-card stat-card admin-summary-card">
           <span>奖励配置</span>
@@ -115,78 +135,103 @@ export function AdminLevelsPage() {
         </div>
 
         {selectedLevel ? (
-          <article className="surface-card editor-panel">
-            <span className="section-block__eyebrow">编辑关卡</span>
-            <h2>{selectedLevel.title}</h2>
-            <div className="chip-row">
-              <span className="surface-tag">{selectedLevel.focus}</span>
-              <span className="surface-tag">{selectedLevel.duration}</span>
-              <span className="surface-tag">{selectedLevel.rewardLabel}</span>
-            </div>
-            <div className="editor-grid">
-              <label className="form-field">
-                <span>关卡标题</span>
-                <input
-                  value={selectedLevel.title}
-                  onChange={(event) =>
-                    updateLevel(selectedLevel.id, "title", event.target.value)
-                  }
-                />
-              </label>
-              <label className="form-field">
-                <span>学习焦点</span>
-                <input
-                  value={selectedLevel.focus}
-                  onChange={(event) =>
-                    updateLevel(selectedLevel.id, "focus", event.target.value)
-                  }
-                />
-              </label>
-              <label className="form-field">
-                <span>预计时长</span>
-                <input
-                  value={selectedLevel.duration}
-                  onChange={(event) =>
-                    updateLevel(selectedLevel.id, "duration", event.target.value)
-                  }
-                />
-              </label>
-              <label className="form-field">
-                <span>奖励规则</span>
-                <input
-                  value={selectedLevel.rewardLabel}
-                  onChange={(event) =>
-                    updateLevel(selectedLevel.id, "rewardLabel", event.target.value)
-                  }
-                />
-              </label>
-              <label className="form-field form-field--wide">
-                <span>反馈风格</span>
-                <textarea
-                  rows={4}
-                  value={selectedLevel.feedbackStyle}
-                  onChange={(event) =>
-                    updateLevel(selectedLevel.id, "feedbackStyle", event.target.value)
-                  }
-                />
-              </label>
-            </div>
+          <div className="page-stack">
+            <article className="surface-card editor-panel">
+              <span className="section-block__eyebrow">编辑关卡</span>
+              <h2>{selectedLevel.title}</h2>
+              <div className="chip-row">
+                <span className="surface-tag">{selectedLevel.focus}</span>
+                <span className="surface-tag">{selectedLevel.duration}</span>
+                <span className="surface-tag">{selectedLevel.rewardLabel}</span>
+              </div>
 
-            <div className="card-grid card-grid--two">
-              <article className="feedback-box">
-                <strong>页面联动</strong>
-                <p>标题、奖励和反馈文案会直接影响学生端闯关页、结算页和成长体系展示。</p>
+              <div className="editor-grid">
+                <label className="form-field">
+                  <span>关卡标题</span>
+                  <input
+                    value={selectedLevel.title}
+                    onChange={(event) =>
+                      updateLevel(selectedLevel.id, "title", event.target.value)
+                    }
+                  />
+                </label>
+
+                <label className="form-field">
+                  <span>学习焦点</span>
+                  <input
+                    value={selectedLevel.focus}
+                    onChange={(event) =>
+                      updateLevel(selectedLevel.id, "focus", event.target.value)
+                    }
+                  />
+                </label>
+
+                <label className="form-field">
+                  <span>预计时长</span>
+                  <input
+                    value={selectedLevel.duration}
+                    onChange={(event) =>
+                      updateLevel(selectedLevel.id, "duration", event.target.value)
+                    }
+                  />
+                </label>
+
+                <label className="form-field">
+                  <span>奖励规则</span>
+                  <input
+                    value={selectedLevel.rewardLabel}
+                    onChange={(event) =>
+                      updateLevel(selectedLevel.id, "rewardLabel", event.target.value)
+                    }
+                  />
+                </label>
+
+                <label className="form-field form-field--wide">
+                  <span>反馈风格</span>
+                  <textarea
+                    rows={4}
+                    value={selectedLevel.feedbackStyle}
+                    onChange={(event) =>
+                      updateLevel(selectedLevel.id, "feedbackStyle", event.target.value)
+                    }
+                  />
+                </label>
+              </div>
+            </article>
+
+            <section className="card-grid card-grid--two">
+              <article className="surface-card admin-preview-card admin-preview-card--level">
+                <span className="section-block__eyebrow">学生端结构预览</span>
+                <h3>{selectedStructure?.title}</h3>
+                <ul className="plain-list">
+                  {selectedStructure?.areas.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+                <p>{selectedStructure?.teachingTip}</p>
               </article>
-              <article className="feedback-box">
-                <strong>教学提示</strong>
-                <p>建议让三关形成递进节奏：先观察，再判断，最后强化出行防护习惯。</p>
-              </article>
-            </div>
-          </article>
+
+              <div className="page-stack">
+                <article className="surface-card admin-preview-card">
+                  <span className="section-block__eyebrow">页面联动</span>
+                  <ul className="plain-list">
+                    <li>关卡标题和焦点会出现在主题页、关卡页和结算页。</li>
+                    <li>奖励规则会进入结算页与成长系统说明。</li>
+                    <li>反馈风格会影响结算文案和教师端建议口径。</li>
+                  </ul>
+                </article>
+
+                <article className="surface-card admin-preview-card">
+                  <span className="section-block__eyebrow">教学提示</span>
+                  <p>建议保持三关递进节奏：先观察，再判断，最后强化出行防护习惯。</p>
+                </article>
+              </div>
+            </section>
+          </div>
         ) : (
           <article className="surface-card empty-state-card">
             <strong>请选择一个关卡</strong>
-            <p>左侧选中关卡后，就可以维护标题、时长、奖励和反馈风格。</p>
+            <p>左侧选中关卡后，就可以维护标题、时长、奖励、反馈风格和结构预览。</p>
           </article>
         )}
       </section>

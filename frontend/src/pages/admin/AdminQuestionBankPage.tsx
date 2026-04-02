@@ -49,8 +49,8 @@ export function AdminQuestionBankPage() {
       <section className="hero-banner hero-banner--admin">
         <div>
           <span className="hero-banner__eyebrow">题库管理</span>
-          <h1>维护题目、正确答案、解析和回看关卡</h1>
-          <p>题库配置会直接影响考试页、错题回看和 AI 结果卡片中的复习建议。</p>
+          <h1>统一维护题目列表、答案、解析与回看指向</h1>
+          <p>这一页对应说明书中的“题目列表 + 编辑面板”结构，并额外补了学生端题面和错题回看预览。</p>
         </div>
       </section>
 
@@ -76,7 +76,7 @@ export function AdminQuestionBankPage() {
         <article className="surface-card stat-card admin-summary-card">
           <span>启用中</span>
           <strong>{enabledCount}</strong>
-          <p>启用状态会决定题目是否进入学生端正式考试流程。</p>
+          <p>启用状态决定题目是否进入学生端正式考试流程。</p>
         </article>
         <article className="surface-card stat-card admin-summary-card">
           <span>草稿 / 回看联动</span>
@@ -120,91 +120,117 @@ export function AdminQuestionBankPage() {
         </div>
 
         {selectedQuestion ? (
-          <article className="surface-card editor-panel">
-            <span className="section-block__eyebrow">编辑题目</span>
-            <h2>{selectedQuestion.id}</h2>
-            <div className="chip-row">
-              <span className="surface-tag">
-                {selectedQuestion.status === "enabled" ? "启用中" : "草稿"}
-              </span>
-              <span className="surface-tag">{selectedQuestion.reviewLevelId}</span>
-            </div>
-            <div className="editor-grid">
-              <label className="form-field form-field--wide">
-                <span>题干</span>
-                <textarea
-                  rows={3}
-                  value={selectedQuestion.prompt}
-                  onChange={(event) =>
-                    updateQuestion(selectedQuestion.id, "prompt", event.target.value)
-                  }
-                />
-              </label>
-              <label className="form-field">
-                <span>正确答案</span>
-                <input
-                  value={selectedQuestion.correctLabel}
-                  onChange={(event) =>
-                    updateQuestion(selectedQuestion.id, "correctLabel", event.target.value)
-                  }
-                />
-              </label>
-              <label className="form-field">
-                <span>回看关卡</span>
-                <select
-                  value={selectedQuestion.reviewLevelId}
-                  onChange={(event) =>
-                    updateQuestion(
-                      selectedQuestion.id,
-                      "reviewLevelId",
-                      event.target.value as LevelId,
-                    )
-                  }
-                >
-                  <option value="level-1">第一关</option>
-                  <option value="level-2">第二关</option>
-                  <option value="level-3">第三关</option>
-                </select>
-              </label>
-              <label className="form-field form-field--wide">
-                <span>解析说明</span>
-                <textarea
-                  rows={4}
-                  value={selectedQuestion.explanation}
-                  onChange={(event) =>
-                    updateQuestion(selectedQuestion.id, "explanation", event.target.value)
-                  }
-                />
-              </label>
-              <label className="form-field">
-                <span>状态</span>
-                <select
-                  value={selectedQuestion.status}
-                  onChange={(event) =>
-                    updateQuestion(
-                      selectedQuestion.id,
-                      "status",
-                      event.target.value as QuestionBankManagementItem["status"],
-                    )
-                  }
-                >
-                  <option value="enabled">启用</option>
-                  <option value="draft">草稿</option>
-                </select>
-              </label>
-            </div>
+          <div className="page-stack">
+            <article className="surface-card editor-panel">
+              <span className="section-block__eyebrow">编辑题目</span>
+              <h2>{selectedQuestion.id}</h2>
+              <div className="chip-row">
+                <span className="surface-tag">
+                  {selectedQuestion.status === "enabled" ? "启用中" : "草稿"}
+                </span>
+                <span className="surface-tag">{selectedQuestion.reviewLevelId}</span>
+              </div>
 
-            <div className="card-grid card-grid--two">
-              <article className="feedback-box">
-                <strong>考试联动提醒</strong>
-                <p>确保题目解析和回看关卡保持一致，这会直接决定考试后的复习路径是否清晰。</p>
+              <div className="editor-grid">
+                <label className="form-field form-field--wide">
+                  <span>题干</span>
+                  <textarea
+                    rows={3}
+                    value={selectedQuestion.prompt}
+                    onChange={(event) =>
+                      updateQuestion(selectedQuestion.id, "prompt", event.target.value)
+                    }
+                  />
+                </label>
+
+                <label className="form-field">
+                  <span>正确答案</span>
+                  <input
+                    value={selectedQuestion.correctLabel}
+                    onChange={(event) =>
+                      updateQuestion(selectedQuestion.id, "correctLabel", event.target.value)
+                    }
+                  />
+                </label>
+
+                <label className="form-field">
+                  <span>回看关卡</span>
+                  <select
+                    value={selectedQuestion.reviewLevelId}
+                    onChange={(event) =>
+                      updateQuestion(
+                        selectedQuestion.id,
+                        "reviewLevelId",
+                        event.target.value as LevelId,
+                      )
+                    }
+                  >
+                    <option value="level-1">第一关</option>
+                    <option value="level-2">第二关</option>
+                    <option value="level-3">第三关</option>
+                  </select>
+                </label>
+
+                <label className="form-field form-field--wide">
+                  <span>解析说明</span>
+                  <textarea
+                    rows={4}
+                    value={selectedQuestion.explanation}
+                    onChange={(event) =>
+                      updateQuestion(selectedQuestion.id, "explanation", event.target.value)
+                    }
+                  />
+                </label>
+
+                <label className="form-field">
+                  <span>状态</span>
+                  <select
+                    value={selectedQuestion.status}
+                    onChange={(event) =>
+                      updateQuestion(
+                        selectedQuestion.id,
+                        "status",
+                        event.target.value as QuestionBankManagementItem["status"],
+                      )
+                    }
+                  >
+                    <option value="enabled">启用</option>
+                    <option value="draft">草稿</option>
+                  </select>
+                </label>
+              </div>
+            </article>
+
+            <section className="card-grid card-grid--two">
+              <article className="surface-card admin-preview-card admin-preview-card--question">
+                <span className="section-block__eyebrow">学生端题面预览</span>
+                <h3>{selectedQuestion.prompt}</h3>
+                <div className="page-stack page-stack--compact">
+                  <article className="question-preview-option">
+                    <strong>正确答案</strong>
+                    <span>{selectedQuestion.correctLabel}</span>
+                  </article>
+                </div>
               </article>
-              <article className="feedback-box">
-                <strong>出题建议</strong>
-                <p>如果题目改成草稿，建议同步准备替代题，避免正式考试题量不足。</p>
-              </article>
-            </div>
-          </article>
+
+              <div className="page-stack">
+                <article className="surface-card admin-preview-card">
+                  <span className="section-block__eyebrow">错题回看预览</span>
+                  <p>{selectedQuestion.explanation}</p>
+                  <span className="surface-tag">建议回看：{selectedQuestion.reviewLevelId}</span>
+                </article>
+
+                <article className="surface-card admin-preview-card">
+                  <span className="section-block__eyebrow">出题提醒</span>
+                  <ul className="plain-list">
+                    <li>确保解析和回看关卡保持一致。</li>
+                    <li>如果题目改成草稿，建议同步准备替代题。</li>
+                    <li>考试结果页和错题页会直接消费这里的解析内容。</li>
+                  </ul>
+                </article>
+              </div>
+            </section>
+          </div>
         ) : (
           <article className="surface-card empty-state-card">
             <strong>请选择一道题</strong>
