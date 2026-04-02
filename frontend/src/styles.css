@@ -753,6 +753,73 @@ button {
   gap: 18px;
 }
 
+.exam-summary-card,
+.exam-question-card,
+.exam-review-card {
+  display: grid;
+  gap: 16px;
+}
+
+.exam-nav {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 12px;
+}
+
+.exam-nav__button {
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.78);
+  padding: 14px 16px;
+  color: var(--text-muted);
+  font-weight: 700;
+  transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.exam-nav__button:hover {
+  transform: translateY(-1px);
+}
+
+.exam-nav__button--active {
+  background: rgba(18, 108, 255, 0.12);
+  border-color: rgba(18, 108, 255, 0.32);
+  color: var(--blue-deep);
+}
+
+.exam-nav__button--done {
+  background: rgba(24, 160, 111, 0.12);
+  border-color: rgba(24, 160, 111, 0.28);
+  color: var(--green-deep);
+}
+
+.exam-option-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.exam-review-list {
+  margin-top: 20px;
+}
+
+.exam-review-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.exam-review-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 178, 0, 0.16);
+  color: #8a5a00;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .ai-assistant {
   position: fixed;
   right: 24px;
@@ -844,6 +911,10 @@ button {
   .avatar-grid {
     grid-template-columns: 1fr;
   }
+
+  .exam-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 720px) {
@@ -862,5 +933,9 @@ button {
   .student-summary {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .exam-nav {
+    grid-template-columns: 1fr;
   }
 }

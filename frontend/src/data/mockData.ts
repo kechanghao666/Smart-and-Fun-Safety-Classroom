@@ -200,6 +200,9 @@ export const examQuestions: ExamQuestion[] = [
     options: ["看见没车就跑过去", "走斑马线并观察信号灯和车辆", "跟着别人横穿马路"],
     correctIndex: 1,
     explanation: "过马路要优先选择斑马线，并同时关注信号灯与车辆动态。",
+    reviewLevelId: "level-1",
+    reviewLabel: "第一关：城市交通观察员",
+    reviewSuggestion: "回看斑马线、信号灯和危险行为识别，重新练习先观察再行动。",
   },
   {
     id: "q-2",
@@ -207,6 +210,9 @@ export const examQuestions: ExamQuestion[] = [
     options: ["打开窗户透气", "系好安全带", "把书包放在腿上"],
     correctIndex: 1,
     explanation: "系安全带是车内最基础、最关键的安全动作。",
+    reviewLevelId: "level-3",
+    reviewLabel: "第三关：安全出行守护任务",
+    reviewSuggestion: "回看车内出行守护任务，重点强化安全带、头盔和候车距离。",
   },
   {
     id: "q-3",
@@ -214,6 +220,9 @@ export const examQuestions: ExamQuestion[] = [
     options: ["从车前快速穿过", "贴着车身绕过去", "避开盲区，确认安全后再通过"],
     correctIndex: 2,
     explanation: "大型车辆视线盲区大，必须避开车前和车身侧方危险区域。",
+    reviewLevelId: "level-2",
+    reviewLabel: "第二关：放学回家路线挑战",
+    reviewSuggestion: "回看路口和公交站节点，重点记住大型车辆盲区和停车后再通行。",
   },
 ];
 

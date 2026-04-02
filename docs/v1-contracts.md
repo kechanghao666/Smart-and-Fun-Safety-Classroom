@@ -53,6 +53,19 @@ interface LevelResult {
 }
 ```
 
+```ts
+interface ExamQuestion {
+  id: string;
+  prompt: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+  reviewLevelId: LevelId;
+  reviewLabel: string;
+  reviewSuggestion: string;
+}
+```
+
 ## 当前前端基线新增状态
 
 ```ts
@@ -80,6 +93,8 @@ interface AppState {
 - 每关完成后进入独立结算页 `/student/theme/road-safety/level/:levelId/result`
 - 三关完成后，主题考试切为 `available`
 - 考试提交后切为 `completed`
+- 考试页采用题号导航 + 上一题/下一题 + 统一提交结构
+- 考试提交后在同页展示错题、正确答案、解析和建议回看关卡
 - 学生端任意页面切换时更新 `lastVisitedRoute`
 
 ## 协作注意事项

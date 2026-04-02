@@ -56,6 +56,9 @@ export interface ExamQuestion {
   options: string[];
   correctIndex: number;
   explanation: string;
+  reviewLevelId: LevelId;
+  reviewLabel: string;
+  reviewSuggestion: string;
 }
 
 export interface AiKnowledgeItem {
