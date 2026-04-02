@@ -27,6 +27,24 @@ function buildInitialLevels(): LevelProgress[] {
   }));
 }
 
+function createInitialProgress(): AppState["progress"] {
+  return {
+    themeId: "road-safety",
+    themeTitle: "道路安全教育",
+    lastVisitedRoute: "/student/home",
+    points: 120,
+    badges: ["观察员新星"],
+    levels: buildInitialLevels(),
+    levelResults: {},
+    exam: {
+      status: "locked",
+      totalQuestions: examQuestions.length,
+      score: null,
+      wrongQuestionIds: [],
+    },
+  };
+}
+
 function createInitialState(): AppState {
   return {
     role: null,
@@ -34,21 +52,7 @@ function createInitialState(): AppState {
     authToken: null,
     authSource: "mock",
     studentProfile: null,
-    progress: {
-      themeId: "road-safety",
-      themeTitle: "道路安全教育",
-      lastVisitedRoute: "/student/home",
-      points: 120,
-      badges: ["观察员新星"],
-      levels: buildInitialLevels(),
-      levelResults: {},
-      exam: {
-        status: "locked",
-        totalQuestions: examQuestions.length,
-        score: null,
-        wrongQuestionIds: [],
-      },
-    },
+    progress: createInitialProgress(),
   };
 }
 
@@ -113,23 +117,25 @@ type AppAction =
 
 function reducer(state: AppState, action: AppAction): AppState {
   if (action.type === "signIn") {
+    const nextSource = action.source ?? (action.token ? "api" : "mock");
+    const isSameStudentSession =
+      action.role === "student" &&
+      state.role === "student" &&
+      state.sessionAccount === action.account;
+
     return {
       ...state,
       role: action.role,
       sessionAccount: action.account,
       authToken: action.token ?? null,
-      authSource: action.source ?? (action.token ? "api" : "mock"),
+      authSource: nextSource,
+      studentProfile: isSameStudentSession ? state.studentProfile : null,
+      progress: isSameStudentSession ? state.progress : createInitialProgress(),
     };
   }
 
   if (action.type === "signOut") {
-    return {
-      ...state,
-      role: null,
-      sessionAccount: null,
-      authToken: null,
-      authSource: "mock",
-    };
+    return createInitialState();
   }
 
   if (action.type === "saveStudentProfile") {

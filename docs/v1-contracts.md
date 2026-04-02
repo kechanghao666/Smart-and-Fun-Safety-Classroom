@@ -121,6 +121,7 @@ interface AppState {
 - `frontend/.env.local` 中配置 `VITE_API_BASE_URL=http://localhost:3000` 后，登录页切换为后端联调模式
 - 未配置 `VITE_API_BASE_URL` 时，默认继续使用本地示例账号和前端状态
 - 登录接口约定：`POST /api/auth/login` 至少返回 `token`、`role`，并可选返回 `account`、`studentProfile`、`progress`
+- 前端在切换到新的学生账号、教师账号或管理员账号时，会主动清空上一位学生的本地资料和学习进度，避免跨账号残留；只有“同一个学生账号重新登录”时才会沿用本地资料等待后端刷新
 - 学生端在后端联调模式下会于进入学生壳层时自动请求一次 `GET /api/student/progress`，窗口重新聚焦后也会静默刷新；页面顶部同时保留“刷新进度”手动入口
 - 学生端接口预留：
   - `GET /api/student/progress`
