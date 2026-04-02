@@ -1,6 +1,6 @@
 # Backend
 
-`backend/` 负责学生主链路、教师端/管理员端接口、SQLite 数据库、登录鉴权、AI 代理与 seed 数据。
+`backend/` 负责学生主链路、教师端/管理员端接口、SQLite 数据库、登录鉴权、AI 代理和 seed 数据。
 
 ## 技术栈
 
@@ -18,7 +18,7 @@ npm install
 npm run dev:backend
 ```
 
-默认启动地址：
+默认地址：
 
 - `http://127.0.0.1:3001`
 
@@ -31,7 +31,7 @@ npm --prefix backend run start
 
 ## 环境变量
 
-可复制 `backend/.env.example` 为 `backend/.env` 后填写。
+复制 `backend/.env.example` 为 `backend/.env` 后填写。
 
 | 变量 | 说明 | 默认值 |
 | --- | --- | --- |
@@ -50,7 +50,7 @@ npm --prefix backend run start
 说明：
 
 - 真实密钥不能提交到仓库。
-- 前端不能直接连接模型服务，只能访问本后端的 `POST /api/ai/chat`。
+- 前端不能直接访问模型服务，只能调用后端的 `POST /api/ai/chat`。
 
 ## Seed 账号
 
@@ -58,49 +58,13 @@ npm --prefix backend run start
 - `teacher001 / 123456`
 - `admin001 / 123456`
 
-学生账号首次登录默认没有完善昵称/头像/学段，后端会先创建学习记录与默认进度。
+学生账号首次登录默认没有资料补全，后端会先创建学习记录和默认进度。
 
 ## 已实现接口
 
 ### 鉴权
 
 - `POST /api/auth/login`
-
-请求体：
-
-```json
-{
-  "account": "student001",
-  "password": "123456"
-}
-```
-
-响应示例：
-
-```json
-{
-  "token": "session_xxx",
-  "role": "student",
-  "account": "student001",
-  "displayName": "学生示例账号",
-  "studentProfile": null,
-  "progress": {
-    "themeId": "road-safety",
-    "themeTitle": "道路安全教育",
-    "lastVisitedRoute": "/student/home",
-    "points": 120,
-    "badges": ["观察员新星"],
-    "levels": [],
-    "levelResults": {},
-    "exam": {
-      "status": "locked",
-      "totalQuestions": 3,
-      "score": null,
-      "wrongQuestionIds": []
-    }
-  }
-}
-```
 
 ### 学生主链路
 
@@ -110,55 +74,25 @@ npm --prefix backend run start
 - `POST /api/student/levels/:levelId/complete`
 - `POST /api/student/exam/submit`
 
-其中：
+后端会强制执行这些规则：
 
 - 第一关默认 `available`
 - 第二、三关默认 `locked`
-- 完成前一关自动解锁下一关
+- 完成前一关后解锁下一关
 - 三关全部完成后 `exam.status = available`
 - 提交考试后 `exam.status = completed`
-- 后端统一返回 `points`、`badges`、`wrongQuestionIds`、`levelResults`
-
-考试提交请求：
-
-```json
-{
-  "answers": [
-    { "questionId": "q-1", "selectedIndex": 1 },
-    { "questionId": "q-2", "selectedIndex": 1 },
-    { "questionId": "q-3", "selectedIndex": 2 }
-  ]
-}
-```
+- 后端统一计算并返回 `points`、`badges`、`wrongQuestionIds`、`levelResults`
 
 ### AI 代理
 
 - `POST /api/ai/chat`
 
-请求体：
+规则：
 
-```json
-{
-  "scene": "hint",
-  "levelId": "level-2",
-  "message": "这一关我有点卡住了"
-}
-```
-
-响应：
-
-```json
-{
-  "reply": "先看清楚关键节点的风险，再决定是否前进，不要被捷径带偏。",
-  "suggestions": ["先看灯和车", "先避开大型车辆盲区"]
-}
-```
-
-AI 约束：
-
-- 只回答“道路安全教育”主题
+- 只回答道路安全教育主题
 - `hint` 只给方向，不直接给完整答案
-- 无关问题会拒答并引导回道路安全主题
+- 无关问题会拒答并引导回主题
+- 当前管理员维护的 `ai-copy` 文案会影响 `welcome` / `hint` 的 fallback 回复
 
 ### 教师端
 
@@ -168,6 +102,8 @@ AI 约束：
 
 ### 管理员端
 
+读接口：
+
 - `GET /api/admin/modules`
 - `GET /api/admin/themes`
 - `GET /api/admin/levels`
@@ -175,6 +111,19 @@ AI 约束：
 - `GET /api/admin/ai-copy`
 - `GET /api/admin/users`
 - `GET /api/admin/stats`
+
+写接口：
+
+- `PUT /api/admin/themes/:id`
+- `PUT /api/admin/levels/:id`
+- `PUT /api/admin/question-bank/:id`
+- `PUT /api/admin/ai-copy/:id`
+
+说明：
+
+- 主题、关卡、题库、AI 文案现在都已落到 SQLite。
+- `question-bank` 的更新会影响考试判分和错题回看基础数据。
+- `ai-copy` 的更新会影响 AI 助手 fallback 文案。
 
 ## 鉴权方式
 
@@ -184,13 +133,22 @@ AI 约束：
 Authorization: Bearer <token>
 ```
 
-## 本地验证建议
+## 本地验证
 
-可用任意 HTTP 客户端按顺序验证：
+本机已通过这些验证：
 
 1. `POST /api/auth/login`
 2. `GET /api/student/progress`
 3. `POST /api/student/levels/level-1/start`
 4. `POST /api/student/levels/level-1/complete`
-5. 按顺序完成三关后调用 `POST /api/student/exam/submit`
+5. 顺序完成三关后调用 `POST /api/student/exam/submit`
 6. `POST /api/ai/chat`
+7. `GET /api/teacher/dashboard`
+8. `GET /api/admin/modules`
+9. `PUT /api/admin/themes/:id` 等管理员内容更新接口
+
+## 前端联调说明
+
+前端同事请优先看：
+
+- `docs/backend-frontend-handoff.md`

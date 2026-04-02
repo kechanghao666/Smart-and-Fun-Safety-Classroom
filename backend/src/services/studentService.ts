@@ -4,14 +4,17 @@ import {
   BASE_BADGES,
   EXAM_COMPLETION_POINTS,
   EXAM_HIGH_SCORE_POINTS,
-  examQuestions,
   levelBadgeMap,
   levelBlueprints,
   LEVEL_COMPLETION_POINTS,
   levelResultTemplates,
   THEME_ID,
-  THEME_TITLE,
 } from "../constants/content";
+import {
+  getExamQuestionsFromDb,
+  getLevelBlueprintsFromDb,
+  getThemeTitle,
+} from "./courseContentService";
 import type {
   CompleteLevelResponse,
   ExamSubmissionRow,
@@ -208,11 +211,15 @@ export async function saveStudentProfile(
 }
 
 export async function buildStudentProgress(userId: string): Promise<StudentProgress> {
-  const [profileRow, levelRows, submission] = await Promise.all([
-    getStudentProfileRow(userId),
-    getLevelRows(userId),
-    getLatestExamSubmission(userId),
-  ]);
+  const [profileRow, levelRows, submission, levelCatalog, themeTitle, examQuestions] =
+    await Promise.all([
+      getStudentProfileRow(userId),
+      getLevelRows(userId),
+      getLatestExamSubmission(userId),
+      getLevelBlueprintsFromDb(),
+      getThemeTitle(),
+      getExamQuestionsFromDb(),
+    ]);
 
   if (!profileRow) {
     throw new HttpError(404, "未找到学生档案。");
@@ -266,11 +273,11 @@ export async function buildStudentProgress(userId: string): Promise<StudentProgr
 
   return {
     themeId: THEME_ID,
-    themeTitle: THEME_TITLE,
+    themeTitle,
     lastVisitedRoute: profileRow.last_visited_route,
     points,
     badges,
-    levels: levelBlueprints.map((level) => {
+    levels: levelCatalog.map((level) => {
       const row = levelRows.find((item) => item.level_id === level.id);
 
       return {
@@ -426,6 +433,7 @@ export async function submitExam(
   answers: StudentExamAnswer[],
 ): Promise<StudentProgress> {
   const progress = await buildStudentProgress(userId);
+  const examQuestions = await getExamQuestionsFromDb();
 
   if (progress.exam.status === "locked") {
     throw new HttpError(409, "请先完成三关闯关学习后再参加主题考试。");

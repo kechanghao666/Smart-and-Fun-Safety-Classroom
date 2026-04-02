@@ -226,6 +226,49 @@ export interface ExamSubmissionRow {
   submitted_at: string;
 }
 
+export interface ThemeManagementRow {
+  id: string;
+  title: string;
+  description: string;
+  cover_label: string;
+  is_open: number;
+  sort_order: number;
+  updated_at: string;
+}
+
+export interface LevelManagementRow {
+  id: LevelId;
+  title: string;
+  focus: string;
+  duration: string;
+  reward_label: string;
+  feedback_style: string;
+  updated_at: string;
+}
+
+export interface QuestionBankRow {
+  id: string;
+  prompt: string;
+  options_json: string;
+  correct_index: number;
+  correct_label: string;
+  explanation: string;
+  review_level_id: LevelId;
+  review_label: string;
+  review_suggestion: string;
+  status: "enabled" | "draft";
+  updated_at: string;
+}
+
+export interface AiCopyTemplateRow {
+  id: string;
+  category: string;
+  title: string;
+  scene: string;
+  prompt_text: string;
+  updated_at: string;
+}
+
 export interface AiChatRequest {
   scene: "welcome" | "hint" | "qa";
   levelId?: LevelId;

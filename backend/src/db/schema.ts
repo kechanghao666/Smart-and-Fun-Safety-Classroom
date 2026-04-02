@@ -1,5 +1,21 @@
 import type { Database } from "sqlite";
 
+async function ensureColumn(
+  db: Database,
+  tableName: string,
+  columnName: string,
+  definition: string,
+) {
+  const columns = await db.all<Array<{ name: string }>>(
+    `PRAGMA table_info(${tableName})`,
+  );
+  const hasColumn = columns.some((column) => column.name === columnName);
+
+  if (!hasColumn) {
+    await db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition};`);
+  }
+}
+
 export async function createSchema(db: Database) {
   await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -73,5 +89,58 @@ export async function createSchema(db: Database) {
       created_at TEXT NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
     );
+
+    CREATE TABLE IF NOT EXISTS themes (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      cover_label TEXT NOT NULL,
+      is_open INTEGER NOT NULL DEFAULT 0,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_levels (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      focus TEXT NOT NULL,
+      duration TEXT NOT NULL,
+      reward_label TEXT NOT NULL,
+      feedback_style TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS question_bank (
+      id TEXT PRIMARY KEY,
+      prompt TEXT NOT NULL,
+      options_json TEXT NOT NULL DEFAULT '[]',
+      correct_index INTEGER NOT NULL DEFAULT 0,
+      correct_label TEXT NOT NULL,
+      explanation TEXT NOT NULL,
+      review_level_id TEXT NOT NULL,
+      review_label TEXT NOT NULL DEFAULT '',
+      review_suggestion TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS ai_copy_templates (
+      id TEXT PRIMARY KEY,
+      category TEXT NOT NULL,
+      title TEXT NOT NULL,
+      scene TEXT NOT NULL,
+      prompt_text TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
   `);
+
+  await ensureColumn(db, "question_bank", "options_json", "TEXT NOT NULL DEFAULT '[]'");
+  await ensureColumn(db, "question_bank", "correct_index", "INTEGER NOT NULL DEFAULT 0");
+  await ensureColumn(db, "question_bank", "review_label", "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn(
+    db,
+    "question_bank",
+    "review_suggestion",
+    "TEXT NOT NULL DEFAULT ''",
+  );
 }

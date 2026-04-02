@@ -1,9 +1,14 @@
 import { randomBytes, scryptSync } from "crypto";
 import type { Database } from "sqlite";
 import {
+  aiCopyTemplateItems,
   BASE_BADGES,
   BASE_POINTS,
+  examQuestions,
   levelBlueprints,
+  levelManagementItems,
+  questionBankManagementItems,
+  themeManagementItems,
 } from "../constants/content";
 
 function hashPassword(password: string, salt: string) {
@@ -100,6 +105,155 @@ async function seedStudentProfile(db: Database, userId: string) {
   }
 }
 
+async function seedThemes(db: Database) {
+  for (const item of themeManagementItems) {
+    const existing = await db.get<{ id: string }>(
+      "SELECT id FROM themes WHERE id = ?",
+      item.id,
+    );
+
+    if (!existing) {
+      await db.run(
+        `
+          INSERT INTO themes (id, title, description, cover_label, is_open, sort_order, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `,
+        item.id,
+        item.title,
+        item.description,
+        item.coverLabel,
+        item.isOpen ? 1 : 0,
+        item.sortOrder,
+        new Date().toISOString(),
+      );
+    }
+  }
+}
+
+async function seedAdminLevels(db: Database) {
+  for (const item of levelManagementItems) {
+    const existing = await db.get<{ id: string }>(
+      "SELECT id FROM admin_levels WHERE id = ?",
+      item.id,
+    );
+
+    if (!existing) {
+      await db.run(
+        `
+          INSERT INTO admin_levels (id, title, focus, duration, reward_label, feedback_style, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `,
+        item.id,
+        item.title,
+        item.focus,
+        item.duration,
+        item.rewardLabel,
+        item.feedbackStyle,
+        new Date().toISOString(),
+      );
+    }
+  }
+}
+
+async function seedQuestionBank(db: Database) {
+  for (const item of questionBankManagementItems) {
+    const fallbackQuestion = examQuestions.find((question) => question.id === item.id);
+    const existing = await db.get<{
+      id: string;
+      options_json?: string;
+      correct_index?: number;
+      review_label?: string;
+      review_suggestion?: string;
+    }>(
+      `
+        SELECT id, options_json, correct_index, review_label, review_suggestion
+        FROM question_bank
+        WHERE id = ?
+      `,
+      item.id,
+    );
+
+    if (!existing) {
+      await db.run(
+        `
+          INSERT INTO question_bank (
+            id, prompt, options_json, correct_index, correct_label, explanation,
+            review_level_id, review_label, review_suggestion, status, updated_at
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        item.id,
+        item.prompt,
+        JSON.stringify(fallbackQuestion?.options ?? []),
+        fallbackQuestion?.correctIndex ?? 0,
+        item.correctLabel,
+        item.explanation,
+        item.reviewLevelId,
+        fallbackQuestion?.reviewLabel ?? "",
+        fallbackQuestion?.reviewSuggestion ?? "",
+        item.status,
+        new Date().toISOString(),
+      );
+      continue;
+    }
+
+    const shouldBackfill =
+      !existing.options_json ||
+      existing.options_json === "[]" ||
+      existing.review_label === "" ||
+      existing.review_suggestion === "";
+
+    if (shouldBackfill) {
+      await db.run(
+        `
+          UPDATE question_bank
+          SET
+            options_json = ?,
+            correct_index = ?,
+            review_label = ?,
+            review_suggestion = ?,
+            updated_at = CASE
+              WHEN updated_at IS NULL OR updated_at = ''
+              THEN ?
+              ELSE updated_at
+            END
+          WHERE id = ?
+        `,
+        JSON.stringify(fallbackQuestion?.options ?? []),
+        fallbackQuestion?.correctIndex ?? 0,
+        fallbackQuestion?.reviewLabel ?? "",
+        fallbackQuestion?.reviewSuggestion ?? "",
+        new Date().toISOString(),
+        item.id,
+      );
+    }
+  }
+}
+
+async function seedAiCopyTemplates(db: Database) {
+  for (const item of aiCopyTemplateItems) {
+    const existing = await db.get<{ id: string }>(
+      "SELECT id FROM ai_copy_templates WHERE id = ?",
+      item.id,
+    );
+
+    if (!existing) {
+      await db.run(
+        `
+          INSERT INTO ai_copy_templates (id, category, title, scene, prompt_text, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `,
+        item.id,
+        item.category,
+        item.title,
+        item.scene,
+        item.promptText,
+        new Date().toISOString(),
+      );
+    }
+  }
+}
+
 export async function seedDatabase(db: Database) {
   await seedUser(db, {
     id: "stu-1",
@@ -121,4 +275,8 @@ export async function seedDatabase(db: Database) {
   });
 
   await seedStudentProfile(db, "stu-1");
+  await seedThemes(db);
+  await seedAdminLevels(db);
+  await seedQuestionBank(db);
+  await seedAiCopyTemplates(db);
 }

@@ -3,15 +3,9 @@ import {
   adminModules,
   adminStatMetrics,
   adminUserSeedSummaries,
-  aiCopyTemplateItems,
-  examQuestions,
-  levelBlueprints,
-  levelManagementItems,
-  questionBankManagementItems,
   teacherClassSummaries,
   teacherStaticDetails,
   teacherStaticStudents,
-  themeManagementItems,
 } from "../constants/content";
 import type {
   AdminUserSummary,
@@ -19,6 +13,7 @@ import type {
   TeacherStudentSummary,
 } from "../types/contracts";
 import { HttpError } from "../utils/httpError";
+import { getExamQuestionsFromDb, getLevelBlueprintsFromDb } from "./courseContentService";
 import { buildStudentProgress } from "./studentService";
 
 function formatExamStatus(status: "locked" | "available" | "in_progress" | "completed") {
@@ -132,6 +127,11 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
   const summary = await buildDynamicStudentSummary();
   const progress = await buildStudentProgress(studentId);
   const growth = buildGrowthStage(progress);
+  const [examQuestions, levelBlueprints] = await Promise.all([
+    getExamQuestionsFromDb(),
+    getLevelBlueprintsFromDb(),
+  ]);
+
   const wrongTopics =
     progress.exam.status === "completed"
       ? examQuestions
@@ -167,22 +167,6 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
 
 export async function getAdminModules() {
   return adminModules;
-}
-
-export async function getAdminThemes() {
-  return themeManagementItems;
-}
-
-export async function getAdminLevels() {
-  return levelManagementItems;
-}
-
-export async function getAdminQuestionBank() {
-  return questionBankManagementItems;
-}
-
-export async function getAdminAiCopy() {
-  return aiCopyTemplateItems;
 }
 
 export async function getAdminUsers(): Promise<AdminUserSummary[]> {

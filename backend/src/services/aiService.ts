@@ -7,6 +7,7 @@ import {
   themeKeywords,
   welcomeSuggestions,
 } from "../constants/content";
+import { getAiPromptByScene } from "./courseContentService";
 import type {
   AiChatRequest,
   AiChatResponse,
@@ -49,24 +50,30 @@ function isRoadSafetyTopic(message: string) {
   return themeKeywords.some((keyword) => message.includes(keyword));
 }
 
-function buildFallbackReply(input: AiChatRequest): AiChatResponse {
+async function buildFallbackReply(input: AiChatRequest): Promise<AiChatResponse> {
+  const managedPrompt = await getAiPromptByScene(input.scene);
+
   if (input.scene === "welcome") {
     return {
-      reply: "欢迎回来，我们继续完成道路安全教育主题。今天也记住先观察、再判断、再行动。",
+      reply:
+        managedPrompt ??
+        "欢迎回来，我们继续完成道路安全教育主题。今天也记住先观察、再判断、再行动。",
       suggestions: welcomeSuggestions,
     };
   }
 
   if (input.scene === "hint") {
+    const baseReply =
+      input.levelId === "level-1"
+        ? "先把注意力放在斑马线、信号灯和危险行为上，按任务顺序一个个确认。"
+        : input.levelId === "level-2"
+          ? "先看关键节点有没有车流、盲区和抄近路诱惑，再决定往哪走。"
+          : input.levelId === "level-3"
+            ? "先检查有没有做好安全准备，再纠正不安全动作，不要急着直接提交。"
+            : "先找到这一关最重要的安全原则，再按“观察环境、判断风险、做出安全选择”的顺序试一次。";
+
     return {
-      reply:
-        input.levelId === "level-1"
-          ? "先把注意力放在斑马线、信号灯和危险行为上，按任务顺序一个个确认。"
-          : input.levelId === "level-2"
-            ? "先看关键节点有没有车流、盲区和抄近路诱惑，再决定往哪走。"
-            : input.levelId === "level-3"
-              ? "先检查有没有做好安全准备，再纠正不安全动作，不要急着直接提交。"
-              : "先找到这一关最重要的安全原则，再按“观察环境、判断风险、做出安全选择”的顺序试一次。",
+      reply: managedPrompt ? `${managedPrompt} ${baseReply}` : baseReply,
       suggestions: input.levelId
         ? hintSuggestionMap[input.levelId]
         : ["先看环境", "先找风险", "先做安全选择"],
@@ -168,7 +175,7 @@ export async function chatWithAi(
   user: AuthenticatedUser,
   input: AiChatRequest,
 ): Promise<AiChatResponse> {
-  const fallback = buildFallbackReply(input);
+  const fallback = await buildFallbackReply(input);
 
   if (input.scene === "qa") {
     const message = input.message?.trim() ?? "";
