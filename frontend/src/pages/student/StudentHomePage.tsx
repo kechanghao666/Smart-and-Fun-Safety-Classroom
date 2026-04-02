@@ -6,6 +6,15 @@ import { StatusBadge } from "../../components/StatusBadge";
 export function StudentHomePage() {
   const navigate = useNavigate();
   const { state } = useAppState();
+  const profile = state.studentProfile;
+  const avatarAccentMap = {
+    "sunny-guard": "sky",
+    "smart-scout": "mint",
+    "brave-captain": "orange",
+  } as const;
+  const avatarAccent = profile
+    ? avatarAccentMap[profile.avatarId as keyof typeof avatarAccentMap] ?? "sky"
+    : "sky";
   const completedLevels = state.progress.levels.filter(
     (level) => level.status === "completed",
   ).length;
@@ -18,7 +27,19 @@ export function StudentHomePage() {
       <section className="hero-banner hero-banner--student">
         <div>
           <span className="hero-banner__eyebrow">学生首页</span>
-          <h1>欢迎回来，小小安全员</h1>
+          <div className="student-summary">
+            {profile ? (
+              <span className={`avatar-badge avatar-badge--${avatarAccent}`}>
+                {profile.avatarLabel.slice(0, 1)}
+              </span>
+            ) : null}
+            <div>
+              <h1>欢迎回来，{profile?.nickname ?? "小小安全员"}</h1>
+              <p className="student-summary__meta">
+                {profile ? `${profile.avatarLabel} · ${profile.stage}` : "请先完善学生资料"}
+              </p>
+            </div>
+          </div>
           <p>
             你已经完成 {completedLevels} / 3 关，当前主题考试状态为
             <strong>
@@ -55,7 +76,10 @@ export function StudentHomePage() {
         <article className="surface-card stat-card">
           <span>当前积分</span>
           <strong>{state.progress.points}</strong>
-          <p>完成关卡和考试会自动获得积分与徽章。</p>
+          <p>
+            完成关卡和考试会自动获得积分与徽章。
+            {profile ? ` 当前学段：${profile.stage}。` : ""}
+          </p>
         </article>
         <article className="surface-card stat-card">
           <span>下一个任务</span>

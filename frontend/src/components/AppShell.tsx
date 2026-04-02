@@ -36,7 +36,7 @@ export function AppShell({
   role: UserRole;
   banner?: ReactNode;
 }) {
-  const { resetDemo, setRole, state } = useAppState();
+  const { resetDemo, signOut, state } = useAppState();
   const navigate = useNavigate();
   const navItems = navByRole[role];
 
@@ -67,7 +67,16 @@ export function AppShell({
           <div className="sidebar-role-card">
             <span>当前身份</span>
             <strong>{roleNameMap[role]}</strong>
-            {role === "student" ? <p>积分 {state.progress.points}</p> : null}
+            {role === "student" ? (
+              <>
+                <p>积分 {state.progress.points}</p>
+                {state.studentProfile ? (
+                  <p>
+                    {state.studentProfile.nickname} · {state.studentProfile.stage}
+                  </p>
+                ) : null}
+              </>
+            ) : null}
           </div>
 
           {role === "student" ? (
@@ -80,7 +89,7 @@ export function AppShell({
             type="button"
             className="ghost-button"
             onClick={() => {
-              setRole(null);
+              signOut();
               navigate("/login");
             }}
           >

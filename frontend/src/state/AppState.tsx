@@ -8,7 +8,13 @@ import {
   type ReactNode,
 } from "react";
 import { examQuestions, levelBlueprints } from "../data/mockData";
-import type { AppState, LevelId, LevelProgress, UserRole } from "../types";
+import type {
+  AppState,
+  LevelId,
+  LevelProgress,
+  StudentProfile,
+  UserRole,
+} from "../types";
 
 const STORAGE_KEY = "smart-safety-classroom-demo-state";
 
@@ -22,6 +28,8 @@ function buildInitialLevels(): LevelProgress[] {
 function createInitialState(): AppState {
   return {
     role: null,
+    sessionAccount: null,
+    studentProfile: null,
     progress: {
       themeId: "road-safety",
       themeTitle: "道路安全教育",
@@ -56,6 +64,8 @@ function loadInitialState(): AppState {
 
     return {
       role: parsed.role ?? fallback.role,
+      sessionAccount: parsed.sessionAccount ?? fallback.sessionAccount,
+      studentProfile: parsed.studentProfile ?? fallback.studentProfile,
       progress: {
         ...fallback.progress,
         ...parsed.progress,
@@ -74,7 +84,9 @@ function loadInitialState(): AppState {
 }
 
 type AppAction =
-  | { type: "setRole"; role: UserRole | null }
+  | { type: "signIn"; role: UserRole; account: string }
+  | { type: "signOut" }
+  | { type: "saveStudentProfile"; profile: StudentProfile }
   | { type: "setLastVisitedRoute"; route: string }
   | { type: "markLevelInProgress"; levelId: LevelId }
   | { type: "completeLevel"; levelId: LevelId }
@@ -82,10 +94,26 @@ type AppAction =
   | { type: "resetDemo" };
 
 function reducer(state: AppState, action: AppAction): AppState {
-  if (action.type === "setRole") {
+  if (action.type === "signIn") {
     return {
       ...state,
       role: action.role,
+      sessionAccount: action.account,
+    };
+  }
+
+  if (action.type === "signOut") {
+    return {
+      ...state,
+      role: null,
+      sessionAccount: null,
+    };
+  }
+
+  if (action.type === "saveStudentProfile") {
+    return {
+      ...state,
+      studentProfile: action.profile,
     };
   }
 
@@ -223,6 +251,8 @@ function reducer(state: AppState, action: AppAction): AppState {
     return {
       ...createInitialState(),
       role: state.role,
+      sessionAccount: state.sessionAccount,
+      studentProfile: state.studentProfile,
     };
   }
 
@@ -231,7 +261,9 @@ function reducer(state: AppState, action: AppAction): AppState {
 
 interface AppStateContextValue {
   state: AppState;
-  setRole: (role: UserRole | null) => void;
+  signIn: (role: UserRole, account: string) => void;
+  signOut: () => void;
+  saveStudentProfile: (profile: StudentProfile) => void;
   setLastVisitedRoute: (route: string) => void;
   markLevelInProgress: (levelId: LevelId) => void;
   completeLevel: (levelId: LevelId) => void;
@@ -250,8 +282,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  const setRole = useCallback(
-    (role: UserRole | null) => dispatch({ type: "setRole", role }),
+  const signIn = useCallback(
+    (role: UserRole, account: string) => dispatch({ type: "signIn", role, account }),
+    [],
+  );
+  const signOut = useCallback(() => dispatch({ type: "signOut" }), []);
+  const saveStudentProfile = useCallback(
+    (profile: StudentProfile) => dispatch({ type: "saveStudentProfile", profile }),
     [],
   );
   const setLastVisitedRoute = useCallback(
@@ -276,7 +313,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AppStateContextValue>(
     () => ({
       state,
-      setRole,
+      signIn,
+      signOut,
+      saveStudentProfile,
       setLastVisitedRoute,
       markLevelInProgress,
       completeLevel,
@@ -287,8 +326,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       completeLevel,
       markLevelInProgress,
       resetDemo,
+      saveStudentProfile,
       setLastVisitedRoute,
-      setRole,
+      signIn,
+      signOut,
       state,
       submitExam,
     ],

@@ -1,4 +1,6 @@
 export type UserRole = "student" | "teacher" | "admin";
+export type ThemeAccent = "sky" | "mint" | "orange";
+export type StudentStage = "小学低段" | "小学中段" | "小学高段";
 
 export type LearningStatus =
   | "locked"
@@ -15,7 +17,7 @@ export interface ThemeCard {
   isOpen: boolean;
   progressLabel: string;
   cta: string;
-  accent: string;
+  accent: ThemeAccent;
 }
 
 export interface LevelBlueprint {
@@ -64,6 +66,28 @@ export interface AiKnowledgeItem {
   answer: string;
 }
 
+export interface DemoAccount {
+  account: string;
+  password: string;
+  role: UserRole;
+  roleLabel: string;
+  displayName: string;
+}
+
+export interface AvatarOption {
+  id: string;
+  label: string;
+  shortLabel: string;
+  accent: ThemeAccent;
+}
+
+export interface StudentProfile {
+  nickname: string;
+  avatarId: string;
+  avatarLabel: string;
+  stage: StudentStage;
+}
+
 export interface TeacherStudentSummary {
   id: string;
   name: string;
@@ -102,5 +126,7 @@ export interface StudentProgress {
 
 export interface AppState {
   role: UserRole | null;
+  sessionAccount: string | null;
+  studentProfile: StudentProfile | null;
   progress: StudentProgress;
 }

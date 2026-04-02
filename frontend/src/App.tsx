@@ -8,6 +8,7 @@ import { StudentAiReportPage } from "./pages/student/StudentAiReportPage";
 import { StudentExamPage } from "./pages/student/StudentExamPage";
 import { StudentHomePage } from "./pages/student/StudentHomePage";
 import { StudentLevelPage } from "./pages/student/StudentLevelPage";
+import { StudentProfileSetupPage } from "./pages/student/StudentProfileSetupPage";
 import { StudentRecordPage } from "./pages/student/StudentRecordPage";
 import { StudentThemePage } from "./pages/student/StudentThemePage";
 import { TeacherDashboardPage } from "./pages/teacher/TeacherDashboardPage";
@@ -21,6 +22,10 @@ function RootRedirect() {
 
   if (!state.role) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (state.role === "student" && !state.studentProfile) {
+    return <Navigate to="/student/profile-setup" replace />;
   }
 
   return <Navigate to={defaultRoleRoute[state.role]} replace />;
@@ -46,6 +51,42 @@ function RoleGate({
   return <>{children}</>;
 }
 
+function StudentSetupGate({ children }: { children: ReactNode }) {
+  const { state } = useAppState();
+
+  if (!state.role) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (state.role !== "student") {
+    return <Navigate to={defaultRoleRoute[state.role]} replace />;
+  }
+
+  if (state.studentProfile) {
+    return <Navigate to="/student/home" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function StudentReadyGate({ children }: { children: ReactNode }) {
+  const { state } = useAppState();
+
+  if (!state.role) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (state.role !== "student") {
+    return <Navigate to={defaultRoleRoute[state.role]} replace />;
+  }
+
+  if (!state.studentProfile) {
+    return <Navigate to="/student/profile-setup" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 function RouteTracker() {
   const location = useLocation();
   const {
@@ -58,6 +99,7 @@ function RouteTracker() {
   useEffect(() => {
     if (
       location.pathname.startsWith("/student") &&
+      location.pathname !== "/student/profile-setup" &&
       location.pathname !== lastVisitedRoute
     ) {
       setLastVisitedRoute(location.pathname);
@@ -74,13 +116,21 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<RootRedirect />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/student/profile-setup"
+          element={
+            <StudentSetupGate>
+              <StudentProfileSetupPage />
+            </StudentSetupGate>
+          }
+        />
 
         <Route
           path="/student"
           element={
-            <RoleGate role="student">
+            <StudentReadyGate>
               <AppShell role="student" />
-            </RoleGate>
+            </StudentReadyGate>
           }
         >
           <Route index element={<Navigate to="home" replace />} />

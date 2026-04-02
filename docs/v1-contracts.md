@@ -3,6 +3,7 @@
 ## 路由分组
 
 - 学生端
+  - `/student/profile-setup`
   - `/student/home`
   - `/student/theme/road-safety`
   - `/student/theme/road-safety/level/:levelId`
@@ -38,8 +39,27 @@ interface StudentProgress {
 }
 ```
 
+## 当前前端基线新增状态
+
+```ts
+interface StudentProfile {
+  nickname: string;
+  avatarId: string;
+  avatarLabel: string;
+  stage: "小学低段" | "小学中段" | "小学高段";
+}
+
+interface AppState {
+  role: UserRole | null;
+  sessionAccount: string | null;
+  studentProfile: StudentProfile | null;
+  progress: StudentProgress;
+}
+```
+
 ## 当前前端原型默认规则
 
+- 学生首次登录后，未完善资料时优先进入 `/student/profile-setup`
 - 第一关默认 `available`
 - 第二、三关默认 `locked`
 - 完成前一关后，下一关切为 `available`

@@ -1,13 +1,67 @@
 import type {
   AdminModuleCard,
   AiKnowledgeItem,
+  AvatarOption,
+  DemoAccount,
   ExamQuestion,
   GuardianTask,
   LevelBlueprint,
   RouteChallengeStep,
+  StudentStage,
   TeacherStudentSummary,
   ThemeCard,
 } from "../types";
+
+export const demoAccounts: DemoAccount[] = [
+  {
+    account: "student001",
+    password: "123456",
+    role: "student",
+    roleLabel: "学生端",
+    displayName: "学生示例账号",
+  },
+  {
+    account: "teacher001",
+    password: "123456",
+    role: "teacher",
+    roleLabel: "教师端",
+    displayName: "教师示例账号",
+  },
+  {
+    account: "admin001",
+    password: "123456",
+    role: "admin",
+    roleLabel: "管理员端",
+    displayName: "管理员示例账号",
+  },
+];
+
+export const studentAvatarOptions: AvatarOption[] = [
+  {
+    id: "sunny-guard",
+    label: "阳光小卫士",
+    shortLabel: "阳",
+    accent: "sky",
+  },
+  {
+    id: "smart-scout",
+    label: "机智观察员",
+    shortLabel: "智",
+    accent: "mint",
+  },
+  {
+    id: "brave-captain",
+    label: "勇敢守护队长",
+    shortLabel: "勇",
+    accent: "orange",
+  },
+];
+
+export const studentStageOptions: StudentStage[] = [
+  "小学低段",
+  "小学中段",
+  "小学高段",
+];
 
 export const themeCards: ThemeCard[] = [
   {
