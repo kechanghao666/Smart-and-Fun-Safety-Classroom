@@ -1164,6 +1164,64 @@ button {
   gap: 14px;
 }
 
+.mini-stat-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.stat-pair {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.8);
+  text-align: center;
+}
+
+.stat-pair strong {
+  font-size: 26px;
+}
+
+.table-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.table-status-badge--active {
+  background: rgba(24, 160, 111, 0.14);
+  color: var(--green);
+}
+
+.table-status-badge--paused {
+  background: rgba(214, 66, 66, 0.12);
+  color: var(--danger);
+}
+
+.trend-bars {
+  display: grid;
+  gap: 18px;
+}
+
+.trend-bars__item {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.bar-item__fill--exam {
+  background: linear-gradient(120deg, var(--orange), var(--blue));
+}
+
 .admin-preview-card {
   min-height: 180px;
 }
@@ -1606,6 +1664,10 @@ button {
 
   .student-shell__status-card {
     min-width: 0;
+  }
+
+  .mini-stat-list {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -17,16 +17,25 @@ export function AdminStatsPage() {
     fetcher: () => fetchAdminStats(state.authToken ?? ""),
     dependencies: [state.authToken],
   });
+
   const trackedClassCount = data.classSummaries.length;
   const topMetric = data.metrics[0] ?? null;
+  const topClass =
+    data.classSummaries
+      .slice()
+      .sort((left, right) => right.completedRate - left.completedRate)[0] ?? null;
+  const watchClass =
+    data.classSummaries
+      .slice()
+      .sort((left, right) => left.examCompletionRate - right.examCompletionRate)[0] ?? null;
 
   return (
     <div className="page-stack">
       <section className="hero-banner hero-banner--admin">
         <div>
           <span className="hero-banner__eyebrow">数据统计</span>
-          <h1>查看访问量、完成率、成绩和班级表现</h1>
-          <p>当前是轻量图表工作台，后续可以直接切换成真实统计接口返回。</p>
+          <h1>查看访问量、完成率、成绩和班级趋势</h1>
+          <p>这一页继续保持轻量图表工作台定位，把关键指标、班级对比和运营观察整理成更清晰的后台统计页。</p>
         </div>
       </section>
 
@@ -57,29 +66,83 @@ export function AdminStatsPage() {
         </article>
       </section>
 
+      <section className="card-grid card-grid--two">
+        <article className="surface-card admin-preview-card">
+          <span className="section-block__eyebrow">运营观察</span>
+          <h2>当前最值得关注的两个点</h2>
+          <div className="page-stack page-stack--compact">
+            <article className="feedback-box">
+              <strong>完成率最高班级</strong>
+              <p>
+                {topClass
+                  ? `${topClass.name}，三关完成率 ${topClass.completedRate}%。`
+                  : "当前暂无班级统计数据。"}
+              </p>
+            </article>
+            <article className="feedback-box">
+              <strong>考试完成率偏低班级</strong>
+              <p>
+                {watchClass
+                  ? `${watchClass.name}，考试完成率 ${watchClass.examCompletionRate}%，建议优先跟进。`
+                  : "当前暂无班级统计数据。"}
+              </p>
+            </article>
+          </div>
+        </article>
+
+        <article className="surface-card admin-preview-card">
+          <span className="section-block__eyebrow">指标说明</span>
+          <h2>当前统计页展示口径</h2>
+          <ul className="plain-list">
+            <li>主题访问量：反映学生进入主题页的整体热度。</li>
+            <li>三关完成率：反映学生端主链路推进情况。</li>
+            <li>考试平均分：反映主题考试的整体学习效果。</li>
+            <li>班级对比：帮助教师和管理员快速识别需要优先支持的班级。</li>
+          </ul>
+        </article>
+      </section>
+
       <section className="surface-card">
         <div className="section-block__header">
           <div>
             <span className="section-block__eyebrow">班级趋势</span>
-            <h2>按班级查看三关完成率与考试完成率</h2>
+            <h2>按班级对比三关完成率和考试完成率</h2>
           </div>
         </div>
 
         {data.classSummaries.length > 0 ? (
-          <div className="bar-list">
+          <div className="trend-bars">
             {data.classSummaries.map((classroom) => (
-              <article key={classroom.id} className="bar-item">
+              <article key={classroom.id} className="trend-bars__item">
                 <div className="row-between">
-                  <strong>{classroom.name}</strong>
-                  <span>三关 {classroom.completedRate}% / 考试 {classroom.examCompletionRate}%</span>
+                  <div>
+                    <strong>{classroom.name}</strong>
+                    <p className="teacher-analysis-card__meta">{classroom.focusLabel}</p>
+                  </div>
+                  <span className="surface-tag">{classroom.studentCount} 人</span>
                 </div>
+
                 <div className="bar-item__track">
                   <span
                     className="bar-item__fill"
                     style={{ width: `${classroom.completedRate}%` }}
                   />
                 </div>
-                <p>{classroom.focusLabel}</p>
+                <div className="row-between">
+                  <span className="data-table__muted">三关完成率</span>
+                  <strong>{classroom.completedRate}%</strong>
+                </div>
+
+                <div className="bar-item__track">
+                  <span
+                    className="bar-item__fill bar-item__fill--exam"
+                    style={{ width: `${classroom.examCompletionRate}%` }}
+                  />
+                </div>
+                <div className="row-between">
+                  <span className="data-table__muted">考试完成率</span>
+                  <strong>{classroom.examCompletionRate}%</strong>
+                </div>
               </article>
             ))}
           </div>
