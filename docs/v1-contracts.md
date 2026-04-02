@@ -2,30 +2,37 @@
 
 ## 路由分组
 
-- 学生端
-  - `/student/profile-setup`
-  - `/student/home`
-  - `/student/theme/road-safety`
-  - `/student/theme/road-safety/level/:levelId`
-  - `/student/theme/road-safety/level/:levelId/result`
-  - `/student/theme/road-safety/exam`
-  - `/student/ai`
-  - `/student/growth`
-  - `/student/records`
-  - `/student/ai-report`
-- 教师端
-  - `/teacher/classes`
-  - `/teacher/dashboard`
-  - `/teacher/students`
-  - `/teacher/students/:studentId`
-- 管理员端
-  - `/admin/dashboard`
-  - `/admin/themes`
-  - `/admin/levels`
-  - `/admin/question-bank`
-  - `/admin/ai-copy`
-  - `/admin/users`
-  - `/admin/stats`
+### 学生端
+
+- `/student/profile-setup`
+- `/student/home`
+- `/student/theme/road-safety`
+- `/student/theme/road-safety/level/:levelId`
+- `/student/theme/road-safety/level/:levelId/result`
+- `/student/theme/road-safety/exam`
+- `/student/theme/road-safety/exam/result`
+- `/student/theme/road-safety/wrong-questions`
+- `/student/ai`
+- `/student/growth`
+- `/student/records`
+- `/student/ai-report`
+
+### 教师端
+
+- `/teacher/classes`
+- `/teacher/dashboard`
+- `/teacher/students`
+- `/teacher/students/:studentId`
+
+### 管理员端
+
+- `/admin/dashboard`
+- `/admin/themes`
+- `/admin/levels`
+- `/admin/question-bank`
+- `/admin/ai-copy`
+- `/admin/users`
+- `/admin/stats`
 
 ## 共享状态枚举
 
@@ -35,7 +42,7 @@ type UserRole = "student" | "teacher" | "admin";
 type LevelId = "level-1" | "level-2" | "level-3";
 ```
 
-## 学生学习状态
+## 学生核心数据结构
 
 ```ts
 interface StudentProgress {
@@ -75,7 +82,7 @@ interface ExamQuestion {
 }
 ```
 
-## 当前前端基线新增状态
+## 前端扩展状态
 
 ```ts
 interface StudentProfile {
@@ -95,51 +102,55 @@ interface AppState {
 }
 ```
 
-## 当前前端原型默认规则
+## 当前前端行为规则
 
-- 学生首次登录后，未完善资料时优先进入 `/student/profile-setup`
-- 第一关默认 `available`
-- 第二、三关默认 `locked`
-- 完成前一关后，下一关切为 `available`
-- 每关完成后进入独立结算页 `/student/theme/road-safety/level/:levelId/result`
-- 三关完成后，主题考试切为 `available`
-- 考试提交后切为 `completed`
-- 考试页采用题号导航 + 上一题/下一题 + 统一提交结构
-- 考试提交后在同页展示错题、正确答案、解析和建议回看关卡
-- 成长档案页 `/student/growth` 基于积分、关卡结算、考试成绩和徽章派生成长阶段展示
-- 学生端任意页面切换时更新 `lastVisitedRoute`
+- 学生首次登录后，未完善资料时优先进入 `/student/profile-setup`。
+- 学生端统一采用“顶部导航 + 主内容区 + 右下角 AI 浮窗”布局。
+- 教师端与管理员端统一采用“左侧菜单 + 右侧内容区”布局。
+- 第一关默认 `available`。
+- 第二关、第三关默认 `locked`。
+- 完成前一关后，下一关切为 `available`。
+- 每关完成后进入独立结算页 `/student/theme/road-safety/level/:levelId/result`。
+- 三关完成后，主题考试切为 `available`。
+- 考试页面只负责答题与统一提交。
+- 考试提交成功后进入独立结果页 `/student/theme/road-safety/exam/result`。
+- 错题独立展示在 `/student/theme/road-safety/wrong-questions`。
+- 成长档案页 `/student/growth` 基于积分、关卡结算、考试成绩和徽章派生成长阶段展示。
+- 学生端任意页面切换时更新 `lastVisitedRoute`。
 
-## 协作注意事项
+## 联调模式约定
 
-- 页面和状态判断统一复用 `frontend/src/types.ts`
-- 本地 mock 数据统一维护在 `frontend/src/data/mockData.ts`
-- 需要改动积分、徽章、解锁条件时，同步更新 `frontend/src/state/AppState.tsx`
-- 接入真实后端后，先保持字段名不变，再逐步替换数据源
+- 在 `frontend/.env.local` 中配置 `VITE_API_BASE_URL=http://localhost:3000` 后，登录页切换为后端联调模式。
+- 未配置 `VITE_API_BASE_URL` 时，默认继续使用本地示例账号和前端状态。
+- 登录接口 `POST /api/auth/login` 至少返回 `token`、`role`，并可选返回 `account`、`studentProfile`、`progress`。
+- 当前前端在切换到新的学生账号、教师账号或管理员账号时，会主动清空上一位学生的本地资料和学习进度；只有“同一个学生账号重新登录”时才会沿用本地资料等待后端刷新。
+- 学生端在后端联调模式下会于进入学生壳层时自动请求一次 `GET /api/student/progress`，窗口重新聚焦后也会静默刷新；顶部同时保留“刷新进度”入口。
+- 学生首页 AI 欢迎卡调用 `POST /api/ai/chat`，使用 `scene: "welcome"`。
+- 学生主题页 AI 提醒卡与关卡页 AI 提示卡调用 `POST /api/ai/chat`，使用 `scene: "hint"`。
+- AI 接口失败时，前端自动回退为本地提示，不阻断学习流程。
+- AI 结果卡页继续采用“数据 + 模板”生成，不依赖真实 AI 返回。
 
-## 前端联调约定
+## 预留接口
 
-- `frontend/.env.local` 中配置 `VITE_API_BASE_URL=http://localhost:3000` 后，登录页切换为后端联调模式
-- 未配置 `VITE_API_BASE_URL` 时，默认继续使用本地示例账号和前端状态
-- 登录接口约定：`POST /api/auth/login` 至少返回 `token`、`role`，并可选返回 `account`、`studentProfile`、`progress`
-- 前端在切换到新的学生账号、教师账号或管理员账号时，会主动清空上一位学生的本地资料和学习进度，避免跨账号残留；只有“同一个学生账号重新登录”时才会沿用本地资料等待后端刷新
-- 学生端在后端联调模式下会于进入学生壳层时自动请求一次 `GET /api/student/progress`，窗口重新聚焦后也会静默刷新；页面顶部同时保留“刷新进度”手动入口
-- 学生首页与主题页的 AI 欢迎卡/提醒卡会调用 `POST /api/ai/chat`，分别使用 `scene: "welcome"` 与 `scene: "hint"`；接口失败时前端自动回退为本地提示
-- 学生闯关页右侧的 AI 关卡提示卡同样调用 `POST /api/ai/chat`，使用 `scene: "hint"` 并携带当前 `levelId`；接口失败时前端自动回退为本地提示
-- 学生结果卡片页继续采用“数据 + 模板”生成，不依赖真实 AI 返回；页面会综合关卡结算、考试状态、错题、成长阶段和徽章生成学习总结、复习重点和后续动作
-- 学生端接口预留：
-  - `GET /api/student/progress`
-  - `POST /api/student/levels/:levelId/start`
-  - `POST /api/student/levels/:levelId/complete`
-  - `POST /api/student/exam/submit`
-  - `POST /api/ai/chat`
-- 教师端接口预留：
-  - `GET /api/teacher/dashboard`
-  - `GET /api/teacher/students`
-  - `GET /api/teacher/students/:studentId`
-- 管理员端接口预留：
-  - `GET /api/admin/modules`
-  - `GET /api/admin/themes`
-  - `GET /api/admin/levels`
+### 学生端
+
+- `GET /api/student/progress`
+- `POST /api/student/levels/:levelId/start`
+- `POST /api/student/levels/:levelId/complete`
+- `POST /api/student/exam/submit`
+- `POST /api/ai/chat`
+
+### 教师端
+
+- `GET /api/teacher/dashboard`
+- `GET /api/teacher/students`
+- `GET /api/teacher/students/:studentId`
+
+### 管理员端
+
+- `GET /api/admin/modules`
+- `GET /api/admin/themes`
+- `GET /api/admin/levels`
 - `GET /api/admin/question-bank`
 - `GET /api/admin/ai-copy`
 - `GET /api/admin/users`
@@ -147,8 +158,8 @@ interface AppState {
 
 ## 教师端与管理员端补充约定
 
-- 教师端首页、班级页、学生列表页、学生详情页统一采用“读取接口优先，失败后回退 mock”的工作流，并在页面上明确展示当前数据来源。
-- 教师端学生详情页需要稳定展示四类信息：学习闭环概览、关卡表现、考试状态 / 风险点、教师建议动作。
-- 管理后台的主题、关卡、题库、AI 文案四个编辑页统一改为显式保存工作流：编辑后先进入未保存状态，点击保存后写入 localStorage。
+- 教师首页、班级页、学生列表页、学生详情页统一采用“读取接口优先，失败后回退 mock”的工作流，并在页面上明确展示当前数据来源。
+- 教师学生详情页必须稳定展示四类信息：学习闭环概览、关卡表现、考试状态与风险点、教师建议动作。
+- 管理后台的主题、关卡、题库、AI 文案四个编辑页统一采用显式保存工作流：编辑后先进入未保存状态，点击保存后写入 `localStorage`。
 - 管理后台编辑页允许“撤销未保存修改”和“恢复同步 / 默认数据”，但本轮不新增真实后端写接口。
-- 管理后台的“保存成功”仅表示本地工作稿已更新，不代表已经写入服务器；后续若接真实写接口，再统一替换保存目标。
+- 管理后台中的“保存成功”仅表示本地工作稿已更新，不代表已经写入服务器；后续若接真实写接口，再统一替换保存目标。

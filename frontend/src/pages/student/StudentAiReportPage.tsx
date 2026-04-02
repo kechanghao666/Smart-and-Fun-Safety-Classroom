@@ -10,7 +10,7 @@ export function StudentAiReportPage() {
     <div className="page-stack">
       <section className="hero-banner hero-banner--report">
         <div>
-          <span className="hero-banner__eyebrow">AI 学习结果卡片</span>
+          <span className="hero-banner__eyebrow">AI 结果卡页</span>
           <h1>{report.headline}</h1>
           <p>{report.summary}</p>
         </div>
@@ -30,7 +30,7 @@ export function StudentAiReportPage() {
         <article className="surface-card report-card report-card--mint">
           <span className="section-block__eyebrow">成长结果</span>
           <h2>{report.growthLabel}</h2>
-          <p>当前积分 {state.progress.points}，成长值、星级和徽章都会继续累计。</p>
+          <p>当前积分 {state.progress.points}，成长值、星级和徽章会继续累计。</p>
         </article>
 
         <article className="surface-card report-card report-card--orange">
@@ -46,8 +46,8 @@ export function StudentAiReportPage() {
 
       <section className="card-grid card-grid--two">
         <article className="surface-card report-panel">
-          <span className="section-block__eyebrow">这轮亮点</span>
-          <h2>你已经做得不错的地方</h2>
+          <span className="section-block__eyebrow">做得好的点</span>
+          <h2>这轮学习的亮点</h2>
           <div className="page-stack page-stack--compact">
             {report.strengths.map((strength) => (
               <article key={strength} className="feedback-box">
@@ -59,8 +59,8 @@ export function StudentAiReportPage() {
         </article>
 
         <article className="surface-card report-panel">
-          <span className="section-block__eyebrow">需要补强</span>
-          <h2>把下一步复习说清楚</h2>
+          <span className="section-block__eyebrow">需要补强的点</span>
+          <h2>下一步复习重点</h2>
           <div className="page-stack page-stack--compact">
             {report.focusAreas.map((item) => (
               <article key={item.id} className="report-focus-item">
@@ -107,7 +107,7 @@ export function StudentAiReportPage() {
         <div className="section-block__header">
           <div>
             <span className="section-block__eyebrow">后续动作</span>
-            <h2>看完结果页之后，下一步怎么走</h2>
+            <h2>看完结果卡后怎么继续</h2>
           </div>
         </div>
 
@@ -125,11 +125,17 @@ export function StudentAiReportPage() {
       </section>
 
       <div className="button-row">
-        <Link className="ghost-button link-button" to="/student/theme/road-safety">
-          返回主题页
+        <Link className="ghost-button link-button" to="/student/theme/road-safety/exam/result">
+          返回考试结果页
+        </Link>
+        <Link
+          className="ghost-button link-button"
+          to="/student/theme/road-safety/wrong-questions"
+        >
+          错题回看页
         </Link>
         <Link className="ghost-button link-button" to="/student/records">
-          查看学习记录
+          学习记录页
         </Link>
       </div>
     </div>

@@ -1,11 +1,11 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { demoAccounts } from "../data/mockData";
-import { defaultRoleRoute, useAppState } from "../state/AppState";
-import { loginWithPassword } from "../services/auth";
 import { apiBaseUrl, apiEnabled, authModeLabel } from "../services/apiConfig";
+import { loginWithPassword } from "../services/auth";
 import { ApiError } from "../services/http";
 import { fetchStudentProgress } from "../services/student";
+import { defaultRoleRoute, useAppState } from "../state/AppState";
 
 export function LoginPage() {
   const { replaceProgress, saveStudentProfile, signIn, state } = useAppState();
@@ -73,6 +73,7 @@ export function LoginPage() {
           state.sessionAccount === (loginResult.account ?? trimmedAccount);
         const nextStudentProfile =
           loginResult.studentProfile ?? (sameStudentAccount ? state.studentProfile : null);
+
         navigate(
           loginResult.role === "student" && !nextStudentProfile
             ? "/student/profile-setup"
@@ -93,6 +94,7 @@ export function LoginPage() {
       signIn(matchedAccount.role, matchedAccount.account, { source: "mock" });
       const nextStudentProfile =
         state.sessionAccount === matchedAccount.account ? state.studentProfile : null;
+
       navigate(
         matchedAccount.role === "student" && !nextStudentProfile
           ? "/student/profile-setup"
@@ -114,17 +116,16 @@ export function LoginPage() {
       <div className="auth-shell">
         <section className="hero-panel">
           <div className="hero-panel__content">
-            <span className="hero-panel__eyebrow">儿童友好 + 安全教育 + 多端协作</span>
+            <span className="hero-panel__eyebrow">登录页</span>
             <h1>智趣安全学堂</h1>
             <p>
-              请使用学生、教师或管理员账号登录系统。首版重点围绕道路安全教育，
-              通过主题学习、闯关任务、主题考试和 AI 结果反馈完成完整课堂流程。
+              以道路安全教育为首发主题，围绕学生学习、教师查看和管理员后台三类角色组织完整课堂流程。
             </p>
             <div className="hero-panel__tags">
-              <span>道路安全教育</span>
-              <span>三关闯关</span>
-              <span>主题考试</span>
-              <span>AI 结果卡片</span>
+              <span>学生端</span>
+              <span>教师端</span>
+              <span>管理员端</span>
+              <span>AI 助学</span>
             </div>
           </div>
         </section>
@@ -133,14 +134,11 @@ export function LoginPage() {
           <article className="surface-card auth-card">
             <div>
               <span className="section-block__eyebrow">正式登录</span>
-              <h2>账号登录</h2>
-              <p>学生登录后将进入学习端；教师与管理员将进入各自后台页面。</p>
+              <h2>账号密码登录</h2>
+              <p>学生登录后将先进入资料补全页；教师与管理员将直接进入各自的工作台页面。</p>
             </div>
 
-            <form
-              className="auth-form"
-              onSubmit={handleSubmit}
-            >
+            <form className="auth-form" onSubmit={handleSubmit}>
               <label className="field-group">
                 <span className="field-label">账号</span>
                 <input
@@ -166,7 +164,7 @@ export function LoginPage() {
                 当前模式：{authModeLabel}
                 {apiEnabled
                   ? `，会优先请求 ${apiBaseUrl}/api/auth/login。`
-                  : "，未配置后端地址时继续使用本地示例账号和前端状态。"}
+                  : "，未配置后端地址时继续使用本地示例账号与前端状态。"}
               </p>
 
               {error ? <p className="form-error">{error}</p> : null}
@@ -183,12 +181,12 @@ export function LoginPage() {
 
           <article className="surface-card auth-card">
             <div>
-              <span className="section-block__eyebrow">账号与联调说明</span>
-              <h2>{apiEnabled ? "后端联调已启用" : "三类账号入口"}</h2>
+              <span className="section-block__eyebrow">账号说明</span>
+              <h2>{apiEnabled ? "当前已处于后端联调模式" : "三类角色示例账号"}</h2>
               <p>
                 {apiEnabled
-                  ? "如后端已导入种子数据，可继续使用以下账号联调；未导入时请以服务端实际返回为准。"
-                  : "当前前端基线使用固定示例账号，后续将由后端真实鉴权接口替换。"}
+                  ? "如果后端已导入种子数据，可继续使用以下账号联调；如果未导入，请以服务端实际返回为准。"
+                  : "当前前端基线使用固定示例账号，后续会由真实鉴权接口替换。"}
               </p>
             </div>
 
@@ -196,7 +194,9 @@ export function LoginPage() {
               {demoAccounts.map((item) => (
                 <li key={item.account}>
                   <strong>{item.roleLabel}</strong>
-                  <span>{item.account} / {item.password}</span>
+                  <span>
+                    {item.account} / {item.password}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -206,4 +206,3 @@ export function LoginPage() {
     </div>
   );
 }
-

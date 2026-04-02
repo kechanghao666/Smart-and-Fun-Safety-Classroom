@@ -10,7 +10,7 @@ import {
 
 export function StudentAiPage() {
   const { state } = useAppState();
-  const profileName = state.studentProfile?.nickname ?? "小小安全员";
+  const profileName = state.studentProfile?.nickname ?? "安全小卫士";
   const [input, setInput] = useState("");
   const [isAsking, setIsAsking] = useState(false);
   const [assistantNotice, setAssistantNotice] = useState("");
@@ -18,7 +18,7 @@ export function StudentAiPage() {
     {
       id: "welcome",
       role: "assistant",
-      text: `你好，${profileName}。我是安全小助手，可以帮你回顾道路安全重点、解释规则，也能根据你的学习进度给出提示。`,
+      text: `你好，${profileName}。我是安全小助手，可以围绕道路安全教育主题帮助你回顾重点、解释规则和整理复习方向。`,
     },
   ]);
 
@@ -55,6 +55,7 @@ export function StudentAiPage() {
         authToken: state.authToken,
         scene,
       });
+
       setMessages((current) => [
         ...current,
         { id: `${Date.now()}-u`, role: "user", text: trimmed },
@@ -71,10 +72,10 @@ export function StudentAiPage() {
     <div className="page-stack">
       <section className="hero-banner hero-banner--student">
         <div>
-          <span className="hero-banner__eyebrow">AI 问答页</span>
+          <span className="hero-banner__eyebrow">独立 AI 问答页</span>
           <h1>围绕道路安全主题随时提问、复习和回看</h1>
           <p>
-            当前 AI 仅回答道路安全教育相关内容，会优先结合你的闯关进度和考试情况给出提示。
+            本页固定服务于道路安全教育主题，适合在卡关、回看错题或整理学习重点时进行轻量问答。
           </p>
         </div>
         <div className="hero-banner__actions">
@@ -82,7 +83,7 @@ export function StudentAiPage() {
             返回主题页
           </Link>
           <Link className="ghost-button link-button" to="/student/ai-report">
-            查看 AI 结果卡片
+            查看 AI 结果卡
           </Link>
         </div>
       </section>
@@ -93,13 +94,15 @@ export function StudentAiPage() {
           <strong>{profileName}</strong>
           <p>{state.studentProfile ? state.studentProfile.stage : "待完善学生资料"}</p>
         </article>
+
         <article className="surface-card stat-card">
-          <span>闯关进度</span>
+          <span>关卡进度</span>
           <strong>
             {state.progress.levels.filter((level) => level.status === "completed").length} / 3
           </strong>
-          <p>完成关卡越多，越适合用 AI 回顾重点和错题。</p>
+          <p>完成关卡越多，AI 越适合帮助你回顾更完整的学习闭环。</p>
         </article>
+
         <article className="surface-card stat-card">
           <span>考试状态</span>
           <strong>
@@ -109,11 +112,67 @@ export function StudentAiPage() {
                 ? "已解锁"
                 : "未解锁"}
           </strong>
-          <p>如果你刚做完考试，这里最适合继续追问错题和规则原因。</p>
+          <p>考试完成后，最适合继续追问错题和相关规则原因。</p>
         </article>
       </section>
 
       <section className="ai-study-layout">
+        <div className="page-stack">
+          <article className="surface-card">
+            <span className="section-block__eyebrow">常见问题区</span>
+            <h2>先从这些主题开始问</h2>
+            <div className="chip-row">
+              {quickPrompts.map((prompt) => (
+                <button
+                  key={prompt.id}
+                  type="button"
+                  className="quick-chip"
+                  disabled={isAsking}
+                  onClick={() => {
+                    void ask(prompt.question);
+                  }}
+                >
+                  {prompt.label}
+                </button>
+              ))}
+            </div>
+          </article>
+
+          <article className="surface-card">
+            <span className="section-block__eyebrow">错题复习方向</span>
+            <h2>根据当前结果推荐追问方向</h2>
+            {reviewPrompts.length > 0 ? (
+              <div className="chip-row">
+                {reviewPrompts.map((prompt) => (
+                  <button
+                    key={prompt.id}
+                    type="button"
+                    className="quick-chip"
+                    disabled={isAsking}
+                    onClick={() => {
+                      void ask(prompt.question, "hint");
+                    }}
+                  >
+                    {prompt.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p>当前还没有错题推荐，可以先问斑马线、公交车盲区或乘车防护这几个主题。</p>
+            )}
+          </article>
+
+          <article className="surface-card">
+            <span className="section-block__eyebrow">使用边界</span>
+            <h2>本页 AI 只会做这些事</h2>
+            <ul className="plain-list">
+              <li>只回答道路安全教育主题相关问题。</li>
+              <li>优先给提示和解释，不直接替学生完成关卡答案。</li>
+              <li>适合复习斑马线、盲区、头盔、安全带和候车距离等主题。</li>
+            </ul>
+          </article>
+        </div>
+
         <article className="surface-card ai-study-panel">
           <div className="section-block__header">
             <div>
@@ -142,7 +201,7 @@ export function StudentAiPage() {
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="例如：为什么过马路要看红绿灯？"
+              placeholder="例如：为什么过马路要看信号灯和车？"
               disabled={isAsking}
             />
             <button type="submit" className="primary-button" disabled={isAsking}>
@@ -150,64 +209,6 @@ export function StudentAiPage() {
             </button>
           </form>
         </article>
-
-        <div className="page-stack">
-          <article className="surface-card">
-            <span className="section-block__eyebrow">快捷提问</span>
-            <h2>先从这些主题开始问</h2>
-            <div className="chip-row">
-              {quickPrompts.map((prompt) => (
-                <button
-                  key={prompt.id}
-                  type="button"
-                  className="quick-chip"
-                  disabled={isAsking}
-                  onClick={() => {
-                    void ask(prompt.question);
-                  }}
-                >
-                  {prompt.label}
-                </button>
-              ))}
-            </div>
-          </article>
-
-          <article className="surface-card">
-            <span className="section-block__eyebrow">错题回看建议</span>
-            <h2>根据当前学习结果推荐追问方向</h2>
-            {reviewPrompts.length > 0 ? (
-              <div className="chip-row">
-                {reviewPrompts.map((prompt) => (
-                  <button
-                    key={prompt.id}
-                    type="button"
-                    className="quick-chip"
-                    disabled={isAsking}
-                    onClick={() => {
-                      void ask(prompt.question, "hint");
-                    }}
-                  >
-                    {prompt.label}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p>
-                目前还没有错题推荐，你可以先问“斑马线怎么走”“为什么不能在车前突然跑出”这类问题。
-              </p>
-            )}
-          </article>
-
-          <article className="surface-card">
-            <span className="section-block__eyebrow">使用范围</span>
-            <h2>这页 AI 会遵守的边界</h2>
-            <ul className="plain-list">
-              <li>只回答道路安全教育相关问题</li>
-              <li>优先给提示和解释，不直接替你完成闯关答案</li>
-              <li>更适合复习“斑马线、盲区、头盔、上下车安全”等主题</li>
-            </ul>
-          </article>
-        </div>
       </section>
     </div>
   );

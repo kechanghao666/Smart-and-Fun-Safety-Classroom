@@ -13,6 +13,7 @@ import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 import { StudentAiPage } from "./pages/student/StudentAiPage";
 import { StudentAiReportPage } from "./pages/student/StudentAiReportPage";
 import { StudentExamPage } from "./pages/student/StudentExamPage";
+import { StudentExamResultPage } from "./pages/student/StudentExamResultPage";
 import { StudentGrowthPage } from "./pages/student/StudentGrowthPage";
 import { StudentHomePage } from "./pages/student/StudentHomePage";
 import { StudentLevelPage } from "./pages/student/StudentLevelPage";
@@ -20,6 +21,7 @@ import { StudentLevelResultPage } from "./pages/student/StudentLevelResultPage";
 import { StudentProfileSetupPage } from "./pages/student/StudentProfileSetupPage";
 import { StudentRecordPage } from "./pages/student/StudentRecordPage";
 import { StudentThemePage } from "./pages/student/StudentThemePage";
+import { StudentWrongQuestionsPage } from "./pages/student/StudentWrongQuestionsPage";
 import { TeacherClassesPage } from "./pages/teacher/TeacherClassesPage";
 import { TeacherDashboardPage } from "./pages/teacher/TeacherDashboardPage";
 import { TeacherStudentDetailPage } from "./pages/teacher/TeacherStudentDetailPage";
@@ -152,6 +154,14 @@ function AppRoutes() {
             element={<StudentLevelResultPage />}
           />
           <Route path="theme/road-safety/exam" element={<StudentExamPage />} />
+          <Route
+            path="theme/road-safety/exam/result"
+            element={<StudentExamResultPage />}
+          />
+          <Route
+            path="theme/road-safety/wrong-questions"
+            element={<StudentWrongQuestionsPage />}
+          />
           <Route path="ai" element={<StudentAiPage />} />
           <Route path="growth" element={<StudentGrowthPage />} />
           <Route path="records" element={<StudentRecordPage />} />

@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAppState } from "../state/AppState";
 import {
   buildAiQuickPrompts,
@@ -17,7 +17,7 @@ export function FloatingAiAssistant() {
     {
       id: "welcome",
       role: "assistant",
-      text: "我是安全小助手，可以给你提示、解释安全规则，也能帮你回顾这节课的重点。",
+      text: "我是安全小助手，可以给你道路安全学习提示、解释规则，也能帮你回顾这节课的重点。",
     },
   ]);
 
@@ -38,6 +38,7 @@ export function FloatingAiAssistant() {
         authToken: state.authToken,
         scene: "qa",
       });
+
       setMessages((current) => [
         ...current,
         { id: `${Date.now()}-u`, role: "user", text: trimmed },
@@ -57,8 +58,8 @@ export function FloatingAiAssistant() {
         <section className="ai-panel">
           <header className="ai-panel__header">
             <div>
-              <strong>安全小助手</strong>
-              <p>轻量提示、道路安全问答、学习节点反馈</p>
+              <strong>AI 学习助手</strong>
+              <p>道路安全主题轻量问答、提示与回看</p>
             </div>
             <button
               type="button"
@@ -114,7 +115,7 @@ export function FloatingAiAssistant() {
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="问我道路安全相关的问题"
+              placeholder="问我道路安全相关问题"
               disabled={isAsking}
             />
             <button type="submit" className="primary-button" disabled={isAsking}>
@@ -135,4 +136,3 @@ export function FloatingAiAssistant() {
     </div>
   );
 }
-

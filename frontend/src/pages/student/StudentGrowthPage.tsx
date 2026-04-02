@@ -21,7 +21,7 @@ export function StudentGrowthPage() {
     <div className="page-stack">
       <section className="hero-banner hero-banner--student">
         <div>
-          <span className="hero-banner__eyebrow">成长档案</span>
+          <span className="hero-banner__eyebrow">成长档案页</span>
           <div className="student-summary">
             {profile ? (
               <span className={`avatar-badge avatar-badge--${avatarAccent}`}>
@@ -29,15 +29,16 @@ export function StudentGrowthPage() {
               </span>
             ) : null}
             <div>
-              <h1>{profile?.nickname ?? "安全学员"} 的成长档案</h1>
+              <h1>{profile?.nickname ?? "安全学员"}的成长档案</h1>
               <p className="student-summary__meta">
-                {profile ? `${profile.avatarLabel} · ${profile.stage}` : "先完善资料后可获得更完整的成长记录。"}
+                {profile
+                  ? `${profile.avatarLabel} · ${profile.stage}`
+                  : "完善资料后会获得更完整的成长档案展示"}
               </p>
             </div>
           </div>
           <p>
-            当前处于 <strong>{growth.currentTier.title}</strong>，
-            {growth.currentTier.description}
+            当前处于 <strong>{growth.currentTier.title}</strong>，{growth.currentTier.description}
           </p>
         </div>
 
@@ -47,7 +48,7 @@ export function StudentGrowthPage() {
           <p>
             {growth.nextTier
               ? `距离 ${growth.nextTier.title} 还差 ${growth.pointsToNext} 分`
-              : "当前阶段内容已全部点亮"}
+              : "当前阶段内容已经全部点亮"}
           </p>
           <div className="growth-track">
             <span
@@ -60,9 +61,8 @@ export function StudentGrowthPage() {
 
       <section className="card-grid card-grid--two">
         <article className="surface-card growth-highlight-card">
-          <span className="section-block__eyebrow">成长阶段</span>
+          <span className="section-block__eyebrow">成长结果</span>
           <h2>{growth.currentTier.title}</h2>
-          <p>{growth.currentTier.description}</p>
           <ul className="plain-list">
             <li>当前外观：{growth.currentTier.appearance}</li>
             <li>专属场景：{growth.currentTier.scene}</li>
@@ -71,8 +71,8 @@ export function StudentGrowthPage() {
         </article>
 
         <article className="surface-card growth-highlight-card">
-          <span className="section-block__eyebrow">成长总览</span>
-          <h2>学习闭环已经留下这些变化</h2>
+          <span className="section-block__eyebrow">成长概览</span>
+          <h2>学习闭环带来的变化</h2>
           <ul className="plain-list">
             <li>累计通关：{growth.completedLevels} / 3 关</li>
             <li>累计星级：{growth.totalStars} 星</li>
@@ -82,37 +82,55 @@ export function StudentGrowthPage() {
         </article>
       </section>
 
-      <section className="card-grid card-grid--three">
-        {growth.dimensions.map((dimension) => (
-          <article key={dimension.id} className="surface-card growth-dimension-card">
-            <span className="section-block__eyebrow">{dimension.label}</span>
-            <strong>{dimension.score} / 100</strong>
-            <div className="growth-track">
-              <span
-                className="growth-track__fill growth-track__fill--warm"
-                style={{ width: `${dimension.score}%` }}
-              />
-            </div>
-            <p>{dimension.note}</p>
-          </article>
-        ))}
+      <section className="surface-card">
+        <div className="section-block__header">
+          <div>
+            <span className="section-block__eyebrow">三类成长维度</span>
+            <h2>观察力、判断力与防护力</h2>
+          </div>
+        </div>
+
+        <div className="card-grid card-grid--three">
+          {growth.dimensions.map((dimension) => (
+            <article key={dimension.id} className="surface-card growth-dimension-card">
+              <span className="section-block__eyebrow">{dimension.label}</span>
+              <strong>{dimension.score} / 100</strong>
+              <div className="growth-track">
+                <span
+                  className="growth-track__fill growth-track__fill--warm"
+                  style={{ width: `${dimension.score}%` }}
+                />
+              </div>
+              <p>{dimension.note}</p>
+            </article>
+          ))}
+        </div>
       </section>
 
-      <section className="card-grid card-grid--three">
-        {growth.unlocks.map((unlock) => (
-          <article key={unlock.label} className="surface-card unlock-card">
-            <span className="section-block__eyebrow">{unlock.label}</span>
-            <h3>{unlock.value}</h3>
-            <p>{unlock.note}</p>
-          </article>
-        ))}
+      <section className="surface-card">
+        <div className="section-block__header">
+          <div>
+            <span className="section-block__eyebrow">已解锁内容</span>
+            <h2>外观、能力与场景</h2>
+          </div>
+        </div>
+
+        <div className="card-grid card-grid--three">
+          {growth.unlocks.map((unlock) => (
+            <article key={unlock.label} className="surface-card unlock-card">
+              <span className="section-block__eyebrow">{unlock.label}</span>
+              <h3>{unlock.value}</h3>
+              <p>{unlock.note}</p>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="surface-card">
         <div className="section-block__header">
           <div>
             <span className="section-block__eyebrow">成长轨迹</span>
-            <h2>把资料、闯关、考试和成长记录在同一条线上</h2>
+            <h2>把关卡、考试和成长变化串在一条线上</h2>
           </div>
         </div>
 
@@ -139,7 +157,7 @@ export function StudentGrowthPage() {
       <div className="button-row">
         <button
           type="button"
-          className="ghost-button"
+          className="primary-button"
           onClick={() => navigate("/student/theme/road-safety")}
         >
           返回主题页

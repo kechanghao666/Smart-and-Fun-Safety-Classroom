@@ -1,9 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  studentAvatarOptions,
-  studentStageOptions,
-} from "../../data/mockData";
+import { studentAvatarOptions, studentStageOptions } from "../../data/mockData";
 import { useAppState } from "../../state/AppState";
 import type { StudentStage } from "../../types";
 import {
@@ -20,6 +17,7 @@ export function StudentProfileSetupPage() {
   const [avatarId, setAvatarId] = useState(state.studentProfile?.avatarId ?? "");
   const [stage, setStage] = useState<StudentStage | "">(state.studentProfile?.stage ?? "");
   const [error, setError] = useState("");
+
   const selectedAvatar =
     studentAvatarOptions.find((item) => item.id === avatarId) ?? undefined;
   const nicknameSuggestions = buildNicknameSuggestions(state.sessionAccount);
@@ -34,12 +32,11 @@ export function StudentProfileSetupPage() {
   const canSubmit = Boolean(nickname.trim() && selectedAvatar && stage);
   const profileAccent = selectedAvatar?.accent ?? "sky";
   const previewTags = useMemo(
-    () =>
-      [
-        nickname.trim() || "待填写昵称",
-        selectedAvatar?.label ?? "待选择头像",
-        stage || "待选择学段",
-      ],
+    () => [
+      nickname.trim() || "待填写昵称",
+      selectedAvatar?.label ?? "待选择头像",
+      stage || "待选择学段",
+    ],
     [nickname, selectedAvatar?.label, stage],
   );
 
@@ -51,7 +48,7 @@ export function StudentProfileSetupPage() {
             <span className="hero-panel__eyebrow">首次登录信息补充</span>
             <h1>先完善你的学习档案</h1>
             <p>
-              请先填写昵称、选择头像和学段。完成后系统会将资料与你的学习记录、考试结果和成长激励关联起来。
+              请先填写昵称、选择头像和学段。完成后系统会把资料和学习记录、考试结果、成长激励关联起来。
             </p>
             <div className="hero-panel__tags">
               <span>昵称</span>
@@ -66,16 +63,16 @@ export function StudentProfileSetupPage() {
             <div>
               <span className="section-block__eyebrow">基础信息</span>
               <h2>保存并进入首页</h2>
-              <p>首版只保留最基础的信息项，确保页面展示和后续成长激励都能正确关联。</p>
+              <p>首版只保留最基础的档案信息，确保首页、记录页和成长页都能正确展示。</p>
             </div>
 
             <form
               className="profile-form"
               onSubmit={(event) => {
                 event.preventDefault();
-                const selectedAvatar = studentAvatarOptions.find((item) => item.id === avatarId);
+                const matchedAvatar = studentAvatarOptions.find((item) => item.id === avatarId);
 
-                if (!nickname.trim() || !selectedAvatar || !stage) {
+                if (!nickname.trim() || !matchedAvatar || !stage) {
                   setError("请完整填写昵称、头像和学段后再进入首页。");
                   return;
                 }
@@ -83,8 +80,8 @@ export function StudentProfileSetupPage() {
                 setError("");
                 saveStudentProfile({
                   nickname: nickname.trim(),
-                  avatarId: selectedAvatar.id,
-                  avatarLabel: selectedAvatar.label,
+                  avatarId: matchedAvatar.id,
+                  avatarLabel: matchedAvatar.label,
                   stage,
                 });
                 navigate("/student/home");
@@ -208,9 +205,9 @@ export function StudentProfileSetupPage() {
 
             <article className="surface-card onboarding-card onboarding-card--soft">
               <span className="section-block__eyebrow">填写说明</span>
-              <h3>为什么要先补充资料？</h3>
+              <h3>为什么要先补充资料</h3>
               <ul className="plain-list">
-                <li>昵称和头像会用于首页欢迎区、学习记录和成长反馈展示。</li>
+                <li>昵称和头像会用于首页欢迎区、学习记录和成长档案展示。</li>
                 <li>学段信息会为后续内容适配和教师查看提供基础参考。</li>
                 <li>当前步骤完成后，你将直接进入学生首页并开始主题学习。</li>
               </ul>
