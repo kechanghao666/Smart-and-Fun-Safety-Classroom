@@ -6,6 +6,7 @@ import { NotFoundPage } from "./pages/NotFoundPage";
 import { AdminDashboardPage } from "./pages/admin/AdminDashboardPage";
 import { StudentAiReportPage } from "./pages/student/StudentAiReportPage";
 import { StudentExamPage } from "./pages/student/StudentExamPage";
+import { StudentGrowthPage } from "./pages/student/StudentGrowthPage";
 import { StudentHomePage } from "./pages/student/StudentHomePage";
 import { StudentLevelPage } from "./pages/student/StudentLevelPage";
 import { StudentLevelResultPage } from "./pages/student/StudentLevelResultPage";
@@ -143,6 +144,7 @@ function AppRoutes() {
             element={<StudentLevelResultPage />}
           />
           <Route path="theme/road-safety/exam" element={<StudentExamPage />} />
+          <Route path="growth" element={<StudentGrowthPage />} />
           <Route path="records" element={<StudentRecordPage />} />
           <Route path="ai-report" element={<StudentAiReportPage />} />
         </Route>

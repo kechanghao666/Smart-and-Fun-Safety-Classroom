@@ -9,6 +9,7 @@
   - `/student/theme/road-safety/level/:levelId`
   - `/student/theme/road-safety/level/:levelId/result`
   - `/student/theme/road-safety/exam`
+  - `/student/growth`
   - `/student/records`
   - `/student/ai-report`
 - 教师端
@@ -95,6 +96,7 @@ interface AppState {
 - 考试提交后切为 `completed`
 - 考试页采用题号导航 + 上一题/下一题 + 统一提交结构
 - 考试提交后在同页展示错题、正确答案、解析和建议回看关卡
+- 成长档案页 `/student/growth` 基于积分、关卡结算、考试成绩和徽章派生成长阶段展示
 - 学生端任意页面切换时更新 `lastVisitedRoute`
 
 ## 协作注意事项

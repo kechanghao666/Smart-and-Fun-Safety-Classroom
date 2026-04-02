@@ -13,6 +13,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   student: [
     { to: "/student/home", label: "学生首页" },
     { to: "/student/theme/road-safety", label: "主题详情" },
+    { to: "/student/growth", label: "成长档案" },
     { to: "/student/records", label: "学习记录" },
     { to: "/student/ai-report", label: "AI 结果卡片" },
   ],
@@ -121,4 +122,3 @@ export function AppShell({
     </div>
   );
 }
-

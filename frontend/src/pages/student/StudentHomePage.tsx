@@ -1,17 +1,20 @@
 import { useNavigate } from "react-router-dom";
+import { StatusBadge } from "../../components/StatusBadge";
 import { themeCards } from "../../data/mockData";
 import { useAppState } from "../../state/AppState";
-import { StatusBadge } from "../../components/StatusBadge";
+import { buildGrowthSnapshot } from "../../utils/studentGrowth";
+
+const avatarAccentMap = {
+  "sunny-guard": "sky",
+  "smart-scout": "mint",
+  "brave-captain": "orange",
+} as const;
 
 export function StudentHomePage() {
   const navigate = useNavigate();
   const { state } = useAppState();
   const profile = state.studentProfile;
-  const avatarAccentMap = {
-    "sunny-guard": "sky",
-    "smart-scout": "mint",
-    "brave-captain": "orange",
-  } as const;
+  const growth = buildGrowthSnapshot(state);
   const avatarAccent = profile
     ? avatarAccentMap[profile.avatarId as keyof typeof avatarAccentMap] ?? "sky"
     : "sky";
@@ -41,7 +44,9 @@ export function StudentHomePage() {
             </div>
           </div>
           <p>
-            你已经完成 {completedLevels} / 3 关，当前主题考试状态为
+            你已经完成 {completedLevels} / 3 关，当前成长阶段为
+            <strong> {growth.currentTier.title}</strong>，
+            主题考试状态为
             <strong>
               {" "}
               {state.progress.exam.status === "completed"
@@ -69,6 +74,13 @@ export function StudentHomePage() {
           >
             查看主题进度
           </button>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => navigate("/student/growth")}
+          >
+            查看成长档案
+          </button>
         </div>
       </section>
 
@@ -82,14 +94,18 @@ export function StudentHomePage() {
           </p>
         </article>
         <article className="surface-card stat-card">
-          <span>下一个任务</span>
+          <span>下一项任务</span>
           <strong>{nextLevel?.title ?? "已完成全部闯关"}</strong>
-          <p>学习路径会自动记录，重新进入时可直接续学。</p>
+          <p>{growth.nextFocus}</p>
         </article>
         <article className="surface-card stat-card">
-          <span>已获得徽章</span>
-          <strong>{state.progress.badges.length} 枚</strong>
-          <p>{state.progress.badges.join(" / ")}</p>
+          <span>成长阶段</span>
+          <strong>{growth.currentTier.title}</strong>
+          <p>
+            {growth.nextTier
+              ? `再获得 ${growth.pointsToNext} 分可进入 ${growth.nextTier.title}`
+              : "当前阶段内容已全部解锁"}
+          </p>
         </article>
       </section>
 
@@ -152,16 +168,16 @@ export function StudentHomePage() {
         </article>
 
         <article className="surface-card">
-          <span className="section-block__eyebrow">AI 节点提示</span>
-          <h3>本节课的 AI 助手会在这些时机出现</h3>
+          <span className="section-block__eyebrow">成长提醒</span>
+          <h3>这次学习已经留下了这些成长变化</h3>
           <ul className="plain-list">
-            <li>进入首页和进入主题时给出欢迎引导</li>
-            <li>长时间停留或连续出错时给出轻量提示</li>
-            <li>关卡结算、考试完成后生成结果卡片</li>
+            <li>累计星级：{growth.totalStars} 星</li>
+            <li>当前外观：{growth.currentTier.appearance}</li>
+            <li>专属场景：{growth.currentTier.scene}</li>
+            <li>建议下一步：{growth.nextFocus}</li>
           </ul>
         </article>
       </section>
     </div>
   );
 }
-
