@@ -1,6 +1,9 @@
+import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { StatusBadge } from "../../components/StatusBadge";
+import type { LevelId } from "../../types";
 import { useAppState } from "../../state/AppState";
+import { useStudentAiScene } from "../../utils/useStudentAiScene";
 
 export function StudentThemePage() {
   const navigate = useNavigate();
@@ -19,6 +22,33 @@ export function StudentThemePage() {
         : "flow-step";
   const flowResultClass =
     state.progress.exam.status === "completed" ? "flow-step flow-step--done" : "flow-step";
+  const nextLevel = state.progress.levels.find(
+    (level) => level.status === "available" || level.status === "in_progress",
+  );
+  const themeAiPrompt = useMemo(
+    () =>
+      `我正在学习道路安全教育主题，目前已经完成 ${completedLevels} / 3 关，考试${examUnlocked ? "已解锁或已完成" : "还未解锁"}。请给我一句学习前提醒，告诉我现在应该先做哪一步，并提醒一个最重要的安全注意点。`,
+    [completedLevels, examUnlocked],
+  );
+  const {
+    isLoading: isHintLoading,
+    message: hintMessage,
+    notice: hintNotice,
+    refresh: refreshHint,
+  } = useStudentAiScene({
+    prompt: themeAiPrompt,
+    scene: "hint",
+    levelId: nextLevel?.id as LevelId | undefined,
+    fallbackText:
+      "先看清楚当前该完成哪一关，再带着“观察环境、判断风险、做出安全选择”的顺序进入学习。",
+  });
+  const nextActionLabel = nextLevel
+    ? `优先进入 ${nextLevel.title}`
+    : state.progress.exam.status === "available"
+      ? "优先完成主题考试"
+      : state.progress.exam.status === "completed"
+        ? "优先查看结果反馈和错题回看"
+        : "先回到主题流程继续推进";
 
   return (
     <div className="page-stack">
@@ -79,6 +109,69 @@ export function StudentThemePage() {
           <div className={flowExamClass}>主题考试</div>
           <div className={flowResultClass}>结果反馈</div>
         </div>
+      </section>
+
+      <section className="card-grid card-grid--two">
+        <article className="surface-card ai-insight-card">
+          <span className="section-block__eyebrow">AI 学习提醒</span>
+          <div className="row-between">
+            <h2>进入主题前先看一眼</h2>
+            <span className="surface-tag">
+              {isHintLoading ? "生成中" : state.authSource === "api" ? "AI 已联调" : "本地提示"}
+            </span>
+          </div>
+          <p className="ai-insight-card__message">
+            {isHintLoading ? "AI 正在整理本轮主题提醒..." : hintMessage}
+          </p>
+          {hintNotice ? <p className="inline-note">{hintNotice}</p> : null}
+          <div className="button-row">
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => {
+                void refreshHint();
+              }}
+              disabled={isHintLoading}
+            >
+              {isHintLoading ? "生成中..." : "刷新提醒"}
+            </button>
+            <Link className="ghost-button link-button" to="/student/ai">
+              继续问 AI
+            </Link>
+          </div>
+        </article>
+
+        <article className="surface-card theme-overview-card">
+          <span className="section-block__eyebrow">当前优先动作</span>
+          <h2>现在最适合先做什么</h2>
+          <ul className="plain-list">
+            <li>{nextActionLabel}</li>
+            <li>最近学习位置：{state.progress.lastVisitedRoute}</li>
+            <li>完成三关后会自动解锁考试，考试后进入结果反馈。</li>
+          </ul>
+          <div className="button-row">
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() =>
+                nextLevel
+                  ? navigate(`/student/theme/road-safety/level/${nextLevel.id}`)
+                  : state.progress.exam.status === "available"
+                    ? navigate("/student/theme/road-safety/exam")
+                    : navigate("/student/ai-report")
+              }
+            >
+              前往当前重点
+            </button>
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => navigate("/student/records")}
+            >
+              查看学习记录
+            </button>
+          </div>
+        </article>
       </section>
 
       <section className="card-grid card-grid--three">

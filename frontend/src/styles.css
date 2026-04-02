@@ -709,6 +709,21 @@ button {
   gap: 12px;
 }
 
+.ai-insight-card {
+  display: grid;
+  gap: 16px;
+  background:
+    linear-gradient(180deg, rgba(38, 139, 210, 0.1), rgba(255, 255, 255, 0.86)),
+    var(--surface);
+}
+
+.ai-insight-card__message {
+  white-space: pre-line;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #163754;
+}
+
 .exam-card--locked {
   background:
     linear-gradient(180deg, rgba(94, 114, 135, 0.08), rgba(255, 255, 255, 0.86)),

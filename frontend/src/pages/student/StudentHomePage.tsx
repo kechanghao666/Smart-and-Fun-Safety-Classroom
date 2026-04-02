@@ -1,7 +1,10 @@
-import { useNavigate } from "react-router-dom";
+import { useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { StatusBadge } from "../../components/StatusBadge";
 import { themeCards } from "../../data/mockData";
 import { useAppState } from "../../state/AppState";
+import type { LevelId } from "../../types";
+import { useStudentAiScene } from "../../utils/useStudentAiScene";
 import { buildGrowthSnapshot } from "../../utils/studentGrowth";
 
 const avatarAccentMap = {
@@ -24,6 +27,25 @@ export function StudentHomePage() {
   const nextLevel = state.progress.levels.find(
     (level) => level.status === "available" || level.status === "in_progress",
   );
+  const examStatusLabel =
+    state.progress.exam.status === "completed"
+      ? "已完成"
+      : state.progress.exam.status === "available"
+        ? "已解锁"
+        : "未解锁";
+  const homeAiPrompt = useMemo(
+    () =>
+      `请用儿童友好的语气欢迎我继续学习道路安全。我目前已经完成 ${completedLevels} / 3 关，考试状态是${examStatusLabel}，请给我一句欢迎语和今天最适合先做的学习建议。`,
+    [completedLevels, examStatusLabel],
+  );
+  const { isLoading: isGreetingLoading, message: greetingMessage, notice: greetingNotice, refresh: refreshGreeting } =
+    useStudentAiScene({
+      prompt: homeAiPrompt,
+      scene: "welcome",
+      levelId: nextLevel?.id as LevelId | undefined,
+      fallbackText:
+        "欢迎回来，先回到你上次停留的位置，继续把道路安全这节课学完整。",
+    });
 
   return (
     <div className="page-stack">
@@ -113,6 +135,63 @@ export function StudentHomePage() {
               ? `再获得 ${growth.pointsToNext} 分可进入 ${growth.nextTier.title}`
               : "当前阶段内容已全部解锁"}
           </p>
+        </article>
+      </section>
+
+      <section className="card-grid card-grid--two">
+        <article className="surface-card ai-insight-card">
+          <span className="section-block__eyebrow">AI 欢迎建议</span>
+          <div className="row-between">
+            <h2>开始学习前，先听一句提醒</h2>
+            <span className="surface-tag">
+              {isGreetingLoading ? "生成中" : state.authSource === "api" ? "AI 已联调" : "本地提示"}
+            </span>
+          </div>
+          <p className="ai-insight-card__message">
+            {isGreetingLoading ? "AI 正在整理今天的学习建议..." : greetingMessage}
+          </p>
+          {greetingNotice ? <p className="inline-note">{greetingNotice}</p> : null}
+          <div className="button-row">
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => {
+                void refreshGreeting();
+              }}
+              disabled={isGreetingLoading}
+            >
+              {isGreetingLoading ? "生成中..." : "刷新建议"}
+            </button>
+            <Link className="ghost-button link-button" to="/student/ai">
+              去 AI 问答
+            </Link>
+          </div>
+        </article>
+
+        <article className="surface-card">
+          <span className="section-block__eyebrow">今日学习路线</span>
+          <h2>把“继续学什么”说清楚</h2>
+          <ul className="plain-list">
+            <li>当前建议：{growth.nextFocus}</li>
+            <li>优先入口：{nextLevel?.title ?? (state.progress.exam.status === "available" ? "主题考试" : "查看结果卡片")}</li>
+            <li>考试状态：{examStatusLabel}</li>
+          </ul>
+          <div className="button-row">
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => navigate(state.progress.lastVisitedRoute)}
+            >
+              继续当前学习
+            </button>
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => navigate("/student/theme/road-safety")}
+            >
+              查看主题路线
+            </button>
+          </div>
         </article>
       </section>
 
