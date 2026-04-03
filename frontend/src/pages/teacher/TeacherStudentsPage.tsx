@@ -9,6 +9,8 @@ import {
   getTeacherAttentionLevel,
 } from "../../utils/teacherInsights";
 
+type CompletionFilter = "all" | "completed" | "incomplete";
+
 export function TeacherStudentsPage() {
   const { state } = useAppState();
   const canUseApi = state.authSource === "api" && Boolean(state.authToken);
@@ -21,37 +23,46 @@ export function TeacherStudentsPage() {
   const [query, setQuery] = useState("");
   const [classFilter, setClassFilter] = useState("all");
   const [examFilter, setExamFilter] = useState("all");
+  const [completionFilter, setCompletionFilter] = useState<CompletionFilter>("all");
 
   const classOptions = Array.from(new Set(data.map((student) => student.className)));
   const filteredStudents = useMemo(
     () =>
       data.filter((student) => {
+        const keyword = query.trim();
         const matchesQuery =
-          query.trim().length === 0 ||
-          student.name.includes(query.trim()) ||
-          student.weakSpot.includes(query.trim());
+          keyword.length === 0 ||
+          student.name.includes(keyword) ||
+          student.weakSpot.includes(keyword);
         const matchesClass = classFilter === "all" || student.className === classFilter;
         const matchesExam =
           examFilter === "all" ||
           (examFilter === "completed" && student.score !== null) ||
           (examFilter === "pending" && student.score === null);
+        const matchesCompletion =
+          completionFilter === "all" ||
+          (completionFilter === "completed" && student.completedLevels === 3) ||
+          (completionFilter === "incomplete" && student.completedLevels < 3);
 
-        return matchesQuery && matchesClass && matchesExam;
+        return matchesQuery && matchesClass && matchesExam && matchesCompletion;
       }),
-    [classFilter, data, examFilter, query],
+    [classFilter, completionFilter, data, examFilter, query],
   );
   const urgentCount = filteredStudents.filter(
     (student) => getTeacherAttentionLevel(student) === "urgent",
   ).length;
   const pendingExamCount = filteredStudents.filter((student) => student.score === null).length;
+  const fullyCompletedCount = filteredStudents.filter(
+    (student) => student.completedLevels === 3,
+  ).length;
 
   return (
     <div className="page-stack">
       <section className="hero-banner hero-banner--teacher">
         <div>
           <span className="hero-banner__eyebrow">班级学生列表</span>
-          <h1>按班级、考试状态和风险点快速筛选学生</h1>
-          <p>列表页先承担教师的快速检索，再通过学生详情页展开更完整的学习与成长状态。</p>
+          <h1>按班级、完成状态、考试状态和风险点快速筛选学生</h1>
+          <p>列表页先承担教师的快速检索，再通过学生详情页展开完整的学习与成长状态。</p>
         </div>
       </section>
 
@@ -68,21 +79,21 @@ export function TeacherStudentsPage() {
         <article className="surface-card stat-card">
           <span>当前筛出</span>
           <strong>{filteredStudents.length}</strong>
-          <p>根据搜索词、班级与考试状态综合筛选后的学生数量。</p>
+          <p>根据搜索词、班级、完成状态和考试状态综合筛选后的学生数量。</p>
+        </article>
+        <article className="surface-card stat-card">
+          <span>三关已完成</span>
+          <strong>{fullyCompletedCount}</strong>
+          <p>用于判断学生是否已经完成主题主学习流程。</p>
         </article>
         <article className="surface-card stat-card">
           <span>需立即跟进</span>
           <strong>{urgentCount}</strong>
           <p>优先查看高风险学生，缩短发现问题到跟进的路径。</p>
         </article>
-        <article className="surface-card stat-card">
-          <span>未完成考试</span>
-          <strong>{pendingExamCount}</strong>
-          <p>提醒尽快形成完整的“三关 + 考试”学习闭环。</p>
-        </article>
       </section>
 
-      <section className="surface-card filter-bar">
+      <section className="surface-card filter-bar filter-bar--teacher">
         <label className="form-field">
           <span>搜索学生</span>
           <input
@@ -105,6 +116,18 @@ export function TeacherStudentsPage() {
         </label>
 
         <label className="form-field">
+          <span>完成状态</span>
+          <select
+            value={completionFilter}
+            onChange={(event) => setCompletionFilter(event.target.value as CompletionFilter)}
+          >
+            <option value="all">全部状态</option>
+            <option value="completed">已完成三关</option>
+            <option value="incomplete">未完成三关</option>
+          </select>
+        </label>
+
+        <label className="form-field">
           <span>考试状态</span>
           <select value={examFilter} onChange={(event) => setExamFilter(event.target.value)}>
             <option value="all">全部状态</option>
@@ -112,6 +135,46 @@ export function TeacherStudentsPage() {
             <option value="pending">未完成考试</option>
           </select>
         </label>
+      </section>
+
+      <section className="card-grid card-grid--two">
+        <article className="surface-card admin-preview-card">
+          <span className="section-block__eyebrow">筛选反馈</span>
+          <h2>当前教师筛选条件</h2>
+          <div className="chip-row">
+            <span className="surface-tag">
+              关键字：{query.trim().length > 0 ? query.trim() : "未设置"}
+            </span>
+            <span className="surface-tag">班级：{classFilter === "all" ? "全部班级" : classFilter}</span>
+            <span className="surface-tag">
+              完成状态：
+              {completionFilter === "all"
+                ? "全部状态"
+                : completionFilter === "completed"
+                  ? "已完成三关"
+                  : "未完成三关"}
+            </span>
+            <span className="surface-tag">
+              考试状态：
+              {examFilter === "all"
+                ? "全部状态"
+                : examFilter === "completed"
+                  ? "已完成考试"
+                  : "未完成考试"}
+            </span>
+          </div>
+          <p>当前未完成考试学生 {pendingExamCount} 人，建议优先补齐“三关 + 考试”的闭环。</p>
+        </article>
+
+        <article className="surface-card admin-preview-card">
+          <span className="section-block__eyebrow">跟进建议</span>
+          <h2>筛选后最值得先处理什么</h2>
+          <ul className="plain-list">
+            <li>优先打开高风险学生详情页，查看错题和成长状态。</li>
+            <li>对未完成三关的学生，先追踪停留在哪一关。</li>
+            <li>对已完成三关但未考试的学生，优先提醒收口。</li>
+          </ul>
+        </article>
       </section>
 
       <section className="surface-card">
@@ -122,7 +185,7 @@ export function TeacherStudentsPage() {
                 <tr>
                   <th>学生</th>
                   <th>班级</th>
-                  <th>学习闭环</th>
+                  <th>完成状态</th>
                   <th>考试状态</th>
                   <th>跟进等级</th>
                   <th>最近学习</th>
@@ -142,7 +205,7 @@ export function TeacherStudentsPage() {
                         </div>
                       </td>
                       <td>{student.className}</td>
-                      <td>{student.completedLevels} / 3</td>
+                      <td>{student.completedLevels === 3 ? "已完成三关" : `${student.completedLevels} / 3`}</td>
                       <td>
                         <div className="data-table__cell-stack">
                           <span>{student.examStatus}</span>

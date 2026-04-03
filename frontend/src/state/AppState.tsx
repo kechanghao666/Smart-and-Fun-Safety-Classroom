@@ -41,6 +41,7 @@ function createInitialProgress(): AppState["progress"] {
       totalQuestions: examQuestions.length,
       score: null,
       wrongQuestionIds: [],
+      studentAnswers: {},
     },
   };
 }
@@ -90,6 +91,10 @@ function loadInitialState(): AppState {
         exam: {
           ...fallback.progress.exam,
           ...parsed.progress?.exam,
+          studentAnswers: {
+            ...fallback.progress.exam.studentAnswers,
+            ...parsed.progress?.exam?.studentAnswers,
+          },
         },
       },
     };
@@ -112,7 +117,12 @@ type AppAction =
   | { type: "setLastVisitedRoute"; route: string }
   | { type: "markLevelInProgress"; levelId: LevelId }
   | { type: "completeLevel"; levelId: LevelId; result?: LevelResult }
-  | { type: "submitExam"; score: number; wrongQuestionIds: string[] }
+  | {
+      type: "submitExam";
+      score: number;
+      wrongQuestionIds: string[];
+      studentAnswers: Record<string, number>;
+    }
   | { type: "resetDemo" };
 
 function reducer(state: AppState, action: AppAction): AppState {
@@ -148,7 +158,16 @@ function reducer(state: AppState, action: AppAction): AppState {
   if (action.type === "replaceProgress") {
     return {
       ...state,
-      progress: action.progress,
+      progress: {
+        ...action.progress,
+        exam: {
+          ...action.progress.exam,
+          studentAnswers:
+            action.progress.exam.studentAnswers ??
+            state.progress.exam.studentAnswers ??
+            {},
+        },
+      },
     };
   }
 
@@ -296,6 +315,7 @@ function reducer(state: AppState, action: AppAction): AppState {
           status: "completed",
           score: action.score,
           wrongQuestionIds: action.wrongQuestionIds,
+          studentAnswers: action.studentAnswers,
         },
       },
     };
@@ -328,7 +348,11 @@ interface AppStateContextValue {
   setLastVisitedRoute: (route: string) => void;
   markLevelInProgress: (levelId: LevelId) => void;
   completeLevel: (levelId: LevelId, result?: LevelResult) => void;
-  submitExam: (score: number, wrongQuestionIds: string[]) => void;
+  submitExam: (
+    score: number,
+    wrongQuestionIds: string[],
+    studentAnswers: Record<string, number>,
+  ) => void;
   resetDemo: () => void;
 }
 
@@ -381,8 +405,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     [],
   );
   const submitExam = useCallback(
-    (score: number, wrongQuestionIds: string[]) =>
-      dispatch({ type: "submitExam", score, wrongQuestionIds }),
+    (
+      score: number,
+      wrongQuestionIds: string[],
+      studentAnswers: Record<string, number>,
+    ) =>
+      dispatch({ type: "submitExam", score, wrongQuestionIds, studentAnswers }),
     [],
   );
   const resetDemo = useCallback(() => dispatch({ type: "resetDemo" }), []);

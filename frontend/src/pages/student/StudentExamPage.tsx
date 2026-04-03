@@ -82,7 +82,13 @@ export function StudentExamPage() {
           })),
         );
 
-        replaceProgress(progress);
+        replaceProgress({
+          ...progress,
+          exam: {
+            ...progress.exam,
+            studentAnswers: answers,
+          },
+        });
         navigate("/student/theme/road-safety/exam/result");
       } catch (error) {
         setSubmitError(
@@ -97,7 +103,7 @@ export function StudentExamPage() {
       return;
     }
 
-    submitExam(score, wrongQuestionIds);
+    submitExam(score, wrongQuestionIds, answers);
     navigate("/student/theme/road-safety/exam/result");
   }
 

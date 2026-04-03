@@ -1690,3 +1690,394 @@ button {
     width: 100%;
   }
 }
+
+.hero-banner__actions--stacked {
+  display: grid;
+  gap: 12px;
+  min-width: 260px;
+}
+
+.hero-select {
+  display: grid;
+  gap: 8px;
+  min-width: 220px;
+  font-weight: 700;
+  color: #214764;
+}
+
+.hero-select select,
+.hero-select input,
+.overlay-modal input,
+.overlay-modal textarea,
+.editor-panel input,
+.editor-panel textarea {
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text);
+}
+
+.overlay-modal textarea,
+.editor-panel textarea {
+  resize: vertical;
+}
+
+.level-status-bar,
+.route-map-panel,
+.route-event-card,
+.guardian-scene-card,
+.guardian-inventory-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.level-status-bar {
+  grid-template-columns: 1.4fr 1fr;
+  align-items: center;
+}
+
+.level-status-bar__meta h1 {
+  margin: 8px 0 10px;
+}
+
+.level-status-bar__summary {
+  display: grid;
+  gap: 16px;
+}
+
+.level-status-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.star-preview {
+  display: flex;
+  gap: 10px;
+  font-size: 20px;
+}
+
+.star-preview__item {
+  color: rgba(20, 50, 74, 0.2);
+}
+
+.star-preview__item--on {
+  color: #f4a62a;
+}
+
+.level-one-layout,
+.class-management-layout {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+}
+
+.level-task-panel,
+.level-scene-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.task-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.task-checklist__item {
+  display: grid;
+  gap: 6px;
+  border: 1px solid rgba(20, 50, 74, 0.1);
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.task-checklist__item--done {
+  border-color: rgba(24, 160, 111, 0.26);
+  background: rgba(24, 160, 111, 0.08);
+}
+
+.street-scene {
+  position: relative;
+  min-height: 420px;
+  overflow: hidden;
+  border-radius: 28px;
+  border: 1px solid rgba(20, 50, 74, 0.08);
+  background: linear-gradient(180deg, #cfeaff 0%, #e8f8ff 42%, #d9ece0 42%, #c9d7cd 100%);
+}
+
+.street-scene__sky {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 48%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent);
+}
+
+.street-scene__building {
+  position: absolute;
+  bottom: 48%;
+  width: 24%;
+  height: 28%;
+  border-radius: 18px 18px 0 0;
+  background: rgba(31, 93, 145, 0.14);
+}
+
+.street-scene__building--left {
+  left: 6%;
+}
+
+.street-scene__building--right {
+  right: 7%;
+}
+
+.street-scene__road {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48%;
+  background:
+    linear-gradient(180deg, rgba(61, 77, 91, 0.24) 0%, rgba(61, 77, 91, 0.7) 100%);
+}
+
+.street-scene__crosswalk {
+  position: absolute;
+  left: 16%;
+  right: 48%;
+  bottom: 10%;
+  height: 18%;
+  border-radius: 16px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.9) 0 12px,
+      rgba(255, 255, 255, 0.12) 12px 24px
+    );
+}
+
+.scene-hotspot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #1b567f;
+  border: 1px solid rgba(38, 139, 210, 0.28);
+  box-shadow: 0 10px 24px rgba(38, 139, 210, 0.18);
+}
+
+.scene-hotspot--done {
+  background: rgba(24, 160, 111, 0.14);
+  border-color: rgba(24, 160, 111, 0.32);
+  color: var(--green-deep);
+}
+
+.inline-tip {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.route-map {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.route-node {
+  display: grid;
+  gap: 12px;
+  border-radius: 24px;
+  padding: 18px;
+  border: 1px solid rgba(20, 50, 74, 0.1);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.route-node--current {
+  border-color: rgba(38, 139, 210, 0.32);
+  background: rgba(38, 139, 210, 0.08);
+}
+
+.route-node--done {
+  border-color: rgba(24, 160, 111, 0.32);
+  background: rgba(24, 160, 111, 0.08);
+}
+
+.route-node--risk {
+  border-color: rgba(240, 147, 43, 0.32);
+  background: rgba(240, 147, 43, 0.1);
+}
+
+.route-node__circle {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(20, 50, 74, 0.08);
+  font-weight: 700;
+}
+
+.route-node__content {
+  display: grid;
+  gap: 6px;
+}
+
+.guardian-step-strip {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.guardian-step {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(20, 50, 74, 0.1);
+}
+
+.guardian-step--active {
+  border-color: rgba(38, 139, 210, 0.32);
+  background: rgba(38, 139, 210, 0.08);
+}
+
+.guardian-step--done {
+  border-color: rgba(24, 160, 111, 0.32);
+  background: rgba(24, 160, 111, 0.08);
+}
+
+.guardian-scene-stage {
+  display: grid;
+  gap: 16px;
+  border-radius: 24px;
+  padding: 24px;
+  background: linear-gradient(160deg, rgba(38, 139, 210, 0.08), rgba(24, 160, 111, 0.08));
+}
+
+.guardian-drop-zone {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  border: 2px dashed rgba(38, 139, 210, 0.28);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 20px;
+}
+
+.guardian-drop-zone--ready {
+  border-color: rgba(240, 147, 43, 0.4);
+  background: rgba(240, 147, 43, 0.08);
+}
+
+.guardian-drop-zone--done {
+  border-color: rgba(24, 160, 111, 0.4);
+  background: rgba(24, 160, 111, 0.08);
+}
+
+.guardian-drop-zone__result {
+  display: grid;
+  gap: 10px;
+}
+
+.guardian-inventory {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.guardian-tool-card {
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  border-radius: 20px;
+  padding: 18px;
+  border: 1px solid rgba(20, 50, 74, 0.12);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.guardian-tool-card--dragging {
+  border-color: rgba(38, 139, 210, 0.35);
+  background: rgba(38, 139, 210, 0.08);
+}
+
+.guardian-tool-card--done {
+  border-color: rgba(24, 160, 111, 0.35);
+  background: rgba(24, 160, 111, 0.08);
+}
+
+.overlay-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(9, 25, 39, 0.38);
+  backdrop-filter: blur(8px);
+}
+
+.overlay-modal {
+  width: min(560px, calc(100vw - 32px));
+  display: grid;
+  gap: 18px;
+}
+
+.danger-button,
+.table-action-button--danger {
+  background: rgba(214, 66, 66, 0.1);
+  color: #b53d3d;
+}
+
+.class-management-layout .editor-panel,
+.class-management-layout .admin-preview-card {
+  display: grid;
+  gap: 18px;
+}
+
+.management-list-card__meta {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+}
+
+.filter-bar--teacher {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.data-table__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.table-action-button {
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  background: rgba(20, 50, 74, 0.08);
+  color: #214764;
+}
+
+.table-action-button--safe {
+  background: rgba(24, 160, 111, 0.1);
+  color: var(--green-deep);
+}
+
+@media (max-width: 1100px) {
+  .level-status-bar,
+  .level-one-layout,
+  .class-management-layout,
+  .route-map,
+  .guardian-step-strip,
+  .guardian-inventory,
+  .filter-bar--teacher {
+    grid-template-columns: 1fr;
+  }
+}

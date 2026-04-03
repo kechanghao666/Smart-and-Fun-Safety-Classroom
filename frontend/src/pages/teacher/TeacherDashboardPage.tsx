@@ -1,8 +1,10 @@
+import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { teacherClassSummaries, teacherStudents } from "../../data/mockData";
 import { fetchTeacherDashboard } from "../../services/teacher";
 import { useAppState } from "../../state/AppState";
 import { useApiResource } from "../../utils/useApiResource";
+import { usePersistedState } from "../../utils/usePersistedState";
 import {
   buildTeacherDashboardActions,
   getTeacherAttentionLabel,
@@ -23,10 +25,31 @@ export function TeacherDashboardPage() {
     fetcher: () => fetchTeacherDashboard(state.authToken ?? ""),
     dependencies: [state.authToken],
   });
+  const [selectedClassId, setSelectedClassId] = usePersistedState<string>(
+    "teacher-dashboard-current-class",
+    "all",
+  );
 
-  const completedAll = data.students.filter((student) => student.completedLevels === 3).length;
-  const examCompleted = data.students.filter((student) => student.score !== null).length;
-  const urgentCount = data.students.filter(
+  useEffect(() => {
+    if (
+      selectedClassId !== "all" &&
+      !data.classSummaries.some((classroom) => classroom.id === selectedClassId)
+    ) {
+      setSelectedClassId("all");
+    }
+  }, [data.classSummaries, selectedClassId, setSelectedClassId]);
+
+  const selectedClass =
+    selectedClassId === "all"
+      ? null
+      : data.classSummaries.find((classroom) => classroom.id === selectedClassId) ?? null;
+  const filteredStudents = selectedClass
+    ? data.students.filter((student) => student.className === selectedClass.name)
+    : data.students;
+  const filteredClassSummaries = selectedClass ? [selectedClass] : data.classSummaries;
+  const completedAll = filteredStudents.filter((student) => student.completedLevels === 3).length;
+  const examCompleted = filteredStudents.filter((student) => student.score !== null).length;
+  const urgentCount = filteredStudents.filter(
     (student) => getTeacherAttentionLevel(student) === "urgent",
   ).length;
   const attentionWeight = {
@@ -34,7 +57,7 @@ export function TeacherDashboardPage() {
     watch: 1,
     stable: 2,
   } as const;
-  const attentionStudents = data.students
+  const attentionStudents = filteredStudents
     .slice()
     .sort((left, right) => {
       const leftLevel = getTeacherAttentionLevel(left);
@@ -42,7 +65,29 @@ export function TeacherDashboardPage() {
       return attentionWeight[leftLevel] - attentionWeight[rightLevel];
     })
     .slice(0, 4);
-  const dashboardActions = buildTeacherDashboardActions(data.students, data.classSummaries);
+  const dashboardActions = buildTeacherDashboardActions(
+    filteredStudents,
+    filteredClassSummaries,
+  );
+  const classLabel = selectedClass ? selectedClass.name : "全部班级";
+  const completedRate =
+    filteredStudents.length > 0
+      ? Math.round((completedAll / filteredStudents.length) * 100)
+      : 0;
+  const examRate =
+    filteredStudents.length > 0
+      ? Math.round((examCompleted / filteredStudents.length) * 100)
+      : 0;
+
+  const classRiskSummary = useMemo(() => {
+    if (filteredClassSummaries.length === 0) {
+      return null;
+    }
+
+    return filteredClassSummaries
+      .slice()
+      .sort((left, right) => left.completedRate - right.completedRate)[0];
+  }, [filteredClassSummaries]);
 
   return (
     <div className="page-stack">
@@ -50,15 +95,31 @@ export function TeacherDashboardPage() {
         <div>
           <span className="hero-banner__eyebrow">教师首页</span>
           <h1>班级学习总览与近期关注提醒</h1>
-          <p>优先展示班级总进度、三关完成率、考试完成率和需要马上跟进的学生。</p>
+          <p>优先展示班级学习概览、三关完成率、考试完成率和近期异常提醒。</p>
         </div>
-        <div className="hero-banner__actions">
-          <Link className="primary-button link-button" to="/teacher/students">
-            查看学生列表
-          </Link>
-          <Link className="ghost-button link-button" to="/teacher/classes">
-            查看班级概览
-          </Link>
+        <div className="hero-banner__actions hero-banner__actions--stacked">
+          <label className="hero-select">
+            <span>当前班级</span>
+            <select
+              value={selectedClassId}
+              onChange={(event) => setSelectedClassId(event.target.value)}
+            >
+              <option value="all">全部班级</option>
+              {data.classSummaries.map((classroom) => (
+                <option key={classroom.id} value={classroom.id}>
+                  {classroom.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="button-row">
+            <Link className="primary-button link-button" to="/teacher/students">
+              查看学生列表
+            </Link>
+            <Link className="ghost-button link-button" to="/teacher/classes">
+              查看班级管理
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -67,40 +128,40 @@ export function TeacherDashboardPage() {
         <p>
           {isLoading
             ? "正在同步教师端数据..."
-            : error || "教师首页已经具备真实接口读取占位，后端就绪后会自动切换。"}
+            : error || "教师首页已经具备真实接口读取占位，后端接入后会自动切换。"}
         </p>
       </article>
 
       <section className="card-grid card-grid--four">
         <article className="surface-card stat-card">
-          <span>班级人数</span>
-          <strong>{data.students.length}</strong>
-          <p>当前默认聚焦道路安全主题学习，便于教师快速查看整体推进情况。</p>
+          <span>当前查看</span>
+          <strong>{classLabel}</strong>
+          <p>用班级选择器快速切换范围，查看不同班级的学习推进情况。</p>
         </article>
         <article className="surface-card stat-card">
-          <span>三关全部完成</span>
-          <strong>{completedAll}</strong>
-          <p>可以快速判断班级是否已经完成主题学习的主链路。</p>
+          <span>三关完成率</span>
+          <strong>{completedRate}%</strong>
+          <p>帮助教师快速判断学生是否已经完成主题主链路学习。</p>
         </article>
         <article className="surface-card stat-card">
-          <span>考试完成</span>
-          <strong>{examCompleted}</strong>
-          <p>便于课后查看知识巩固情况和错题分布。</p>
+          <span>考试完成率</span>
+          <strong>{examRate}%</strong>
+          <p>用于观察学生是否已经进入考试和结果反馈阶段。</p>
         </article>
         <article className="surface-card stat-card">
           <span>需重点跟进</span>
           <strong>{urgentCount}</strong>
-          <p>优先关注未形成完整闭环或风险仍较高的学生。</p>
+          <p>优先关注未形成完整闭环或薄弱点仍较高的学生。</p>
         </article>
       </section>
 
       <section className="card-grid card-grid--two">
         <article className="surface-card">
-          <span className="section-block__eyebrow">班级完成概览</span>
-          <h2>先看哪一个班级需要更多课堂支持</h2>
-          {data.classSummaries.length > 0 ? (
+          <span className="section-block__eyebrow">班级学习概览</span>
+          <h2>先看当前班级整体推进到哪一步</h2>
+          {filteredClassSummaries.length > 0 ? (
             <div className="bar-list">
-              {data.classSummaries.map((classroom) => (
+              {filteredClassSummaries.map((classroom) => (
                 <article key={classroom.id} className="bar-item">
                   <div className="row-between">
                     <strong>{classroom.name}</strong>
@@ -172,21 +233,32 @@ export function TeacherDashboardPage() {
         </article>
       </section>
 
-      <section className="surface-card">
-        <div className="section-block__header">
-          <div>
-            <span className="section-block__eyebrow">教师建议动作</span>
-            <h2>本轮最适合立刻展开的三件事</h2>
+      <section className="card-grid card-grid--two">
+        <article className="surface-card">
+          <span className="section-block__eyebrow">风险概览</span>
+          <h2>当前最需要补课支持的班级</h2>
+          <article className="feedback-box">
+            <strong>{classRiskSummary?.name ?? "暂无班级数据"}</strong>
+            <p>
+              {classRiskSummary
+                ? `${classRiskSummary.focusLabel}，建议优先围绕三关未完成和考试未完成学生安排课后复习。`
+                : "等待后端返回班级数据后，这里会自动汇总重点支持对象。"}
+            </p>
+          </article>
+        </article>
+
+        <article className="surface-card">
+          <span className="section-block__eyebrow">教师建议动作</span>
+          <h2>本轮最适合立刻展开的三件事</h2>
+          <div className="card-grid card-grid--three">
+            {dashboardActions.map((item) => (
+              <article key={item.id} className="teacher-action-card">
+                <strong>{item.title}</strong>
+                <p>{item.detail}</p>
+              </article>
+            ))}
           </div>
-        </div>
-        <div className="card-grid card-grid--three">
-          {dashboardActions.map((item) => (
-            <article key={item.id} className="teacher-action-card">
-              <strong>{item.title}</strong>
-              <p>{item.detail}</p>
-            </article>
-          ))}
-        </div>
+        </article>
       </section>
     </div>
   );

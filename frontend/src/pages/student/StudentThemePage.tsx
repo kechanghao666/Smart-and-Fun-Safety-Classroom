@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { StatusBadge } from "../../components/StatusBadge";
 import { useAppState } from "../../state/AppState";
 import type { LevelId } from "../../types";
 import { useStudentAiScene } from "../../utils/useStudentAiScene";
+import { usePersistedState } from "../../utils/usePersistedState";
 
 export function StudentThemePage() {
   const navigate = useNavigate();
@@ -16,6 +17,12 @@ export function StudentThemePage() {
   );
   const examUnlocked = state.progress.exam.status !== "locked";
   const examCompleted = state.progress.exam.status === "completed";
+  const accountKey = state.sessionAccount ?? "student-demo";
+  const [unlockAcknowledged, setUnlockAcknowledged] = usePersistedState<
+    Record<string, boolean>
+  >("student-theme-exam-unlock", {});
+  const [showExamUnlock, setShowExamUnlock] = useState(false);
+
   const homeRoute =
     nextLevel?.status === "completed" && state.progress.levelResults[nextLevel.id]
       ? `/student/theme/road-safety/level/${nextLevel.id}/result`
@@ -44,6 +51,45 @@ export function StudentThemePage() {
       "先确认当前最该完成的关卡，再按照“观察环境、判断风险、做出安全选择”的顺序进入学习。",
   });
 
+  useEffect(() => {
+    if (!examUnlocked) {
+      if (unlockAcknowledged[accountKey]) {
+        setUnlockAcknowledged((current) => ({
+          ...current,
+          [accountKey]: false,
+        }));
+      }
+      setShowExamUnlock(false);
+      return;
+    }
+
+    if (!examCompleted && !unlockAcknowledged[accountKey]) {
+      setShowExamUnlock(true);
+    }
+
+    if (examCompleted) {
+      setShowExamUnlock(false);
+    }
+  }, [
+    accountKey,
+    examCompleted,
+    examUnlocked,
+    setUnlockAcknowledged,
+    unlockAcknowledged,
+  ]);
+
+  function acknowledgeUnlock(nextRoute?: string) {
+    setUnlockAcknowledged((current) => ({
+      ...current,
+      [accountKey]: true,
+    }));
+    setShowExamUnlock(false);
+
+    if (nextRoute) {
+      navigate(nextRoute);
+    }
+  }
+
   return (
     <div className="page-stack">
       <section className="hero-banner hero-banner--theme">
@@ -51,7 +97,7 @@ export function StudentThemePage() {
           <span className="hero-banner__eyebrow">主题详情页</span>
           <h1>道路安全教育</h1>
           <p>
-            本主题固定采用“三关学习 - 主题考试 - 结果反馈”的闭环结构。先完成关卡学习，再进入考试和结果页完成本轮学习收口。
+            本主题固定采用“三关闯关学习 - 主题考试 - 结果反馈”的闭环结构。先完成关卡学习，再进入考试和结果页完成本轮学习收口。
           </p>
         </div>
 
@@ -90,10 +136,13 @@ export function StudentThemePage() {
 
         <article className="surface-card theme-overview-card">
           <span className="section-block__eyebrow">主题简介</span>
-          <h2>这节课会学习什么</h2>
-          <p>
-            学生将依次完成城市交通观察、放学路线判断和安全出行守护三关练习，再通过主题考试完成知识检测，并在结果页查看错题、成长和 AI 学习总结。
-          </p>
+          <h2>进入主题前先知道学什么</h2>
+          <ul className="plain-list">
+            <li>第一关：观察并识别斑马线、信号灯、危险行为。</li>
+            <li>第二关：沿着放学回家路线，在关键节点做出更安全的判断。</li>
+            <li>第三关：完成公交、私家车、电动车场景下的出行防护准备。</li>
+            <li>三关全部完成后，主题考试入口会自动点亮。</li>
+          </ul>
         </article>
       </section>
 
@@ -106,7 +155,11 @@ export function StudentThemePage() {
         </div>
 
         <div className="flow-strip">
-          <div className={completedLevels === 3 ? "flow-step flow-step--done" : "flow-step flow-step--active"}>
+          <div
+            className={
+              completedLevels === 3 ? "flow-step flow-step--done" : "flow-step flow-step--active"
+            }
+          >
             三关学习
           </div>
           <div
@@ -168,11 +221,11 @@ export function StudentThemePage() {
               {nextLevel
                 ? `优先完成：${nextLevel.title}`
                 : examCompleted
-                  ? "优先查看考试结果与 AI 结果卡"
+                  ? "优先查看考试结果和 AI 结果卡"
                   : "优先进入主题考试"}
             </li>
             <li>考试只会在三关全部完成后自动解锁。</li>
-            <li>考试完成后会进入独立结果页，再进入错题回看页和 AI 结果卡页。</li>
+            <li>考试完成后会进入独立结果页、错题页和 AI 结果卡页。</li>
           </ul>
           <div className="button-row">
             <button
@@ -223,7 +276,7 @@ export function StudentThemePage() {
                   <li>预计时长：{level.duration}</li>
                   <li>
                     {level.status === "locked"
-                      ? "当前未解锁，需先完成前一关。"
+                      ? "当前未解锁，需要先完成前一关。"
                       : level.status === "completed"
                         ? "本关已完成，可查看独立结算页或重新进入复习。"
                         : "当前可进入学习，完成后会自动跳转到独立结算页。"}
@@ -309,6 +362,34 @@ export function StudentThemePage() {
           </div>
         </article>
       </section>
+
+      {showExamUnlock ? (
+        <section className="overlay-modal-backdrop">
+          <article className="surface-card overlay-modal">
+            <span className="section-block__eyebrow">已解锁主题考试</span>
+            <h2>三关学习已经全部完成</h2>
+            <p>
+              你已经完成道路安全主题的三关学习，现在可以进入主题考试，完成本轮学习闭环。
+            </p>
+            <div className="button-row">
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => acknowledgeUnlock()}
+              >
+                稍后去完成
+              </button>
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => acknowledgeUnlock("/student/theme/road-safety/exam")}
+              >
+                立即进入
+              </button>
+            </div>
+          </article>
+        </section>
+      ) : null}
     </div>
   );
 }

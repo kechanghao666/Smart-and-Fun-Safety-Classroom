@@ -185,6 +185,7 @@ export interface AdminUserSummary {
   name: string;
   role: UserRole;
   status: "active" | "paused";
+  createdAt?: string;
   lastActiveAt: string;
   note: string;
 }
@@ -202,6 +203,7 @@ export interface ExamProgress {
   totalQuestions: number;
   score: number | null;
   wrongQuestionIds: string[];
+  studentAnswers?: Partial<Record<string, number>>;
 }
 
 export interface LevelResult {

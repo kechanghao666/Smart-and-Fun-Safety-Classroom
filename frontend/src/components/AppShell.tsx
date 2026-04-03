@@ -12,6 +12,8 @@ import { ApiError } from "../services/http";
 import { fetchStudentProgress } from "../services/student";
 import { useAppState } from "../state/AppState";
 import type { UserRole } from "../types";
+import { buildGrowthSnapshot } from "../utils/studentGrowth";
+import { usePersistedState } from "../utils/usePersistedState";
 
 interface NavItem {
   to: string;
@@ -258,6 +260,14 @@ export function AppShell({
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState("");
   const [lastSyncedAt, setLastSyncedAt] = useState("");
+  const growthSnapshot = useMemo(
+    () => (role === "student" ? buildGrowthSnapshot(state) : null),
+    [role, state],
+  );
+  const [growthTierSeenMap, setGrowthTierSeenMap] = usePersistedState<
+    Record<string, string>
+  >("student-growth-tier-seen", {});
+  const [showGrowthUpgradeModal, setShowGrowthUpgradeModal] = useState(false);
 
   useEffect(() => {
     lastVisitedRouteRef.current = state.progress.lastVisitedRoute;
@@ -357,11 +367,66 @@ export function AppShell({
     () => resolvePageMeta(role, location.pathname),
     [location.pathname, role],
   );
+  const studentAccountKey = state.sessionAccount ?? "";
+  const currentGrowthTierId = growthSnapshot?.currentTier.id ?? "";
+
+  useEffect(() => {
+    if (role !== "student" || !studentAccountKey || !currentGrowthTierId) {
+      setShowGrowthUpgradeModal(false);
+      return;
+    }
+
+    const seenTierId = growthTierSeenMap[studentAccountKey];
+
+    if (!seenTierId) {
+      setGrowthTierSeenMap((current) => ({
+        ...current,
+        [studentAccountKey]: currentGrowthTierId,
+      }));
+      return;
+    }
+
+    if (seenTierId !== currentGrowthTierId) {
+      setShowGrowthUpgradeModal(true);
+    }
+  }, [
+    currentGrowthTierId,
+    growthTierSeenMap,
+    role,
+    setGrowthTierSeenMap,
+    studentAccountKey,
+  ]);
 
   const handleSignOut = useCallback(() => {
     signOut();
     navigate("/login");
   }, [navigate, signOut]);
+
+  const acknowledgeGrowthUpgrade = useCallback(
+    (openGrowthPage: boolean) => {
+      if (role !== "student" || !studentAccountKey || !currentGrowthTierId) {
+        setShowGrowthUpgradeModal(false);
+        return;
+      }
+
+      setGrowthTierSeenMap((current) => ({
+        ...current,
+        [studentAccountKey]: currentGrowthTierId,
+      }));
+      setShowGrowthUpgradeModal(false);
+
+      if (openGrowthPage) {
+        navigate("/student/growth");
+      }
+    },
+    [
+      currentGrowthTierId,
+      navigate,
+      role,
+      setGrowthTierSeenMap,
+      studentAccountKey,
+    ],
+  );
 
   if (role === "student") {
     return (
@@ -465,6 +530,37 @@ export function AppShell({
             <Outlet />
           </main>
         </div>
+
+        {showGrowthUpgradeModal && growthSnapshot ? (
+          <section className="overlay-modal-backdrop">
+            <article className="surface-card overlay-modal">
+              <span className="section-block__eyebrow">成长升级提醒</span>
+              <h2>已解锁新的成长阶段：{growthSnapshot.currentTier.title}</h2>
+              <p>{growthSnapshot.currentTier.description}</p>
+              <ul className="plain-list">
+                <li>新外观：{growthSnapshot.currentTier.appearance}</li>
+                <li>新能力标签：{growthSnapshot.currentTier.ability}</li>
+                <li>新场景：{growthSnapshot.currentTier.scene}</li>
+              </ul>
+              <div className="button-row">
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => acknowledgeGrowthUpgrade(false)}
+                >
+                  稍后查看
+                </button>
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={() => acknowledgeGrowthUpgrade(true)}
+                >
+                  去成长档案页
+                </button>
+              </div>
+            </article>
+          </section>
+        ) : null}
 
         <FloatingAiAssistant />
       </div>
