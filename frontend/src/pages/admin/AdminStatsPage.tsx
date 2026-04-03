@@ -28,6 +28,29 @@ export function AdminStatsPage() {
     data.classSummaries
       .slice()
       .sort((left, right) => left.examCompletionRate - right.examCompletionRate)[0] ?? null;
+  const reminderItems = [
+    {
+      id: "watch-class",
+      title: "优先跟进班级",
+      detail: watchClass
+        ? `${watchClass.name} 的考试完成率目前最低，建议先推动主题考试收口。`
+        : "当前暂无需要优先跟进的班级提醒。",
+    },
+    {
+      id: "top-class",
+      title: "本周亮点班级",
+      detail: topClass
+        ? `${topClass.name} 的三关完成率领先，可作为课堂复盘和分享案例。`
+        : "当前暂无班级亮点数据。",
+    },
+    {
+      id: "metric-focus",
+      title: "当前指标关注点",
+      detail: topMetric
+        ? `${topMetric.label} 是当前首页最优先关注的核心指标。`
+        : "当前暂无核心指标提醒。",
+    },
+  ];
 
   return (
     <div className="page-stack">
@@ -100,6 +123,24 @@ export function AdminStatsPage() {
             <li>班级对比：帮助教师和管理员快速识别需要优先支持的班级。</li>
           </ul>
         </article>
+      </section>
+
+      <section className="surface-card">
+        <div className="section-block__header">
+          <div>
+            <span className="section-block__eyebrow">近期提醒</span>
+            <h2>把当前最值得跟进的动作整理成工作提示</h2>
+          </div>
+        </div>
+
+        <div className="card-grid card-grid--three">
+          {reminderItems.map((item) => (
+            <article key={item.id} className="surface-card admin-reminder-card">
+              <strong>{item.title}</strong>
+              <p>{item.detail}</p>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="surface-card">

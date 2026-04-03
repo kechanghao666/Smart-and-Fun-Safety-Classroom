@@ -148,6 +148,17 @@ export function TeacherStudentDetailPage() {
           <span className="section-block__eyebrow">成长状态</span>
           <h2>把学习结果转成可持续推进的反馈</h2>
           <div className="page-stack">
+            <article className="teacher-growth-showcase">
+              <div className="teacher-growth-showcase__visual">
+                <strong>{student.currentAppearance}</strong>
+                <p>{student.currentScene}</p>
+              </div>
+              <div className="chip-row">
+                <span className="surface-tag">{student.growthLevelLabel}</span>
+                <span className="surface-tag">{student.growthStage}</span>
+                <span className="surface-tag">{student.currentAbility}</span>
+              </div>
+            </article>
             <article className="teacher-analysis-card">
               <strong>人物当前形态</strong>
               <p>{student.currentAppearance}</p>

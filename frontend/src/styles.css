@@ -935,6 +935,7 @@ button {
 
 .growth-progress-panel,
 .growth-highlight-card,
+.growth-showcase-card,
 .growth-dimension-card,
 .unlock-card {
   display: grid;
@@ -1008,6 +1009,23 @@ button {
 
 .growth-choice-card strong {
   font-size: 18px;
+}
+
+.growth-showcase-card__preview,
+.teacher-growth-showcase__visual {
+  display: grid;
+  gap: 8px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(38, 139, 210, 0.1), rgba(255, 255, 255, 0.9)),
+    var(--surface);
+  border: 1px solid rgba(38, 139, 210, 0.12);
+}
+
+.growth-showcase-card__preview strong,
+.teacher-growth-showcase__visual strong {
+  font-size: 24px;
 }
 
 .growth-progress-panel {
@@ -1226,8 +1244,10 @@ button {
 
 .editor-status-bar,
 .admin-summary-card,
+.admin-reminder-card,
 .empty-state-card,
 .teacher-analysis-card,
+.teacher-growth-showcase,
 .teacher-action-card {
   display: grid;
   gap: 14px;
@@ -1432,6 +1452,7 @@ button {
 }
 
 .teacher-analysis-card,
+.teacher-growth-showcase,
 .teacher-action-card {
   border: 1px solid var(--line);
   border-radius: 22px;

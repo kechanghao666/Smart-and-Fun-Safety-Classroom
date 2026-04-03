@@ -85,6 +85,33 @@ export function StudentGrowthPage() {
         </article>
       </section>
 
+      <section className="card-grid card-grid--two">
+        <article className="surface-card growth-showcase-card">
+          <span className="section-block__eyebrow">当前展示形态</span>
+          <h2>外观、能力与场景正在这样组合展示</h2>
+          <div className="growth-showcase-card__preview">
+            <strong>{growth.selectedAppearance}</strong>
+            <p>{growth.selectedScene}</p>
+          </div>
+          <div className="chip-row">
+            <span className="surface-tag">{growth.currentTier.title}</span>
+            <span className="surface-tag">{growth.currentTier.ability}</span>
+            <span className="surface-tag">{growth.selectedScene}</span>
+          </div>
+        </article>
+
+        <article className="surface-card growth-showcase-card">
+          <span className="section-block__eyebrow">成长展示说明</span>
+          <h2>已解锁内容会同步出现在首页、主题页和结果卡页</h2>
+          <ul className="plain-list">
+            <li>当前外观：{growth.selectedAppearance}</li>
+            <li>当前场景：{growth.selectedScene}</li>
+            <li>能力标签：{growth.currentTier.ability}</li>
+            <li>已解锁外观与场景可在本页自由切换</li>
+          </ul>
+        </article>
+      </section>
+
       <section className="surface-card">
         <div className="section-block__header">
           <div>
