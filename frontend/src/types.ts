@@ -91,6 +91,11 @@ export interface StudentProfile {
   stage: StudentStage;
 }
 
+export interface StudentGrowthPreferences {
+  appearance: string | null;
+  scene: string | null;
+}
+
 export interface TeacherStudentSummary {
   id: string;
   name: string;
@@ -249,5 +254,6 @@ export interface AppState {
   authToken: string | null;
   authSource: AuthSource;
   studentProfile: StudentProfile | null;
+  growthPreferences: StudentGrowthPreferences;
   progress: StudentProgress;
 }

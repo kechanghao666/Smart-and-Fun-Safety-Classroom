@@ -34,9 +34,9 @@ export function StudentAiReportPage() {
           <h2>{report.growthLabel}</h2>
           <p>当前积分 {state.progress.points}，成长值、星级和徽章会继续累计。</p>
           <ul className="plain-list">
-            <li>当前外观：{growth.currentTier.appearance}</li>
+            <li>当前外观：{growth.selectedAppearance}</li>
             <li>能力标签：{growth.currentTier.ability}</li>
-            <li>专属场景：{growth.currentTier.scene}</li>
+            <li>专属场景：{growth.selectedScene}</li>
           </ul>
         </article>
 

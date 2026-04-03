@@ -956,6 +956,60 @@ button {
   box-shadow: 0 14px 28px rgba(38, 139, 210, 0.12);
 }
 
+.growth-choice-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.growth-choice-card {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid rgba(20, 50, 74, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text);
+  text-align: left;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.growth-choice-card:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: rgba(38, 139, 210, 0.28);
+  box-shadow: 0 10px 22px rgba(38, 139, 210, 0.12);
+}
+
+.growth-choice-card--selected {
+  border-color: rgba(38, 139, 210, 0.32);
+  background:
+    linear-gradient(180deg, rgba(38, 139, 210, 0.08), rgba(255, 255, 255, 0.9)),
+    var(--surface);
+  box-shadow: 0 12px 24px rgba(38, 139, 210, 0.12);
+}
+
+.growth-choice-card--locked {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+.growth-choice-card__status {
+  display: inline-flex;
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(20, 50, 74, 0.08);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.growth-choice-card strong {
+  font-size: 18px;
+}
+
 .growth-progress-panel {
   min-width: min(280px, 100%);
   padding: 22px;

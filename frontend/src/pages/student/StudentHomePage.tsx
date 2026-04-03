@@ -280,8 +280,8 @@ export function StudentHomePage() {
           <h3>这轮学习带来的变化</h3>
           <ul className="plain-list">
             <li>累计星级：{growth.totalStars} 星</li>
-            <li>当前外观：{growth.currentTier.appearance}</li>
-            <li>专属场景：{growth.currentTier.scene}</li>
+            <li>当前外观：{growth.selectedAppearance}</li>
+            <li>专属场景：{growth.selectedScene}</li>
             <li>下一步重点：{growth.nextFocus}</li>
           </ul>
         </article>

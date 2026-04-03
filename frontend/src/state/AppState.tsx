@@ -14,6 +14,7 @@ import type {
   LevelId,
   LevelProgress,
   LevelResult,
+  StudentGrowthPreferences,
   StudentProfile,
   UserRole,
 } from "../types";
@@ -53,6 +54,10 @@ function createInitialState(): AppState {
     authToken: null,
     authSource: "mock",
     studentProfile: null,
+    growthPreferences: {
+      appearance: null,
+      scene: null,
+    },
     progress: createInitialProgress(),
   };
 }
@@ -78,6 +83,10 @@ function loadInitialState(): AppState {
       authToken: parsed.authToken ?? fallback.authToken,
       authSource: parsed.authSource ?? fallback.authSource,
       studentProfile: parsed.studentProfile ?? fallback.studentProfile,
+      growthPreferences: {
+        ...fallback.growthPreferences,
+        ...parsed.growthPreferences,
+      },
       progress: {
         ...fallback.progress,
         ...parsed.progress,
@@ -113,6 +122,7 @@ type AppAction =
     }
   | { type: "signOut" }
   | { type: "saveStudentProfile"; profile: StudentProfile }
+  | { type: "saveGrowthPreferences"; preferences: Partial<StudentGrowthPreferences> }
   | { type: "replaceProgress"; progress: AppState["progress"] }
   | { type: "setLastVisitedRoute"; route: string }
   | { type: "markLevelInProgress"; levelId: LevelId }
@@ -140,6 +150,9 @@ function reducer(state: AppState, action: AppAction): AppState {
       authToken: action.token ?? null,
       authSource: nextSource,
       studentProfile: isSameStudentSession ? state.studentProfile : null,
+      growthPreferences: isSameStudentSession
+        ? state.growthPreferences
+        : createInitialState().growthPreferences,
       progress: isSameStudentSession ? state.progress : createInitialProgress(),
     };
   }
@@ -152,6 +165,16 @@ function reducer(state: AppState, action: AppAction): AppState {
     return {
       ...state,
       studentProfile: action.profile,
+    };
+  }
+
+  if (action.type === "saveGrowthPreferences") {
+    return {
+      ...state,
+      growthPreferences: {
+        ...state.growthPreferences,
+        ...action.preferences,
+      },
     };
   }
 
@@ -304,6 +327,7 @@ function reducer(state: AppState, action: AppAction): AppState {
       authToken: state.authToken,
       authSource: state.authSource,
       studentProfile: state.studentProfile,
+      growthPreferences: state.growthPreferences,
     };
   }
 
@@ -319,6 +343,7 @@ interface AppStateContextValue {
   ) => void;
   signOut: () => void;
   saveStudentProfile: (profile: StudentProfile) => void;
+  saveGrowthPreferences: (preferences: Partial<StudentGrowthPreferences>) => void;
   replaceProgress: (progress: AppState["progress"]) => void;
   setLastVisitedRoute: (route: string) => void;
   markLevelInProgress: (levelId: LevelId) => void;
@@ -362,6 +387,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     (profile: StudentProfile) => dispatch({ type: "saveStudentProfile", profile }),
     [],
   );
+  const saveGrowthPreferences = useCallback(
+    (preferences: Partial<StudentGrowthPreferences>) =>
+      dispatch({ type: "saveGrowthPreferences", preferences }),
+    [],
+  );
   const replaceProgress = useCallback(
     (progress: AppState["progress"]) => dispatch({ type: "replaceProgress", progress }),
     [],
@@ -396,6 +426,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       signIn,
       signOut,
       saveStudentProfile,
+      saveGrowthPreferences,
       replaceProgress,
       setLastVisitedRoute,
       markLevelInProgress,
@@ -409,6 +440,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       resetDemo,
       replaceProgress,
       saveStudentProfile,
+      saveGrowthPreferences,
       setLastVisitedRoute,
       signIn,
       signOut,

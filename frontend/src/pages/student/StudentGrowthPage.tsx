@@ -13,7 +13,7 @@ const avatarAccentMap = {
 
 export function StudentGrowthPage() {
   const navigate = useNavigate();
-  const { state } = useAppState();
+  const { state, saveGrowthPreferences } = useAppState();
   const growth = buildGrowthSnapshot(state);
   const profile = state.studentProfile;
   const avatarAccent = profile
@@ -67,8 +67,8 @@ export function StudentGrowthPage() {
           <span className="section-block__eyebrow">成长结果</span>
           <h2>{growth.currentTier.title}</h2>
           <ul className="plain-list">
-            <li>当前外观：{growth.currentTier.appearance}</li>
-            <li>专属场景：{growth.currentTier.scene}</li>
+            <li>当前外观：{growth.selectedAppearance}</li>
+            <li>专属场景：{growth.selectedScene}</li>
             <li>能力标签：{growth.currentTier.ability}</li>
           </ul>
         </article>
@@ -123,6 +123,87 @@ export function StudentGrowthPage() {
               </article>
             );
           })}
+        </div>
+      </section>
+
+      <section className="surface-card">
+        <div className="section-block__header">
+          <div>
+            <span className="section-block__eyebrow">成长形态切换</span>
+            <h2>已解锁的外观与场景可以自由切换</h2>
+          </div>
+        </div>
+
+        <div className="card-grid card-grid--two">
+          <article className="surface-card">
+            <span className="section-block__eyebrow">外观选择</span>
+            <div className="growth-choice-grid">
+              {growth.appearanceOptions.map((option) => {
+                const isSelected = option.label === growth.selectedAppearance;
+
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={
+                      isSelected
+                        ? "growth-choice-card growth-choice-card--selected"
+                        : option.unlocked
+                          ? "growth-choice-card"
+                          : "growth-choice-card growth-choice-card--locked"
+                    }
+                    disabled={!option.unlocked}
+                    onClick={() =>
+                      saveGrowthPreferences({
+                        appearance: option.label,
+                      })
+                    }
+                  >
+                    <span className="growth-choice-card__status">
+                      {isSelected ? "当前使用" : option.unlocked ? "已解锁" : "待解锁"}
+                    </span>
+                    <strong>{option.label}</strong>
+                    <span>{option.detail}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </article>
+
+          <article className="surface-card">
+            <span className="section-block__eyebrow">场景选择</span>
+            <div className="growth-choice-grid">
+              {growth.sceneOptions.map((option) => {
+                const isSelected = option.label === growth.selectedScene;
+
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={
+                      isSelected
+                        ? "growth-choice-card growth-choice-card--selected"
+                        : option.unlocked
+                          ? "growth-choice-card"
+                          : "growth-choice-card growth-choice-card--locked"
+                    }
+                    disabled={!option.unlocked}
+                    onClick={() =>
+                      saveGrowthPreferences({
+                        scene: option.label,
+                      })
+                    }
+                  >
+                    <span className="growth-choice-card__status">
+                      {isSelected ? "当前使用" : option.unlocked ? "已解锁" : "待解锁"}
+                    </span>
+                    <strong>{option.label}</strong>
+                    <span>{option.detail}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </article>
         </div>
       </section>
 
@@ -227,7 +308,7 @@ export function StudentGrowthPage() {
         <div className="section-block__header">
           <div>
             <span className="section-block__eyebrow">成长轨迹</span>
-            <h2>把关卡、考试和成长变化串在一条线上</h2>
+            <h2>把关卡、考试和成长变化串在一条线里</h2>
           </div>
         </div>
 

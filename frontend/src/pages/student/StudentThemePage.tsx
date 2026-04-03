@@ -220,9 +220,9 @@ export function StudentThemePage() {
           <h2>当前人物成长状态</h2>
           <ul className="plain-list">
             <li>成长阶段：{growth.currentTier.title}</li>
-            <li>当前外观：{growth.currentTier.appearance}</li>
+            <li>当前外观：{growth.selectedAppearance}</li>
             <li>能力标签：{growth.currentTier.ability}</li>
-            <li>专属场景：{growth.currentTier.scene}</li>
+            <li>专属场景：{growth.selectedScene}</li>
             <li>
               下一阶段：
               {growth.nextTier

@@ -32,6 +32,13 @@ export interface GrowthJournalItem {
   ctaLabel: string;
 }
 
+export interface GrowthChoiceOption {
+  id: string;
+  label: string;
+  detail: string;
+  unlocked: boolean;
+}
+
 export interface GrowthSnapshot {
   points: number;
   completedLevels: number;
@@ -44,6 +51,10 @@ export interface GrowthSnapshot {
   pointsToNext: number;
   dimensions: GrowthDimension[];
   unlocks: GrowthUnlock[];
+  selectedAppearance: string;
+  selectedScene: string;
+  appearanceOptions: GrowthChoiceOption[];
+  sceneOptions: GrowthChoiceOption[];
   journal: GrowthJournalItem[];
   nextFocus: string;
 }
@@ -52,7 +63,8 @@ export const growthTierDefinitions: GrowthTierConfig[] = [
   {
     id: "seed",
     title: "安全萌芽期",
-    description: "先建立交通观察习惯，学会在路口停下来、看清楚、再行动。",
+    description:
+      "先建立基础交通观察习惯，学会在路口停下来、看清楚、再行动。",
     minPoints: 0,
     appearance: "阳光守护徽章边框",
     scene: "校园出发行程卡",
@@ -61,7 +73,8 @@ export const growthTierDefinitions: GrowthTierConfig[] = [
   {
     id: "rising",
     title: "守护进阶期",
-    description: "能够在路线选择和路口判断中保持更稳定的安全意识。",
+    description:
+      "能够在路线选择和路口判断中保持更稳定的安全意识，把规则用到真实情境里。",
     minPoints: 180,
     appearance: "守护披风外观",
     scene: "放学回家路线地图",
@@ -70,7 +83,8 @@ export const growthTierDefinitions: GrowthTierConfig[] = [
   {
     id: "guardian",
     title: "安全守护期",
-    description: "完成主题学习闭环，已经具备较完整的综合出行防护能力。",
+    description:
+      "完成主题学习闭环，已经具备较完整的综合出行防护能力。",
     minPoints: 280,
     appearance: "星级守护勋章外观",
     scene: "城市安全出行场景",
@@ -126,6 +140,9 @@ export function buildGrowthSnapshot(state: AppState): GrowthSnapshot {
   const wrongQuestionCount = state.progress.exam.wrongQuestionIds.length;
   const currentTier = getCurrentTier(state.progress.points);
   const nextTier = getNextTier(state.progress.points);
+  const unlockedTiers = growthTierDefinitions.filter(
+    (tier) => state.progress.points >= tier.minPoints,
+  );
   const previousTierMin = currentTier.minPoints;
   const nextTierMin = nextTier?.minPoints ?? state.progress.points;
   const nextTierProgress = nextTier
@@ -134,13 +151,29 @@ export function buildGrowthSnapshot(state: AppState): GrowthSnapshot {
         Math.min(
           100,
           Math.round(
-            ((state.progress.points - previousTierMin) / (nextTierMin - previousTierMin)) * 100,
+            ((state.progress.points - previousTierMin) /
+              (nextTierMin - previousTierMin)) *
+              100,
           ),
         ),
       )
     : 100;
   const examBonus =
-    state.progress.exam.score === null ? 0 : Math.min(12, Math.round(state.progress.exam.score / 10));
+    state.progress.exam.score === null
+      ? 0
+      : Math.min(12, Math.round(state.progress.exam.score / 10));
+
+  const preferredAppearance = state.growthPreferences.appearance;
+  const preferredScene = state.growthPreferences.scene;
+  const selectedAppearance =
+    preferredAppearance &&
+    unlockedTiers.some((tier) => tier.appearance === preferredAppearance)
+      ? preferredAppearance
+      : currentTier.appearance;
+  const selectedScene =
+    preferredScene && unlockedTiers.some((tier) => tier.scene === preferredScene)
+      ? preferredScene
+      : currentTier.scene;
 
   const dimensions: GrowthDimension[] = [
     {
@@ -176,23 +209,42 @@ export function buildGrowthSnapshot(state: AppState): GrowthSnapshot {
     },
   ];
 
+  const strongestDimension =
+    [...dimensions].sort((left, right) => right.score - left.score)[0]?.label ?? "观察力";
+
   const unlocks: GrowthUnlock[] = [
     {
       label: "当前外观",
-      value: currentTier.appearance,
-      note: "跟随成长阶段变化，展示不同守护形象。",
+      value: selectedAppearance,
+      note: "已解锁的外观会长期保留，并可在成长档案中自由切换。",
     },
     {
       label: "能力标签",
       value: currentTier.ability,
-      note: `本轮最强维度：${[...dimensions].sort((left, right) => right.score - left.score)[0]?.label ?? "观察力"}`,
+      note: `本轮最强维度：${strongestDimension}`,
     },
     {
       label: "专属场景",
-      value: currentTier.scene,
-      note: nextTier ? `再积累 ${nextTier.minPoints - state.progress.points} 分可解锁下一阶段内容。` : "当前阶段内容已全部解锁。",
+      value: selectedScene,
+      note: nextTier
+        ? `再积累 ${nextTier.minPoints - state.progress.points} 分可解锁下一阶段场景，已解锁场景可自由切换。`
+        : "当前阶段内容已经全部点亮，可在成长档案中自由切换已解锁场景。",
     },
   ];
+
+  const appearanceOptions: GrowthChoiceOption[] = growthTierDefinitions.map((tier) => ({
+    id: `${tier.id}-appearance`,
+    label: tier.appearance,
+    detail: `${tier.title} · ${tier.ability}`,
+    unlocked: state.progress.points >= tier.minPoints,
+  }));
+
+  const sceneOptions: GrowthChoiceOption[] = growthTierDefinitions.map((tier) => ({
+    id: `${tier.id}-scene`,
+    label: tier.scene,
+    detail: `${tier.title} · ${tier.description}`,
+    unlocked: state.progress.points >= tier.minPoints,
+  }));
 
   const currentLearningLevel = state.progress.levels.find(
     (level) => level.status === "available",
@@ -282,15 +334,16 @@ export function buildGrowthSnapshot(state: AppState): GrowthSnapshot {
     });
   }
 
-  const nextFocus = state.progress.exam.status === "completed"
-    ? wrongQuestionCount > 0
-      ? "先回看错题对应关卡，再补齐本轮薄弱点。"
-      : "继续保持当前节奏，已经可以把重心放到成长档案和连续学习上。"
-    : state.progress.exam.status === "available"
-      ? "主题考试已经解锁，完成它就能补齐本轮学习闭环。"
-      : currentLearningLevel
-        ? `继续完成 ${currentLearningLevel.title}，成长值会在通关后自动上涨。`
-        : "先回到主题页，继续推进当前学习进度。";
+  const nextFocus =
+    state.progress.exam.status === "completed"
+      ? wrongQuestionCount > 0
+        ? "先回看错题对应关卡，再补齐本轮薄弱点。"
+        : "继续保持当前节奏，已经可以把重点放到成长档案和连续学习上。"
+      : state.progress.exam.status === "available"
+        ? "主题考试已经解锁，完成它就能补齐本轮学习闭环。"
+        : currentLearningLevel
+          ? `继续完成 ${currentLearningLevel.title}，成长值会在通关后自动上涨。`
+          : "先回到主题页，继续推进当前学习进度。";
 
   return {
     points: state.progress.points,
@@ -304,6 +357,10 @@ export function buildGrowthSnapshot(state: AppState): GrowthSnapshot {
     pointsToNext: nextTier ? Math.max(0, nextTier.minPoints - state.progress.points) : 0,
     dimensions,
     unlocks,
+    selectedAppearance,
+    selectedScene,
+    appearanceOptions,
+    sceneOptions,
     journal,
     nextFocus,
   };

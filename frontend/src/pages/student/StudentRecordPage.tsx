@@ -169,7 +169,8 @@ export function StudentRecordPage() {
           <ul className="plain-list">
             <li>成长值：{growth.points}</li>
             <li>累计星级：{growth.totalStars} 星</li>
-            <li>当前外观：{growth.currentTier.appearance}</li>
+            <li>当前外观：{growth.selectedAppearance}</li>
+            <li>当前场景：{growth.selectedScene}</li>
             <li>已获得徽章：{state.progress.badges.join(" / ")}</li>
           </ul>
         </article>
