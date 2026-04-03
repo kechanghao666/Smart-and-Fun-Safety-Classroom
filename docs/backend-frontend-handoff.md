@@ -8,7 +8,8 @@
 - 技术栈：`Node.js + Express + TypeScript + SQLite`
 - 鉴权方式：`Authorization: Bearer <token>`
 - 默认端口：`3001`
-- 本轮未做真实 Spark 密钥联机验证，但 `/api/ai/chat` 的后端代理和 fallback 已可用
+- 昨天已完成的后端接口保持不变
+- 本轮已补完真实 Spark 联机验收，前端接口形状没有变化
 
 ## 本地启动
 
@@ -33,7 +34,7 @@ GET http://127.0.0.1:3001/api/health
 
 ## 已对齐的核心结构
 
-后端已按当前前端契约返回这些关键结构：
+后端按当前前端契约返回这些关键结构：
 
 - `LoginResponse`
 - `StudentProgress`
@@ -106,8 +107,8 @@ GET http://127.0.0.1:3001/api/health
 
 说明：
 
-- 这个接口是我额外补的，方便你们把资料补全页真正落到后端
-- 当前前端如果暂时还没接这个接口，也不会影响其他主链路
+- 这个接口是为了让资料补全页能真正落后端
+- 即使前端暂时没接，也不影响主链路
 
 ### 4. 开始关卡
 
@@ -115,17 +116,15 @@ GET http://127.0.0.1:3001/api/health
 
 说明：
 
-- 只能启动 `available` 或 `in_progress` 的关卡
-- 如果当前关卡未解锁，后端会返回 `409`
+- 只允许进入 `available` 或 `in_progress` 的关卡
+- 未解锁时后端返回 `409`
 - 返回最新 `StudentProgress`
 
 ### 5. 完成关卡
 
 `POST /api/student/levels/:levelId/complete`
 
-说明：
-
-- 返回：
+返回：
 
 ```json
 {
@@ -134,8 +133,10 @@ GET http://127.0.0.1:3001/api/health
 }
 ```
 
-- 完成上一关后会自动解锁下一关
-- 完成三关后 `exam.status` 会自动变成 `available`
+说明：
+
+- 完成上一关后自动解锁下一关
+- 完成三关后 `exam.status` 自动变成 `available`
 
 ### 6. 提交考试
 
@@ -156,16 +157,16 @@ GET http://127.0.0.1:3001/api/health
 说明：
 
 - 三关没完成前提交会返回 `409`
-- 考试只允许本轮提交一次
+- 当前版本一次学习流程只允许提交一次
 - 提交后 `exam.status = completed`
 - 返回最新 `StudentProgress`
-- `wrongQuestionIds`、`score`、`points`、`badges` 都以后端结果为准
+- `wrongQuestionIds`、`score`、`points`、`badges` 以后端结果为准
 
 ### 7. AI 助手
 
 `POST /api/ai/chat`
 
-请求：
+请求示例：
 
 ```json
 {
@@ -173,16 +174,13 @@ GET http://127.0.0.1:3001/api/health
 }
 ```
 
-或
-
 ```json
 {
   "scene": "hint",
-  "levelId": "level-2"
+  "levelId": "level-2",
+  "message": "我卡住了"
 }
 ```
-
-或
 
 ```json
 {
@@ -195,17 +193,24 @@ GET http://127.0.0.1:3001/api/health
 
 ```json
 {
-  "reply": "……",
-  "suggestions": ["……", "……"]
+  "reply": "…",
+  "suggestions": ["…", "…"]
 }
 ```
 
 说明：
 
-- 只允许道路安全主题内问答
+- 只允许道路安全教育主题内问答
 - 无关问题会拒答并引导回主题
 - `hint` 只给方向，不给完整答案
-- 当前管理员修改 `AI 文案管理` 后，`welcome` 和 `hint` 的 fallback 文案会直接受影响
+- `welcome` / `hint` 在上游不可用时会回退到后台配置文案
+
+真实 Spark 验收结论：
+
+- `welcome`：已验证走真实 `spark`
+- `hint`：已验证走真实 `spark`
+- 主题内 `qa`：已验证走真实 `spark`
+- 无关主题 `qa`：已验证走拒答逻辑，`provider=fallback`
 
 ## 教师端接口
 
@@ -215,8 +220,8 @@ GET http://127.0.0.1:3001/api/health
 
 说明：
 
-- `stu-1` 是真实跟随学生主链路变化的动态数据
-- 其他学生数据当前仍保留稳定 seed/mock，用于先完成页面联调
+- `stu-1` 会跟随真实学生主链路动态变化
+- 其他学生仍保留稳定 seed/mock 数据，方便先联调页面
 
 ## 管理员端接口
 
@@ -245,23 +250,21 @@ GET http://127.0.0.1:3001/api/health
 
 说明：
 
-- 这些内容现在已经落到 SQLite，不再只是静态返回
-- 题库和 AI 文案的更新会影响后端实际运行结果
-- 目前管理员写接口走“部分字段更新”，前端提交需要只传当前表单里真正修改的字段即可
-- `level-1`、`level-2`、`level-3` 是 v1 固定三关，当前只开放更新接口，不开放新增/删除，避免破坏学生主链路
+- 这些内容都已落到 SQLite，不再只是静态返回
+- 题库和 AI 文案的修改会影响后端真实运行结果
+- `level-1`、`level-2`、`level-3` 是 v1 固定三关，只开放更新，不开放新增/删除
 
 ## 前端接入注意点
 
 - 非登录接口一律带 Bearer token
-- 学生端不要自己计算关卡解锁、考试解锁、积分和徽章，直接信任后端返回
-- `complete level` 接口返回的是 `{ progress, result }`，不要只取 `progress`
-- 错题结果请使用 `wrongQuestionIds` 和题目自身的 `reviewLevelId` / `reviewLabel` / `reviewSuggestion`
-- 管理员内容如果做保存按钮，可以直接开始接 `PUT` 接口
-- 如果要做“新增/删除”按钮，当前可直接接主题、题库、AI 文案的 `POST/DELETE`
-- 真实 Spark 还没做联机验收，所以如果你看到 AI 结果比较模板化，这是当前预期
+- 学生端不要自己计算关卡解锁、考试解锁、积分和徽章，直接以后端返回为准
+- `complete level` 返回的是 `{ progress, result }`，不要只取 `progress`
+- 错题结果请使用 `wrongQuestionIds` 配合题目的 `reviewLevelId` / `reviewLabel` / `reviewSuggestion`
+- 管理员端表单如果做保存，直接接已有 `PUT` / `POST` / `DELETE` 即可
 
-## 已知未完成项
+## 这轮补完了什么
 
-- Spark Lite 真实密钥联机验证还没做
-- 关卡管理目前仍是“固定三关，只允许更新”，这是按说明书约束保留的
-- 教师/管理员统计仍以首版展示型数据为主，还没做更完整的动态分析
+- 没有新增前端契约字段
+- 没有重做昨天已完成的后端接口
+- 只补完了真实 Spark 联机验收和文档状态更新
+- 前端现有接入方式保持不变

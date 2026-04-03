@@ -31,7 +31,7 @@ npm --prefix backend run start
 
 ## 环境变量
 
-复制 `backend/.env.example` 为 `backend/.env` 后填写。
+复制 `backend/.env.example` 为 `backend/.env` 后填写：
 
 | 变量 | 说明 | 默认值 |
 | --- | --- | --- |
@@ -44,13 +44,15 @@ npm --prefix backend run start
 | `SPARK_APP_ID` | 鉴权文档中的 APPID，仅保留后端环境变量 | 空 |
 | `SPARK_API_KEY` | 鉴权文档中的 APIKey，仅保留后端环境变量 | 空 |
 | `SPARK_API_SECRET` | 鉴权文档中的 APISecret，仅保留后端环境变量 | 空 |
-| `SPARK_API_PASSWORD` | 鉴权文档中的 APIPassword，用于 HTTP 代理调用 | 空 |
-| `AI_FALLBACK_ENABLED` | 未配置密钥或上游失败时是否回退到本地模板回复 | `true` |
+| `SPARK_API_PASSWORD` | 后端实际发送给 Spark HTTP 接口的 Bearer 凭证 | 空 |
+| `AI_FALLBACK_ENABLED` | 上游失败时是否回退到本地模板响应 | `true` |
 
 说明：
 
 - 真实密钥不能提交到仓库。
 - 前端不能直接访问模型服务，只能调用后端的 `POST /api/ai/chat`。
+- 本项目代码只读取 `SPARK_API_PASSWORD` 作为 Bearer 凭证。
+- 按讯飞官方 2026 年 OpenAI 兼容文档，`SPARK_API_PASSWORD` 可填写控制台可用的 HTTP 鉴权值；当前仓库内这组鉴权信息已经用 `APIKey:APISecret` 形式完成真实联机验收。
 
 ## Seed 账号
 
@@ -58,7 +60,7 @@ npm --prefix backend run start
 - `teacher001 / 123456`
 - `admin001 / 123456`
 
-学生账号首次登录默认没有资料补全，后端会先创建学习记录和默认进度。
+学生账号首次登录默认没有资料补全；后端会先创建学习记录和默认进度。
 
 ## 已实现接口
 
@@ -74,7 +76,7 @@ npm --prefix backend run start
 - `POST /api/student/levels/:levelId/complete`
 - `POST /api/student/exam/submit`
 
-后端会强制执行这些规则：
+后端强制执行这些规则：
 
 - 第一关默认 `available`
 - 第二、三关默认 `locked`
@@ -92,7 +94,7 @@ npm --prefix backend run start
 - 只回答道路安全教育主题
 - `hint` 只给方向，不直接给完整答案
 - 无关问题会拒答并引导回主题
-- 当前管理员维护的 `ai-copy` 文案会影响 `welcome` / `hint` 的 fallback 回复
+- `ai-copy` 的后台配置会影响 `welcome` / `hint` 的 fallback 文案
 
 ### 教师端
 
@@ -127,10 +129,10 @@ npm --prefix backend run start
 
 说明：
 
-- 主题、关卡、题库、AI 文案现在都已落到 SQLite。
+- 主题、关卡、题库、AI 文案都已落到 SQLite。
 - `question-bank` 的更新会影响考试判分和错题回看基础数据。
 - `ai-copy` 的更新会影响 AI 助手 fallback 文案。
-- `level-1/2/3` 是 v1 固定三关，因此目前只开放更新，不开放新增/删除。
+- `level-1/2/3` 是 v1 固定三关，因此当前只开放更新，不开放新增/删除。
 
 ## 鉴权方式
 
@@ -140,22 +142,31 @@ npm --prefix backend run start
 Authorization: Bearer <token>
 ```
 
-## 本地验证
+## 本机验收
 
 本机已通过这些验证：
 
-1. `POST /api/auth/login`
-2. `GET /api/student/progress`
-3. `POST /api/student/levels/level-1/start`
-4. `POST /api/student/levels/level-1/complete`
-5. 顺序完成三关后调用 `POST /api/student/exam/submit`
-6. `POST /api/ai/chat`
-7. `GET /api/teacher/dashboard`
-8. `GET /api/admin/modules`
-9. `PUT /api/admin/themes/:id` 等管理员内容更新接口
+1. `npm run check:backend`
+2. `npm run build:backend`
+3. `POST /api/auth/login`
+4. `GET /api/student/progress`
+5. `POST /api/student/levels/level-1/start`
+6. 顺序完成三关并验证考试自动解锁
+7. `POST /api/student/exam/submit`
+8. `POST /api/ai/chat`
+9. `GET /api/teacher/dashboard`
+10. `GET /api/admin/modules`
+11. `PUT /api/admin/themes/:id` 等管理员内容更新接口
+
+真实 Spark 联机验收结论：
+
+- 已直接请求 Spark 官方 HTTP 接口并拿到有效返回。
+- 已通过后端完整链路验证 `welcome`、`hint`、主题内 `qa` 三类请求走真实 `spark`。
+- 已验证无关主题 `qa` 被后端拒答并记录为 `fallback`。
+- 验证时使用临时环境变量，不写入仓库，不提交密钥。
 
 ## 前端联调说明
 
-前端同事请优先看：
+前端同事优先查看：
 
 - `docs/backend-frontend-handoff.md`
