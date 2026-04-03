@@ -27,6 +27,17 @@ const levelStructureMap: Record<
   },
 };
 
+function linesToText(lines: string[]) {
+  return lines.join("\n");
+}
+
+function textToLines(value: string) {
+  return value
+    .split("\n")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 export function AdminLevelsPage() {
   const { state } = useAppState();
   const canUseApi = state.authSource === "api" && Boolean(state.authToken);
@@ -38,12 +49,16 @@ export function AdminLevelsPage() {
     dependencies: [state.authToken],
     fallbackMessage: "暂时无法获取关卡管理数据，当前继续使用本地演示内容。",
   });
-  const levels = editor.draftData;
+  const levels = editor.draftData
+    .slice()
+    .sort((left, right) => left.displayOrder - right.displayOrder);
   const [selectedId, setSelectedId] = useState(levels[0]?.id ?? "level-1");
 
   useEffect(() => {
     setSelectedId((current) =>
-      current && levels.some((item) => item.id === current) ? current : levels[0]?.id ?? "level-1",
+      current && levels.some((item) => item.id === current)
+        ? current
+        : levels[0]?.id ?? "level-1",
     );
   }, [levels]);
 
@@ -51,8 +66,12 @@ export function AdminLevelsPage() {
     () => levels.find((item) => item.id === selectedId) ?? levels[0] ?? null,
     [levels, selectedId],
   );
-  const rewardConfiguredCount = levels.filter((item) => item.rewardLabel.trim().length > 0).length;
-  const feedbackConfiguredCount = levels.filter((item) => item.feedbackStyle.trim().length > 0).length;
+  const rewardConfiguredCount = levels.filter(
+    (item) => item.rewardLabel.trim().length > 0,
+  ).length;
+  const feedbackConfiguredCount = levels.filter(
+    (item) => item.feedbackCopy.trim().length > 0,
+  ).length;
   const selectedStructure = selectedLevel ? levelStructureMap[selectedLevel.id] : null;
 
   function updateLevel<K extends keyof LevelManagementItem>(
@@ -65,13 +84,24 @@ export function AdminLevelsPage() {
     );
   }
 
+  function updateLevelListField(
+    id: LevelManagementItem["id"],
+    field: "taskOutline" | "hotspotItems" | "propItems" | "targetAreaNotes",
+    value: string,
+  ) {
+    updateLevel(id, field, textToLines(value));
+  }
+
   return (
     <div className="page-stack">
       <section className="hero-banner hero-banner--admin">
         <div>
           <span className="hero-banner__eyebrow">关卡内容管理</span>
-          <h1>以双栏工作台维护关卡结构、奖励和反馈风格</h1>
-          <p>这一页对应说明书中的“关卡列表 + 场景配置区”结构，用来收口学生端三关的教学节奏和界面框架。</p>
+          <h1>按关卡结构、场景配置和反馈文案维护三关内容</h1>
+          <p>
+            这一页严格对应说明书中的“关卡列表 + 场景配置区”结构，补齐场景图、
+            任务内容、反馈文案、展示顺序、热点配置和拖拽道具说明。
+          </p>
         </div>
       </section>
 
@@ -100,7 +130,7 @@ export function AdminLevelsPage() {
           <p>奖励规则会直接影响学生端结算页和成长反馈展示。</p>
         </article>
         <article className="surface-card stat-card admin-summary-card">
-          <span>反馈风格</span>
+          <span>反馈文案</span>
           <strong>{feedbackConfiguredCount}</strong>
           <p>建议统一保持儿童友好、规则明确、鼓励式反馈。</p>
         </article>
@@ -120,10 +150,12 @@ export function AdminLevelsPage() {
                 }
                 onClick={() => setSelectedId(level.id)}
               >
-                <span className="surface-tag">{level.focus}</span>
-                <h3>{level.title}</h3>
-                <p>{level.rewardLabel}</p>
-                <span className="inline-note">{level.duration}</span>
+                <div className="row-between">
+                  <strong>{level.title}</strong>
+                  <span className="surface-tag">顺序 {level.displayOrder}</span>
+                </div>
+                <p>{level.sceneAssetLabel}</p>
+                <span className="inline-note">{level.rewardLabel}</span>
               </button>
             ))
           ) : (
@@ -137,12 +169,12 @@ export function AdminLevelsPage() {
         {selectedLevel ? (
           <div className="page-stack">
             <article className="surface-card editor-panel">
-              <span className="section-block__eyebrow">编辑关卡</span>
+              <span className="section-block__eyebrow">场景配置区</span>
               <h2>{selectedLevel.title}</h2>
               <div className="chip-row">
                 <span className="surface-tag">{selectedLevel.focus}</span>
                 <span className="surface-tag">{selectedLevel.duration}</span>
-                <span className="surface-tag">{selectedLevel.rewardLabel}</span>
+                <span className="surface-tag">顺序 {selectedLevel.displayOrder}</span>
               </div>
 
               <div className="editor-grid">
@@ -177,6 +209,44 @@ export function AdminLevelsPage() {
                 </label>
 
                 <label className="form-field">
+                  <span>展示顺序</span>
+                  <input
+                    type="number"
+                    value={selectedLevel.displayOrder}
+                    onChange={(event) =>
+                      updateLevel(
+                        selectedLevel.id,
+                        "displayOrder",
+                        Number.isNaN(Number(event.target.value))
+                          ? selectedLevel.displayOrder
+                          : Number(event.target.value),
+                      )
+                    }
+                  />
+                </label>
+
+                <label className="form-field form-field--wide">
+                  <span>场景图</span>
+                  <input
+                    value={selectedLevel.sceneAssetLabel}
+                    onChange={(event) =>
+                      updateLevel(selectedLevel.id, "sceneAssetLabel", event.target.value)
+                    }
+                  />
+                </label>
+
+                <label className="form-field form-field--wide">
+                  <span>任务内容（每行一条）</span>
+                  <textarea
+                    rows={5}
+                    value={linesToText(selectedLevel.taskOutline)}
+                    onChange={(event) =>
+                      updateLevelListField(selectedLevel.id, "taskOutline", event.target.value)
+                    }
+                  />
+                </label>
+
+                <label className="form-field">
                   <span>奖励规则</span>
                   <input
                     value={selectedLevel.rewardLabel}
@@ -186,13 +256,60 @@ export function AdminLevelsPage() {
                   />
                 </label>
 
-                <label className="form-field form-field--wide">
+                <label className="form-field">
                   <span>反馈风格</span>
-                  <textarea
-                    rows={4}
+                  <input
                     value={selectedLevel.feedbackStyle}
                     onChange={(event) =>
                       updateLevel(selectedLevel.id, "feedbackStyle", event.target.value)
+                    }
+                  />
+                </label>
+
+                <label className="form-field form-field--wide">
+                  <span>反馈文案</span>
+                  <textarea
+                    rows={4}
+                    value={selectedLevel.feedbackCopy}
+                    onChange={(event) =>
+                      updateLevel(selectedLevel.id, "feedbackCopy", event.target.value)
+                    }
+                  />
+                </label>
+
+                <label className="form-field form-field--wide">
+                  <span>场景热点 / 节点配置（每行一条）</span>
+                  <textarea
+                    rows={4}
+                    value={linesToText(selectedLevel.hotspotItems)}
+                    onChange={(event) =>
+                      updateLevelListField(selectedLevel.id, "hotspotItems", event.target.value)
+                    }
+                  />
+                </label>
+
+                <label className="form-field form-field--wide">
+                  <span>拖拽道具列表（每行一条）</span>
+                  <textarea
+                    rows={4}
+                    value={linesToText(selectedLevel.propItems)}
+                    onChange={(event) =>
+                      updateLevelListField(selectedLevel.id, "propItems", event.target.value)
+                    }
+                  />
+                </label>
+
+                <label className="form-field form-field--wide">
+                  <span>目标区域说明（每行一条）</span>
+                  <textarea
+                    rows={4}
+                    value={linesToText(selectedLevel.targetAreaNotes)}
+                    onChange={(event) =>
+                      updateLevelListField(
+                        selectedLevel.id,
+                        "targetAreaNotes",
+                        event.target.value,
+                      )
                     }
                   />
                 </label>
@@ -211,27 +328,59 @@ export function AdminLevelsPage() {
                 <p>{selectedStructure?.teachingTip}</p>
               </article>
 
-              <div className="page-stack">
-                <article className="surface-card admin-preview-card">
-                  <span className="section-block__eyebrow">页面联动</span>
-                  <ul className="plain-list">
-                    <li>关卡标题和焦点会出现在主题页、关卡页和结算页。</li>
-                    <li>奖励规则会进入结算页与成长系统说明。</li>
-                    <li>反馈风格会影响结算文案和教师端建议口径。</li>
-                  </ul>
-                </article>
+              <article className="surface-card admin-preview-card">
+                <span className="section-block__eyebrow">场景与任务预览</span>
+                <div className="theme-cover-preview theme-cover-preview--sky">
+                  <strong>{selectedLevel.sceneAssetLabel}</strong>
+                  <p>当前场景图会在学生端主场景区域展示。</p>
+                </div>
+                <ul className="plain-list">
+                  {selectedLevel.taskOutline.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </article>
+            </section>
 
-                <article className="surface-card admin-preview-card">
-                  <span className="section-block__eyebrow">教学提示</span>
-                  <p>建议保持三关递进节奏：先观察，再判断，最后强化出行防护习惯。</p>
-                </article>
-              </div>
+            <section className="card-grid card-grid--three">
+              <article className="surface-card admin-preview-card">
+                <span className="section-block__eyebrow">热点 / 节点配置</span>
+                <ul className="plain-list">
+                  {selectedLevel.hotspotItems.length > 0 ? (
+                    selectedLevel.hotspotItems.map((item) => <li key={item}>{item}</li>)
+                  ) : (
+                    <li>当前关卡不需要单独配置热点。</li>
+                  )}
+                </ul>
+              </article>
+
+              <article className="surface-card admin-preview-card">
+                <span className="section-block__eyebrow">道具列表</span>
+                <ul className="plain-list">
+                  {selectedLevel.propItems.length > 0 ? (
+                    selectedLevel.propItems.map((item) => <li key={item}>{item}</li>)
+                  ) : (
+                    <li>当前关卡不使用拖拽道具。</li>
+                  )}
+                </ul>
+              </article>
+
+              <article className="surface-card admin-preview-card">
+                <span className="section-block__eyebrow">目标区域说明</span>
+                <ul className="plain-list">
+                  {selectedLevel.targetAreaNotes.length > 0 ? (
+                    selectedLevel.targetAreaNotes.map((item) => <li key={item}>{item}</li>)
+                  ) : (
+                    <li>当前关卡不需要额外目标区域说明。</li>
+                  )}
+                </ul>
+              </article>
             </section>
           </div>
         ) : (
           <article className="surface-card empty-state-card">
             <strong>请选择一个关卡</strong>
-            <p>左侧选中关卡后，就可以维护标题、时长、奖励、反馈风格和结构预览。</p>
+            <p>左侧选中关卡后，就可以维护场景图、任务、热点、道具和反馈文案。</p>
           </article>
         )}
       </section>

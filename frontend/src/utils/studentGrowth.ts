@@ -97,10 +97,6 @@ function getLevelScore(state: AppState, levelId: LevelId) {
     return 80;
   }
 
-  if (level.status === "in_progress") {
-    return 52;
-  }
-
   if (level.status === "available") {
     return 28;
   }
@@ -196,7 +192,7 @@ export function buildGrowthSnapshot(state: AppState): GrowthSnapshot {
   ];
 
   const currentLearningLevel = state.progress.levels.find(
-    (level) => level.status === "available" || level.status === "in_progress",
+    (level) => level.status === "available",
   );
 
   const journal: GrowthJournalItem[] = [];
@@ -232,7 +228,7 @@ export function buildGrowthSnapshot(state: AppState): GrowthSnapshot {
       return;
     }
 
-    if (level.status === "available" || level.status === "in_progress") {
+    if (level.status === "available") {
       journal.push({
         id: `${levelId}-current`,
         title: `当前进行：${level.title}`,

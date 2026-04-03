@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { StatusBadge } from "../../components/StatusBadge";
 import { themeCards } from "../../data/mockData";
@@ -26,8 +26,9 @@ export function StudentHomePage() {
     (level) => level.status === "completed",
   ).length;
   const nextLevel = state.progress.levels.find(
-    (level) => level.status === "available" || level.status === "in_progress",
+    (level) => level.status === "available",
   );
+  const [unavailableThemeNotice, setUnavailableThemeNotice] = useState("");
   const examStatusLabel =
     state.progress.exam.status === "completed"
       ? "已完成"
@@ -201,6 +202,13 @@ export function StudentHomePage() {
         </article>
       </section>
 
+      {unavailableThemeNotice ? (
+        <article className="feedback-box">
+          <strong>主题提示</strong>
+          <p>{unavailableThemeNotice}</p>
+        </article>
+      ) : null}
+
       <section className="section-block">
         <div className="section-block__header">
           <div>
@@ -225,9 +233,7 @@ export function StudentHomePage() {
                       status={
                         state.progress.exam.status === "completed"
                           ? "completed"
-                          : completedLevels > 0
-                            ? "in_progress"
-                            : "available"
+                          : "available"
                       }
                     />
                   ) : null}
@@ -240,7 +246,7 @@ export function StudentHomePage() {
                   onClick={() =>
                     theme.isOpen
                       ? navigate("/student/theme/road-safety")
-                      : window.alert("该主题正在开发中，敬请期待。")
+                      : setUnavailableThemeNotice("该主题正在开发中，敬请期待。")
                   }
                 >
                   {theme.cta}

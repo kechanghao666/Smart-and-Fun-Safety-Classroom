@@ -186,32 +186,7 @@ function reducer(state: AppState, action: AppAction): AppState {
   }
 
   if (action.type === "markLevelInProgress") {
-    const shouldUpdate = state.progress.levels.some(
-      (level) => level.id === action.levelId && level.status === "available",
-    );
-
-    if (!shouldUpdate) {
-      return state;
-    }
-
-    const levels = state.progress.levels.map((level) => {
-      if (level.id === action.levelId && level.status === "available") {
-        return {
-          ...level,
-          status: "in_progress" as const,
-        };
-      }
-
-      return level;
-    });
-
-    return {
-      ...state,
-      progress: {
-        ...state.progress,
-        levels,
-      },
-    };
+    return state;
   }
 
   if (action.type === "completeLevel") {

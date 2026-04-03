@@ -4,6 +4,7 @@ import { StatusBadge } from "../../components/StatusBadge";
 import { useAppState } from "../../state/AppState";
 import type { LevelId } from "../../types";
 import { useStudentAiScene } from "../../utils/useStudentAiScene";
+import { buildGrowthSnapshot } from "../../utils/studentGrowth";
 import { usePersistedState } from "../../utils/usePersistedState";
 
 export function StudentThemePage() {
@@ -12,8 +13,9 @@ export function StudentThemePage() {
   const completedLevels = state.progress.levels.filter(
     (level) => level.status === "completed",
   ).length;
+  const growth = buildGrowthSnapshot(state);
   const nextLevel = state.progress.levels.find(
-    (level) => level.status === "available" || level.status === "in_progress",
+    (level) => level.status === "available",
   );
   const examUnlocked = state.progress.exam.status !== "locked";
   const examCompleted = state.progress.exam.status === "completed";
@@ -179,7 +181,7 @@ export function StudentThemePage() {
         </div>
       </section>
 
-      <section className="card-grid card-grid--two">
+      <section className="card-grid card-grid--three">
         <article className="surface-card ai-insight-card">
           <span className="section-block__eyebrow">AI 学习提醒</span>
           <div className="row-between">
@@ -211,6 +213,23 @@ export function StudentThemePage() {
               打开 AI 问答页
             </Link>
           </div>
+        </article>
+
+        <article className="surface-card theme-overview-card">
+          <span className="section-block__eyebrow">成长展示区</span>
+          <h2>当前人物成长状态</h2>
+          <ul className="plain-list">
+            <li>成长阶段：{growth.currentTier.title}</li>
+            <li>当前外观：{growth.currentTier.appearance}</li>
+            <li>能力标签：{growth.currentTier.ability}</li>
+            <li>专属场景：{growth.currentTier.scene}</li>
+            <li>
+              下一阶段：
+              {growth.nextTier
+                ? `再获得 ${growth.pointsToNext} 分可进入 ${growth.nextTier.title}`
+                : "当前阶段内容已全部点亮"}
+            </li>
+          </ul>
         </article>
 
         <article className="surface-card theme-overview-card">

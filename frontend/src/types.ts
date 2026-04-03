@@ -6,7 +6,6 @@ export type AuthSource = "mock" | "api";
 export type LearningStatus =
   | "locked"
   | "available"
-  | "in_progress"
   | "completed";
 
 export type LevelId = "level-1" | "level-2" | "level-3";
@@ -130,8 +129,12 @@ export interface TeacherStudentDetail {
   lastActiveAt: string;
   weakSpot: string;
   growthStage: string;
+  growthLevelLabel: string;
   growthSummary: string;
   motivationLabel: string;
+  currentAppearance: string;
+  currentAbility: string;
+  currentScene: string;
   levelStatuses: TeacherStudentLevelStatus[];
   wrongTopics: string[];
   recommendations: string[];
@@ -150,6 +153,8 @@ export interface ThemeManagementItem {
   title: string;
   description: string;
   coverLabel: string;
+  coverAccent: ThemeAccent;
+  coverIllustration: string;
   isOpen: boolean;
   sortOrder: number;
 }
@@ -159,13 +164,24 @@ export interface LevelManagementItem {
   title: string;
   focus: string;
   duration: string;
+  displayOrder: number;
+  sceneAssetLabel: string;
+  taskOutline: string[];
   rewardLabel: string;
   feedbackStyle: string;
+  feedbackCopy: string;
+  hotspotItems: string[];
+  propItems: string[];
+  targetAreaNotes: string[];
 }
 
 export interface QuestionBankManagementItem {
   id: string;
+  themeId: string;
+  themeTitle: string;
   prompt: string;
+  options: string[];
+  correctOptionIndex: number;
   correctLabel: string;
   explanation: string;
   reviewLevelId: LevelId;

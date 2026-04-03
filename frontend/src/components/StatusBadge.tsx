@@ -1,9 +1,8 @@
 import type { LearningStatus } from "../types";
 
 const labelMap: Record<LearningStatus, string> = {
-  locked: "未解锁",
-  available: "可进入",
-  in_progress: "进行中",
+  locked: "未开启",
+  available: "已开启未完成",
   completed: "已完成",
 };
 

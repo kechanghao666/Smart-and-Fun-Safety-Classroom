@@ -3,8 +3,62 @@ import { AdminEditorStatusBar } from "../../components/AdminEditorStatusBar";
 import { themeManagementItems } from "../../data/mockData";
 import { fetchAdminThemes } from "../../services/admin";
 import { useAppState } from "../../state/AppState";
-import type { ThemeManagementItem } from "../../types";
+import type { ThemeAccent, ThemeManagementItem } from "../../types";
 import { useEditableAdminResource } from "../../utils/useEditableAdminResource";
+
+interface ThemeCoverPreset {
+  accent: ThemeAccent;
+  coverIllustration: string;
+  coverLabel: string;
+}
+
+interface ThemeModalState {
+  mode: "create" | "edit";
+  draft: ThemeManagementItem;
+}
+
+const coverPresetOptions: ThemeCoverPreset[] = [
+  {
+    accent: "sky",
+    coverIllustration: "斑马线与信号灯插画",
+    coverLabel: "蓝天斑马线封面",
+  },
+  {
+    accent: "mint",
+    coverIllustration: "校园操场与教学楼插画",
+    coverLabel: "校园操场封面",
+  },
+  {
+    accent: "orange",
+    coverIllustration: "家庭客厅与安全提醒插画",
+    coverLabel: "家庭安全封面",
+  },
+];
+
+function buildThemeId(title: string) {
+  const normalized = title
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-\u4e00-\u9fa5]/g, "");
+
+  return normalized ? `theme-${normalized}` : `theme-${Date.now()}`;
+}
+
+function createThemeDraft(sortOrder: number): ThemeManagementItem {
+  const preset = coverPresetOptions[0];
+
+  return {
+    id: `theme-${Date.now()}`,
+    title: "新主题",
+    description: "请填写主题简介。",
+    coverLabel: preset.coverLabel,
+    coverAccent: preset.accent,
+    coverIllustration: preset.coverIllustration,
+    isOpen: false,
+    sortOrder,
+  };
+}
 
 export function AdminThemesPage() {
   const { state } = useAppState();
@@ -17,8 +71,11 @@ export function AdminThemesPage() {
     dependencies: [state.authToken],
     fallbackMessage: "暂时无法获取主题管理数据，当前继续使用本地演示内容。",
   });
-  const themes = editor.draftData;
+  const themes = editor.draftData
+    .slice()
+    .sort((left, right) => left.sortOrder - right.sortOrder);
   const [selectedId, setSelectedId] = useState(themes[0]?.id ?? "");
+  const [modalState, setModalState] = useState<ThemeModalState | null>(null);
 
   useEffect(() => {
     setSelectedId((current) =>
@@ -33,14 +90,85 @@ export function AdminThemesPage() {
   const openCount = themes.filter((item) => item.isOpen).length;
   const closedCount = themes.length - openCount;
 
-  function updateTheme<K extends keyof ThemeManagementItem>(
-    id: string,
+  function openCreateModal() {
+    const nextSortOrder =
+      Math.max(0, ...themes.map((item) => item.sortOrder)) + 1;
+
+    setModalState({
+      mode: "create",
+      draft: createThemeDraft(nextSortOrder),
+    });
+  }
+
+  function openEditModal(theme: ThemeManagementItem) {
+    setModalState({
+      mode: "edit",
+      draft: { ...theme },
+    });
+  }
+
+  function updateModalDraft<K extends keyof ThemeManagementItem>(
     field: K,
     value: ThemeManagementItem[K],
   ) {
-    editor.updateDraft((current) =>
-      current.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+    setModalState((current) =>
+      current
+        ? {
+            ...current,
+            draft: {
+              ...current.draft,
+              [field]: value,
+            },
+          }
+        : current,
     );
+  }
+
+  function applyPreset(preset: ThemeCoverPreset) {
+    setModalState((current) =>
+      current
+        ? {
+            ...current,
+            draft: {
+              ...current.draft,
+              coverAccent: preset.accent,
+              coverIllustration: preset.coverIllustration,
+              coverLabel: preset.coverLabel,
+            },
+          }
+        : current,
+    );
+  }
+
+  function submitModal() {
+    if (!modalState) {
+      return;
+    }
+
+    const trimmedTitle = modalState.draft.title.trim() || "未命名主题";
+    const trimmedDescription = modalState.draft.description.trim() || "请补充主题简介。";
+    const nextDraft: ThemeManagementItem = {
+      ...modalState.draft,
+      id:
+        modalState.mode === "create"
+          ? buildThemeId(trimmedTitle)
+          : modalState.draft.id,
+      title: trimmedTitle,
+      description: trimmedDescription,
+      sortOrder: Number.isNaN(modalState.draft.sortOrder)
+        ? themes.length + 1
+        : modalState.draft.sortOrder,
+    };
+
+    editor.updateDraft((current) => {
+      if (modalState.mode === "create") {
+        return [...current, nextDraft];
+      }
+
+      return current.map((item) => (item.id === nextDraft.id ? nextDraft : item));
+    });
+    setSelectedId(nextDraft.id);
+    setModalState(null);
   }
 
   return (
@@ -48,8 +176,25 @@ export function AdminThemesPage() {
       <section className="hero-banner hero-banner--admin">
         <div>
           <span className="hero-banner__eyebrow">主题管理</span>
-          <h1>维护主题列表、开放状态与学生端展示预览</h1>
-          <p>这一页对应说明书中的“列表 + 编辑区 + 预览卡”结构，用来统一管理主题入口的展示效果和开放顺序。</p>
+          <h1>用列表、弹窗和学生端预览维护主题入口</h1>
+          <p>
+            这一页严格对应说明书中的“列表 + 编辑弹窗 + 预览区”结构，用来统一管理主题名称、
+            简介、封面图、开放状态和排序。
+          </p>
+        </div>
+        <div className="hero-banner__actions">
+          <button type="button" className="primary-button" onClick={openCreateModal}>
+            新增主题
+          </button>
+          {selectedTheme ? (
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => openEditModal(selectedTheme)}
+            >
+              编辑当前主题
+            </button>
+          ) : null}
         </div>
       </section>
 
@@ -80,7 +225,7 @@ export function AdminThemesPage() {
         <article className="surface-card stat-card admin-summary-card">
           <span>待开放</span>
           <strong>{closedCount}</strong>
-          <p>未开放主题可以先维护封面、简介和排序，再决定正式上线时间。</p>
+          <p>未开放主题可以先完成封面和简介录入，再决定正式上线时间。</p>
         </article>
       </section>
 
@@ -104,7 +249,7 @@ export function AdminThemesPage() {
                 </div>
                 <p>{theme.description}</p>
                 <span className="inline-note">
-                  封面标签：{theme.coverLabel} · 排序 {theme.sortOrder}
+                  封面图：{theme.coverLabel} · 排序 {theme.sortOrder}
                 </span>
               </button>
             ))
@@ -118,122 +263,202 @@ export function AdminThemesPage() {
 
         {selectedTheme ? (
           <div className="page-stack">
-            <article className="surface-card editor-panel">
-              <span className="section-block__eyebrow">编辑主题</span>
-              <h2>{selectedTheme.title}</h2>
-              <div className="chip-row">
-                <span className="surface-tag">{selectedTheme.isOpen ? "已开放" : "未开放"}</span>
-                <span className="surface-tag">排序 {selectedTheme.sortOrder}</span>
-                <span className="surface-tag">{selectedTheme.coverLabel}</span>
+            <article className="surface-card admin-preview-card">
+              <div className="row-between">
+                <div>
+                  <span className="section-block__eyebrow">当前主题预览</span>
+                  <h2>{selectedTheme.title}</h2>
+                </div>
+                <div className="chip-row">
+                  <span className="surface-tag">排序 {selectedTheme.sortOrder}</span>
+                  <span className="surface-tag">{selectedTheme.isOpen ? "已开放" : "未开放"}</span>
+                </div>
               </div>
 
-              <div className="editor-grid">
-                <label className="form-field">
-                  <span>主题名称</span>
-                  <input
-                    value={selectedTheme.title}
-                    onChange={(event) =>
-                      updateTheme(selectedTheme.id, "title", event.target.value)
-                    }
-                  />
-                </label>
+              <div
+                className={`theme-cover-preview theme-cover-preview--${selectedTheme.coverAccent}`}
+              >
+                <strong>{selectedTheme.coverLabel}</strong>
+                <p>{selectedTheme.coverIllustration}</p>
+              </div>
 
-                <label className="form-field">
-                  <span>封面标签</span>
-                  <input
-                    value={selectedTheme.coverLabel}
-                    onChange={(event) =>
-                      updateTheme(selectedTheme.id, "coverLabel", event.target.value)
-                    }
-                  />
-                </label>
-
-                <label className="form-field form-field--wide">
-                  <span>主题简介</span>
-                  <textarea
-                    rows={4}
-                    value={selectedTheme.description}
-                    onChange={(event) =>
-                      updateTheme(selectedTheme.id, "description", event.target.value)
-                    }
-                  />
-                </label>
-
-                <label className="form-field">
-                  <span>排序</span>
-                  <input
-                    type="number"
-                    value={selectedTheme.sortOrder}
-                    onChange={(event) => {
-                      const nextValue = Number(event.target.value);
-                      updateTheme(
-                        selectedTheme.id,
-                        "sortOrder",
-                        Number.isNaN(nextValue) ? 0 : nextValue,
-                      );
-                    }}
-                  />
-                </label>
-
-                <label className="form-field">
-                  <span>开放状态</span>
-                  <select
-                    value={selectedTheme.isOpen ? "open" : "closed"}
-                    onChange={(event) =>
-                      updateTheme(selectedTheme.id, "isOpen", event.target.value === "open")
-                    }
-                  >
-                    <option value="open">开放</option>
-                    <option value="closed">关闭</option>
-                  </select>
-                </label>
+              <div className={`theme-card theme-card--${selectedTheme.coverAccent}`}>
+                <div className="theme-card__top">
+                  <span className="surface-tag">
+                    {selectedTheme.isOpen ? "当前开放主题" : "正在开发中"}
+                  </span>
+                  <span className="surface-tag">
+                    {selectedTheme.isOpen ? "可进入" : "敬请期待"}
+                  </span>
+                </div>
+                <h3>{selectedTheme.title}</h3>
+                <p>{selectedTheme.description}</p>
+                <button
+                  type="button"
+                  className={selectedTheme.isOpen ? "primary-button" : "ghost-button"}
+                >
+                  {selectedTheme.isOpen ? "进入主题" : "敬请期待"}
+                </button>
               </div>
             </article>
 
             <section className="card-grid card-grid--two">
-              <article className="surface-card admin-preview-card admin-preview-card--theme">
-                <span className="section-block__eyebrow">学生端预览</span>
-                <div className="theme-card theme-card--sky">
-                  <div className="theme-card__top">
-                    <span className="surface-tag">
-                      {selectedTheme.isOpen ? "当前开放主题" : "正在开发中"}
-                    </span>
-                    <span className="surface-tag">
-                      {selectedTheme.isOpen ? "可进入" : "敬请期待"}
-                    </span>
-                  </div>
-                  <h3>{selectedTheme.title}</h3>
-                  <p>{selectedTheme.description}</p>
-                  <button type="button" className={selectedTheme.isOpen ? "primary-button" : "ghost-button"}>
-                    {selectedTheme.isOpen ? "进入主题" : "敬请期待"}
-                  </button>
-                </div>
+              <article className="surface-card admin-preview-card">
+                <span className="section-block__eyebrow">页面联动</span>
+                <ul className="plain-list">
+                  <li>开放状态会影响学生端主题卡是否点亮。</li>
+                  <li>排序会影响主题卡片在首页中的展示先后。</li>
+                  <li>封面图会进入学生端主题卡和后台预览区域。</li>
+                </ul>
               </article>
 
-              <div className="page-stack">
-                <article className="surface-card admin-preview-card">
-                  <span className="section-block__eyebrow">页面联动</span>
-                  <ul className="plain-list">
-                    <li>开放状态会影响学生端主题卡是否点亮。</li>
-                    <li>排序会影响主题卡片在首页中的展示先后。</li>
-                    <li>封面标签会作为主题卡顶部辅助信息展示。</li>
-                  </ul>
-                </article>
-
-                <article className="surface-card admin-preview-card">
-                  <span className="section-block__eyebrow">保存说明</span>
-                  <p>当前保存只会写入本地工作稿，方便前端继续演示和联调，不会直接改动服务器主题配置。</p>
-                </article>
-              </div>
+              <article className="surface-card admin-preview-card">
+                <span className="section-block__eyebrow">编辑方式</span>
+                <p>
+                  点击“新增主题”或“编辑当前主题”会弹出表单窗口；确认后只写入本地工作稿，
+                  仍需通过上方状态条保存到本地持久化。
+                </p>
+              </article>
             </section>
           </div>
         ) : (
           <article className="surface-card empty-state-card">
             <strong>请选择一个主题</strong>
-            <p>左侧选中主题后，就可以在这里维护标题、封面、开放状态和学生端预览。</p>
+            <p>左侧选中主题后，就可以在这里预览学生端卡片效果并继续编辑。</p>
           </article>
         )}
       </section>
+
+      {modalState ? (
+        <section className="overlay-modal-backdrop">
+          <article className="surface-card overlay-modal overlay-modal--wide">
+            <div className="row-between">
+              <div>
+                <span className="section-block__eyebrow">
+                  {modalState.mode === "create" ? "新增主题" : "编辑主题"}
+                </span>
+                <h2>{modalState.mode === "create" ? "创建新的主题入口" : modalState.draft.title}</h2>
+              </div>
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => setModalState(null)}
+              >
+                关闭
+              </button>
+            </div>
+
+            <div className="editor-grid">
+              <label className="form-field">
+                <span>主题名称</span>
+                <input
+                  value={modalState.draft.title}
+                  onChange={(event) => updateModalDraft("title", event.target.value)}
+                />
+              </label>
+
+              <label className="form-field">
+                <span>排序</span>
+                <input
+                  type="number"
+                  value={modalState.draft.sortOrder}
+                  onChange={(event) =>
+                    updateModalDraft(
+                      "sortOrder",
+                      Number.isNaN(Number(event.target.value))
+                        ? modalState.draft.sortOrder
+                        : Number(event.target.value),
+                    )
+                  }
+                />
+              </label>
+
+              <label className="form-field form-field--wide">
+                <span>主题简介</span>
+                <textarea
+                  rows={4}
+                  value={modalState.draft.description}
+                  onChange={(event) => updateModalDraft("description", event.target.value)}
+                />
+              </label>
+
+              <label className="form-field">
+                <span>开放状态</span>
+                <select
+                  value={modalState.draft.isOpen ? "open" : "closed"}
+                  onChange={(event) =>
+                    updateModalDraft("isOpen", event.target.value === "open")
+                  }
+                >
+                  <option value="open">开放</option>
+                  <option value="closed">关闭</option>
+                </select>
+              </label>
+
+              <label className="form-field">
+                <span>封面图名称</span>
+                <input
+                  value={modalState.draft.coverLabel}
+                  onChange={(event) => updateModalDraft("coverLabel", event.target.value)}
+                />
+              </label>
+
+              <label className="form-field form-field--wide">
+                <span>封面图说明</span>
+                <textarea
+                  rows={3}
+                  value={modalState.draft.coverIllustration}
+                  onChange={(event) =>
+                    updateModalDraft("coverIllustration", event.target.value)
+                  }
+                />
+              </label>
+            </div>
+
+            <section className="page-stack">
+              <div>
+                <span className="section-block__eyebrow">选择封面图预设</span>
+                <h3>点击后会同步更新封面图名称、颜色和预览</h3>
+              </div>
+
+              <div className="cover-preset-grid">
+                {coverPresetOptions.map((preset) => {
+                  const isActive =
+                    modalState.draft.coverAccent === preset.accent &&
+                    modalState.draft.coverIllustration === preset.coverIllustration;
+
+                  return (
+                    <button
+                      key={`${preset.accent}-${preset.coverLabel}`}
+                      type="button"
+                      className={
+                        isActive
+                          ? "cover-preset-card cover-preset-card--active"
+                          : "cover-preset-card"
+                      }
+                      onClick={() => applyPreset(preset)}
+                    >
+                      <div className={`theme-cover-preview theme-cover-preview--${preset.accent}`}>
+                        <strong>{preset.coverLabel}</strong>
+                        <p>{preset.coverIllustration}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            <div className="button-row">
+              <button type="button" className="ghost-button" onClick={() => setModalState(null)}>
+                取消
+              </button>
+              <button type="button" className="primary-button" onClick={submitModal}>
+                确认写入工作稿
+              </button>
+            </div>
+          </article>
+        </section>
+      ) : null}
     </div>
   );
 }

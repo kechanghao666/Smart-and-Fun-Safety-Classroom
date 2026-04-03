@@ -51,6 +51,7 @@ export function TeacherStudentDetailPage() {
           <div className="chip-row">
             <span className="surface-tag">{student.className}</span>
             <span className="surface-tag">{student.growthStage}</span>
+            <span className="surface-tag">{student.growthLevelLabel}</span>
             <span className={`teacher-attention-pill teacher-attention-pill--${attentionLevel}`}>
               {attentionLabel}
             </span>
@@ -147,6 +148,22 @@ export function TeacherStudentDetailPage() {
           <span className="section-block__eyebrow">成长状态</span>
           <h2>把学习结果转成可持续推进的反馈</h2>
           <div className="page-stack">
+            <article className="teacher-analysis-card">
+              <strong>人物当前形态</strong>
+              <p>{student.currentAppearance}</p>
+            </article>
+            <article className="teacher-analysis-card">
+              <strong>成长等级</strong>
+              <p>
+                {student.growthLevelLabel} · {student.growthStage}
+              </p>
+            </article>
+            <article className="teacher-analysis-card">
+              <strong>已解锁能力 / 场景</strong>
+              <p>
+                {student.currentAbility} · {student.currentScene}
+              </p>
+            </article>
             <article className="teacher-analysis-card">
               <strong>成长总结</strong>
               <p>{student.growthSummary}</p>

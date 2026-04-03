@@ -121,7 +121,7 @@ function buildFocusAreas(state: AppState): ReportFocusArea[] {
   }
 
   const nextLevel = state.progress.levels.find(
-    (level) => level.status === "available" || level.status === "in_progress",
+    (level) => level.status === "available",
   );
 
   if (nextLevel) {

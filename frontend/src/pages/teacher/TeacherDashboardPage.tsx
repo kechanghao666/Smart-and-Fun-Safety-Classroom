@@ -1,6 +1,10 @@
 import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { teacherClassSummaries, teacherStudents } from "../../data/mockData";
+import {
+  demoAccounts,
+  teacherClassSummaries,
+  teacherStudents,
+} from "../../data/mockData";
 import { fetchTeacherDashboard } from "../../services/teacher";
 import { useAppState } from "../../state/AppState";
 import { useApiResource } from "../../utils/useApiResource";
@@ -69,6 +73,11 @@ export function TeacherDashboardPage() {
     filteredStudents,
     filteredClassSummaries,
   );
+  const teacherDisplayName =
+    demoAccounts.find(
+      (account) =>
+        account.account === state.sessionAccount && account.role === "teacher",
+    )?.displayName ?? "当前授课教师";
   const classLabel = selectedClass ? selectedClass.name : "全部班级";
   const completedRate =
     filteredStudents.length > 0
@@ -96,6 +105,10 @@ export function TeacherDashboardPage() {
           <span className="hero-banner__eyebrow">教师首页</span>
           <h1>班级学习总览与近期关注提醒</h1>
           <p>优先展示班级学习概览、三关完成率、考试完成率和近期异常提醒。</p>
+          <div className="chip-row">
+            <span className="surface-tag">教师姓名：{teacherDisplayName}</span>
+            <span className="surface-tag">当前班级：{classLabel}</span>
+          </div>
         </div>
         <div className="hero-banner__actions hero-banner__actions--stacked">
           <label className="hero-select">

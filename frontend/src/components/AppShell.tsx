@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { FloatingAiAssistant } from "./FloatingAiAssistant";
 import { ApiError } from "../services/http";
 import { fetchStudentProgress } from "../services/student";
@@ -23,6 +23,11 @@ interface NavItem {
 interface PageMeta {
   title: string;
   description: string;
+}
+
+interface BreadcrumbItem {
+  label: string;
+  to?: string;
 }
 
 const navByRole: Record<UserRole, NavItem[]> = {
@@ -211,13 +216,81 @@ function resolvePageMeta(role: UserRole, pathname: string): PageMeta {
   };
 }
 
+function resolveBreadcrumbs(role: UserRole, pathname: string): BreadcrumbItem[] {
+  if (role === "student") {
+    return [];
+  }
+
+  if (role === "teacher") {
+    const breadcrumbs: BreadcrumbItem[] = [
+      { label: "教师工作台", to: "/teacher/dashboard" },
+    ];
+
+    if (pathname === "/teacher/classes") {
+      breadcrumbs.push({ label: "班级概览" });
+      return breadcrumbs;
+    }
+
+    if (pathname === "/teacher/students") {
+      breadcrumbs.push({ label: "学生列表" });
+      return breadcrumbs;
+    }
+
+    if (pathname.startsWith("/teacher/students/")) {
+      breadcrumbs.push({ label: "学生列表", to: "/teacher/students" });
+      breadcrumbs.push({ label: "学生详情" });
+      return breadcrumbs;
+    }
+
+    breadcrumbs.push({ label: "教学总览" });
+    return breadcrumbs;
+  }
+
+  const breadcrumbs: BreadcrumbItem[] = [{ label: "管理员后台", to: "/admin/dashboard" }];
+
+  if (pathname === "/admin/themes") {
+    breadcrumbs.push({ label: "主题管理" });
+    return breadcrumbs;
+  }
+
+  if (pathname === "/admin/levels") {
+    breadcrumbs.push({ label: "关卡内容管理" });
+    return breadcrumbs;
+  }
+
+  if (pathname === "/admin/question-bank") {
+    breadcrumbs.push({ label: "题库管理" });
+    return breadcrumbs;
+  }
+
+  if (pathname === "/admin/ai-copy") {
+    breadcrumbs.push({ label: "AI 文案管理" });
+    return breadcrumbs;
+  }
+
+  if (pathname === "/admin/users") {
+    breadcrumbs.push({ label: "用户管理" });
+    return breadcrumbs;
+  }
+
+  if (pathname === "/admin/stats") {
+    breadcrumbs.push({ label: "数据统计" });
+    return breadcrumbs;
+  }
+
+  breadcrumbs.push({ label: "后台首页" });
+  return breadcrumbs;
+}
+
 function WorkspaceHeader({
   role,
   meta,
+  breadcrumbs,
   onSignOut,
 }: {
   role: UserRole;
   meta: PageMeta;
+  breadcrumbs: BreadcrumbItem[];
   onSignOut: () => void;
 }) {
   const { state } = useAppState();
@@ -225,6 +298,21 @@ function WorkspaceHeader({
   return (
     <header className="workspace-header">
       <div className="workspace-header__copy">
+        {breadcrumbs.length > 0 ? (
+          <nav className="workspace-breadcrumbs" aria-label="面包屑导航">
+            {breadcrumbs.map((item, index) => (
+              <span key={`${item.label}-${index}`} className="workspace-breadcrumbs__item">
+                {item.to && index < breadcrumbs.length - 1 ? (
+                  <Link className="workspace-breadcrumbs__link" to={item.to}>
+                    {item.label}
+                  </Link>
+                ) : (
+                  <span>{item.label}</span>
+                )}
+              </span>
+            ))}
+          </nav>
+        ) : null}
         <span className="topbar__eyebrow">{roleNameMap[role]}</span>
         <h1>{meta.title}</h1>
         <p>{meta.description}</p>
@@ -365,6 +453,10 @@ export function AppShell({
 
   const pageMeta = useMemo(
     () => resolvePageMeta(role, location.pathname),
+    [location.pathname, role],
+  );
+  const breadcrumbs = useMemo(
+    () => resolveBreadcrumbs(role, location.pathname),
     [location.pathname, role],
   );
   const studentAccountKey = state.sessionAccount ?? "";
@@ -604,7 +696,12 @@ export function AppShell({
       </aside>
 
       <div className="shell-main">
-        <WorkspaceHeader role={role} meta={pageMeta} onSignOut={handleSignOut} />
+        <WorkspaceHeader
+          role={role}
+          meta={pageMeta}
+          breadcrumbs={breadcrumbs}
+          onSignOut={handleSignOut}
+        />
         {banner}
         <main className="content-area">
           <Outlet />
