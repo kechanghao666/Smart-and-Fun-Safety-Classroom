@@ -128,11 +128,11 @@ export function AdminUsersPage() {
       </section>
 
       <article className="feedback-box">
-        <strong>{source === "api" ? "用户列表来自后端" : "用户列表来自本地 mock"}</strong>
+        <strong>{source === "api" ? "用户列表已接入服务数据" : "用户列表当前使用预置数据"}</strong>
         <p>
           {isLoading
             ? "正在同步用户列表..."
-            : error || "用户管理页已经具备真实接口读取占位，异常处理动作当前先保存到本地工作台。"}
+            : error || "异常账号处理会先记录在当前管理版本中，后续可继续接入统一账号服务。"}
         </p>
       </article>
 
@@ -337,8 +337,8 @@ export function AdminUsersPage() {
             </p>
             <p>
               {pendingAction.nextStatus === "paused"
-                ? "当前动作会把该账号标记为异常并停用，只写入本地工作台状态，不会直接写入服务器。"
-                : "当前动作会恢复该账号的可用状态，只写入本地工作台状态，不会直接写入服务器。"}
+                ? "当前动作会先把该账号标记为异常并停用，待服务端接入后可再统一同步。"
+                : "当前动作会先恢复该账号的可用状态，待服务端接入后可再统一同步。"}
             </p>
             <div className="button-row">
               <button

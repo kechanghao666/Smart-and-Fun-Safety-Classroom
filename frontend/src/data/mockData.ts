@@ -310,7 +310,7 @@ export const adminModules: AdminModuleCard[] = [
     id: "levels",
     title: "关卡内容管理",
     description: "维护场景任务、热点配置、反馈文案和奖励规则。",
-    ownerSuggestion: "教学设计 / 前端联调",
+    ownerSuggestion: "教学设计 / 数据接入",
     status: "优先搭建",
   },
   {

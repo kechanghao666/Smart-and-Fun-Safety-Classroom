@@ -15,7 +15,7 @@ export function AdminQuestionBankPage() {
     enabled: canUseApi,
     fetcher: () => fetchAdminQuestionBank(state.authToken ?? ""),
     dependencies: [state.authToken],
-    fallbackMessage: "暂时无法获取题库数据，当前继续使用本地演示内容。",
+    fallbackMessage: "暂时无法获取题库数据，当前继续使用预置内容。",
   });
   const questions = editor.draftData;
   const themeOptions = useMemo(

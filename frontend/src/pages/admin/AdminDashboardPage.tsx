@@ -41,11 +41,11 @@ export function AdminDashboardPage() {
       </section>
 
       <article className="feedback-box">
-        <strong>{source === "api" ? "后台模块列表来自后端" : "后台模块列表来自本地 mock"}</strong>
+        <strong>{source === "api" ? "后台模块列表已接入服务数据" : "后台模块列表当前使用预置数据"}</strong>
         <p>
           {isLoading
             ? "正在同步后台模块..."
-            : error || "管理员首页已经预留真实接口读取能力。"}
+            : error || "后台首页会根据当前数据来源自动更新模块状态。"}
         </p>
       </article>
 
@@ -58,7 +58,7 @@ export function AdminDashboardPage() {
         <article className="surface-card stat-card admin-summary-card">
           <span>已进入实施</span>
           <strong>{startedCount}</strong>
-          <p>这些模块已经具备正式页面结构，适合继续做字段冻结和后端联调。</p>
+          <p>这些模块已经具备正式页面结构，适合继续做字段冻结和数据接入。</p>
         </article>
         <article className="surface-card stat-card admin-summary-card">
           <span>本地可编辑</span>
@@ -66,7 +66,7 @@ export function AdminDashboardPage() {
           <p>主题、关卡、题库和 AI 文案已具备显式保存与预览流程。</p>
         </article>
         <article className="surface-card stat-card admin-summary-card">
-          <span>待后端联调</span>
+          <span>待接入数据</span>
           <strong>{pendingCount}</strong>
           <p>用户管理和统计页已留好读取接口，后续可直接切真实数据源。</p>
         </article>
@@ -118,7 +118,7 @@ export function AdminDashboardPage() {
         </article>
 
         <article className="surface-card">
-          <span className="section-block__eyebrow">联调提醒</span>
+          <span className="section-block__eyebrow">数据说明</span>
           <ul className="plain-list">
             <li>字段命名优先和 `docs/v1-contracts.md` 保持一致。</li>
             <li>后台原型允许先用 localStorage 持久化，后续再换真实接口。</li>

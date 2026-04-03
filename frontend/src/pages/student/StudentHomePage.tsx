@@ -149,8 +149,8 @@ export function StudentHomePage() {
               {isGreetingLoading
                 ? "生成中"
                 : state.authSource === "api"
-                  ? "AI 已联调"
-                  : "本地提示"}
+                  ? "AI 实时提示"
+                  : "AI 学习提示"}
             </span>
           </div>
           <p className="ai-insight-card__message">

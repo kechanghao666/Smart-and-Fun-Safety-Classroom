@@ -69,7 +69,7 @@ export function AdminThemesPage() {
     enabled: canUseApi,
     fetcher: () => fetchAdminThemes(state.authToken ?? ""),
     dependencies: [state.authToken],
-    fallbackMessage: "暂时无法获取主题管理数据，当前继续使用本地演示内容。",
+    fallbackMessage: "暂时无法获取主题管理数据，当前继续使用预置内容。",
   });
   const themes = editor.draftData
     .slice()
@@ -256,7 +256,7 @@ export function AdminThemesPage() {
           ) : (
             <article className="surface-card empty-state-card">
               <strong>当前没有主题数据</strong>
-              <p>请先恢复同步 / 默认数据，或等待后端返回主题列表。</p>
+              <p>请先恢复最近版本，或等待主题列表更新后再继续查看。</p>
             </article>
           )}
         </div>
@@ -315,8 +315,8 @@ export function AdminThemesPage() {
               <article className="surface-card admin-preview-card">
                 <span className="section-block__eyebrow">编辑方式</span>
                 <p>
-                  点击“新增主题”或“编辑当前主题”会弹出表单窗口；确认后只写入本地工作稿，
-                  仍需通过上方状态条保存到本地持久化。
+                  点击“新增主题”或“编辑当前主题”会弹出表单窗口；确认后先写入当前配置稿，
+                  再通过上方状态条保存为最新版本。
                 </p>
               </article>
             </section>
@@ -453,7 +453,7 @@ export function AdminThemesPage() {
                 取消
               </button>
               <button type="button" className="primary-button" onClick={submitModal}>
-                确认写入工作稿
+                确认写入配置稿
               </button>
             </div>
           </article>

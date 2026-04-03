@@ -105,7 +105,7 @@ export function useEditableAdminResource<T>({
   enabled,
   fetcher,
   dependencies = [],
-  fallbackMessage = "暂时无法获取后端数据，当前继续使用本地演示数据。",
+  fallbackMessage = "暂时无法获取服务数据，当前继续使用预置数据。",
 }: UseEditableAdminResourceOptions<T>) {
   const initialStateRef = useRef(
     loadPersistedEditableState(storageKey, fallbackData),

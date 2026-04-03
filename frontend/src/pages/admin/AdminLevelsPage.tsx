@@ -47,7 +47,7 @@ export function AdminLevelsPage() {
     enabled: canUseApi,
     fetcher: () => fetchAdminLevels(state.authToken ?? ""),
     dependencies: [state.authToken],
-    fallbackMessage: "暂时无法获取关卡管理数据，当前继续使用本地演示内容。",
+    fallbackMessage: "暂时无法获取关卡管理数据，当前继续使用预置内容。",
   });
   const levels = editor.draftData
     .slice()
@@ -161,7 +161,7 @@ export function AdminLevelsPage() {
           ) : (
             <article className="surface-card empty-state-card">
               <strong>当前没有关卡数据</strong>
-              <p>请先恢复同步 / 默认数据，或等待后端返回关卡配置。</p>
+              <p>请先恢复最近版本，或等待关卡配置更新后再继续查看。</p>
             </article>
           )}
         </div>

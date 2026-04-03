@@ -14,7 +14,7 @@ export function useApiResource<T>({
   fallbackData,
   fetcher,
   dependencies = [],
-  fallbackMessage = "暂时无法获取后端数据，当前已回退为本地演示数据。",
+  fallbackMessage = "暂时无法获取服务数据，当前已切换为预置数据。",
 }: UseApiResourceOptions<T>) {
   const [data, setData] = useState<T>(fallbackData);
   const [isLoading, setIsLoading] = useState(false);

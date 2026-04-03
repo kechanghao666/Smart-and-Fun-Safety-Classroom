@@ -156,7 +156,7 @@ export function TeacherClassesPage() {
         <div>
           <span className="hero-banner__eyebrow">班级创建与管理</span>
           <h1>维护班级列表、调整关注重点并查看班级学习闭环</h1>
-          <p>这里汇总班级完成率、考试完成率和当前最需要关注的教学风险，并补上前端可演示的班级创建与管理流程。</p>
+          <p>这里汇总班级完成率、考试完成率和当前最需要关注的教学风险，并提供完整的班级创建与管理入口。</p>
         </div>
         <div className="hero-banner__actions">
           <button
@@ -173,11 +173,11 @@ export function TeacherClassesPage() {
       </section>
 
       <article className="feedback-box">
-        <strong>{source === "api" ? "班级数据来自后端" : "班级数据来自本地 mock"}</strong>
+        <strong>{source === "api" ? "班级数据已接入服务数据" : "班级数据当前使用预置数据"}</strong>
         <p>
           {isLoading
             ? "正在同步班级概览..."
-            : error || "班级管理页已经预留真实接口读取能力，创建和编辑流程当前先保存到本地工作台。"}
+            : error || "班级创建与编辑会先保存在当前管理版本中，后续可继续接入统一班级服务。"}
         </p>
       </article>
 
@@ -245,7 +245,7 @@ export function TeacherClassesPage() {
           ) : (
             <article className="surface-card empty-state-card">
               <strong>当前没有班级概览</strong>
-              <p>等待后端返回班级数据，或先创建一个本地演示班级。</p>
+              <p>等待班级数据更新后再继续查看，或先补充新的班级信息。</p>
             </article>
           )}
         </div>
@@ -260,7 +260,7 @@ export function TeacherClassesPage() {
                   {getTeacherAttentionLabel(attentionLevel)}
                 </span>
                 <span className="surface-tag">
-                  {selectedClass.isCustom ? "本地新建班级" : "同步班级"}
+                  {selectedClass.isCustom ? "新建班级" : "现有班级"}
                 </span>
               </div>
 
@@ -379,7 +379,7 @@ export function TeacherClassesPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p>当前班级还没有同步到学生数据，适合先作为创建与管理演示用班级。</p>
+                  <p>当前班级暂时还没有学生信息，可以先补充班级资料与关注重点。</p>
                 )}
               </article>
             </section>
@@ -413,7 +413,7 @@ export function TeacherClassesPage() {
         <section className="overlay-modal-backdrop">
           <article className="surface-card overlay-modal">
             <span className="section-block__eyebrow">创建班级</span>
-            <h2>先补一个可演示的班级管理入口</h2>
+            <h2>创建新的班级管理入口</h2>
             <div className="editor-grid">
               <label className="form-field">
                 <span>班级名称</span>

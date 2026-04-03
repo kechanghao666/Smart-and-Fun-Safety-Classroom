@@ -90,11 +90,11 @@ export function TeacherStudentsPage() {
       </section>
 
       <article className="feedback-box">
-        <strong>{source === "api" ? "学生列表来自后端" : "学生列表来自本地 mock"}</strong>
+        <strong>{source === "api" ? "学生列表已接入服务数据" : "学生列表当前使用预置数据"}</strong>
         <p>
           {isLoading
             ? "正在同步学生列表..."
-            : error || "学生列表页已经预留真实接口读取能力。"}
+            : error || "学生列表页会根据当前数据来源自动刷新筛选结果。"}
         </p>
       </article>
 

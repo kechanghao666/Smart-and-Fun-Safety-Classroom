@@ -5,4 +5,4 @@ export const apiBaseUrl = rawApiBaseUrl.replace(/\/+$/, "");
 export const apiEnabled = apiBaseUrl.length > 0;
 export const apiTimeoutMs =
   Number.isFinite(rawTimeout) && rawTimeout > 0 ? rawTimeout : 8000;
-export const authModeLabel = apiEnabled ? "后端联调模式" : "本地演示模式";
+export const authModeLabel = apiEnabled ? "服务数据模式" : "预置数据模式";

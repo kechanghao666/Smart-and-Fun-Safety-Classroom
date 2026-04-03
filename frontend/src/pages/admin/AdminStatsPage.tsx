@@ -40,11 +40,11 @@ export function AdminStatsPage() {
       </section>
 
       <article className="feedback-box">
-        <strong>{source === "api" ? "统计数据来自后端" : "统计数据来自本地 mock"}</strong>
+        <strong>{source === "api" ? "统计数据已接入服务数据" : "统计数据当前使用预置数据"}</strong>
         <p>
           {isLoading
             ? "正在同步统计数据..."
-            : error || "数据统计页已经预留真实接口读取能力。"}
+            : error || "统计页会根据当前数据来源自动刷新指标与趋势。"}
         </p>
       </article>
 
@@ -149,7 +149,7 @@ export function AdminStatsPage() {
         ) : (
           <article className="feedback-box empty-state-card">
             <strong>当前没有班级统计</strong>
-            <p>等待后端返回统计数据，或先使用本地演示数据初始化图表。</p>
+            <p>等待统计数据更新后再继续查看，当前也可以先参考已有指标结构。</p>
           </article>
         )}
       </section>

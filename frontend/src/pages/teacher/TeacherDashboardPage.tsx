@@ -137,11 +137,11 @@ export function TeacherDashboardPage() {
       </section>
 
       <article className="feedback-box">
-        <strong>{source === "api" ? "当前使用后端教师数据" : "当前使用本地演示数据"}</strong>
+        <strong>{source === "api" ? "当前使用服务数据" : "当前使用预置数据"}</strong>
         <p>
           {isLoading
             ? "正在同步教师端数据..."
-            : error || "教师首页已经具备真实接口读取占位，后端接入后会自动切换。"}
+            : error || "教师首页会根据当前数据来源自动更新班级总览。"}
         </p>
       </article>
 
@@ -195,7 +195,7 @@ export function TeacherDashboardPage() {
           ) : (
             <article className="feedback-box empty-state-card">
               <strong>当前没有班级概览数据</strong>
-              <p>等待后端同步班级统计，或先使用本地演示数据。</p>
+              <p>等待班级统计更新后再继续查看，当前也可先参考总览结构。</p>
             </article>
           )}
         </article>

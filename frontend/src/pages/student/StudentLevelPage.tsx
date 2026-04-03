@@ -557,7 +557,7 @@ export function StudentLevelPage() {
 
       {syncError ? (
         <article className="feedback-box">
-          <strong>同步提醒</strong>
+          <strong>学习提醒</strong>
           <p>{syncError}</p>
         </article>
       ) : null}
@@ -860,7 +860,7 @@ export function StudentLevelPage() {
               <h2>卡住时先看这里</h2>
             </div>
             <span className="surface-tag">
-              {isHintLoading ? "生成中" : state.authSource === "api" ? "AI 已联调" : "本地提示"}
+              {isHintLoading ? "生成中" : state.authSource === "api" ? "AI 实时提示" : "AI 学习提示"}
             </span>
           </div>
           <p className="ai-insight-card__message">

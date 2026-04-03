@@ -22,7 +22,7 @@ export function TeacherStudentDetailPage() {
     fallbackData: fallbackStudent,
     fetcher: () => fetchTeacherStudentDetail(state.authToken ?? "", studentId ?? ""),
     dependencies: [state.authToken, studentId],
-    fallbackMessage: "暂时无法获取学生详情，当前已回退为本地演示数据。",
+    fallbackMessage: "暂时无法获取学生详情，当前已切换为预置数据。",
   });
 
   if (!student) {
@@ -66,11 +66,11 @@ export function TeacherStudentDetailPage() {
       </section>
 
       <article className="feedback-box">
-        <strong>{source === "api" ? "学生详情来自后端" : "学生详情来自本地 mock"}</strong>
+        <strong>{source === "api" ? "学生详情已接入服务数据" : "学生详情当前使用预置数据"}</strong>
         <p>
           {isLoading
             ? "正在同步学生详情..."
-            : error || "学生详情页已经预留真实接口读取能力。"}
+            : error || "学生详情页会根据当前数据来源自动更新学习与成长信息。"}
         </p>
       </article>
 

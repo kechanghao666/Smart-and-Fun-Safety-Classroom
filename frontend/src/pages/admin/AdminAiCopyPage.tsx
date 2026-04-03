@@ -21,7 +21,7 @@ export function AdminAiCopyPage() {
     enabled: canUseApi,
     fetcher: () => fetchAdminAiCopy(state.authToken ?? ""),
     dependencies: [state.authToken],
-    fallbackMessage: "暂时无法获取 AI 文案模板，当前继续使用本地演示内容。",
+    fallbackMessage: "暂时无法获取 AI 文案模板，当前继续使用预置内容。",
   });
   const templates = editor.draftData;
   const categories = useMemo(
@@ -151,7 +151,7 @@ export function AdminAiCopyPage() {
           ) : (
             <article className="surface-card empty-state-card">
               <strong>当前分类下没有模板</strong>
-              <p>请先恢复同步 / 默认数据，或切换到其他文案分类查看。</p>
+              <p>请先恢复最近版本，或切换到其他文案分类查看。</p>
             </article>
           )}
         </div>
@@ -230,8 +230,8 @@ export function AdminAiCopyPage() {
                 </article>
 
                 <article className="surface-card admin-preview-card">
-                  <span className="section-block__eyebrow">联调说明</span>
-                  <p>当前保存只影响前端本地工作稿。后续如果接真实后台写接口，再整体替换成真实模板管理。</p>
+                  <span className="section-block__eyebrow">数据说明</span>
+                  <p>当前保存会先写入本地配置版本，后续接入服务端后可直接切换为统一模板管理。</p>
                 </article>
               </div>
             </section>

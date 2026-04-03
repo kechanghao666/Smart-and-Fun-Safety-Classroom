@@ -320,7 +320,7 @@ function WorkspaceHeader({
 
       <div className="workspace-header__actions">
         <span className="surface-tag">
-          {state.authSource === "api" ? "后端联调模式" : "Mock 演示模式"}
+          {state.authSource === "api" ? "服务数据模式" : "预置数据模式"}
         </span>
         <button type="button" className="ghost-button" onClick={onSignOut}>
           退出登录
@@ -402,7 +402,7 @@ export function AppShell({
         setSyncMessage(
           error instanceof ApiError
             ? error.message
-            : "暂时无法同步最新学习进度，当前继续使用本地已保存的学习状态。",
+            : "暂时无法更新最新学习进度，当前继续使用已保存的学习状态。",
         );
       } finally {
         if (!silent && syncRequestRef.current === requestId) {
@@ -536,7 +536,7 @@ export function AppShell({
             <div className="student-shell__status">
               <div className="student-shell__status-card">
                 <span className="surface-tag">
-                  {state.authSource === "api" ? "后端联调模式" : "Mock 演示模式"}
+                  {state.authSource === "api" ? "服务数据模式" : "预置数据模式"}
                 </span>
                 <strong>{state.studentProfile?.nickname ?? "待完善学生资料"}</strong>
                 <p>
@@ -561,7 +561,7 @@ export function AppShell({
 
                 {state.authSource === "mock" ? (
                   <button type="button" className="ghost-button" onClick={resetDemo}>
-                    重置演示进度
+                    重新开始学习
                   </button>
                 ) : null}
 
@@ -608,11 +608,11 @@ export function AppShell({
             <article className="feedback-box">
               <div className="row-between">
                 <div>
-                  <strong>{isSyncing ? "正在同步学生进度..." : "学生端已连接后端"}</strong>
+                  <strong>{isSyncing ? "正在更新学习进度..." : "学习进度已接入服务数据"}</strong>
                   <p>{syncSummary}</p>
                 </div>
                 <span className="surface-tag">
-                  {isSyncing ? "同步中" : lastSyncedAt ? "已同步" : "待同步"}
+                  {isSyncing ? "更新中" : lastSyncedAt ? "已更新" : "等待更新"}
                 </span>
               </div>
             </article>
@@ -686,7 +686,7 @@ export function AppShell({
           <div className="sidebar-role-card">
             <span>当前身份</span>
             <strong>{roleNameMap[role]}</strong>
-            <p>{state.authSource === "api" ? "后端联调模式" : "本地演示模式"}</p>
+            <p>{state.authSource === "api" ? "当前使用服务数据" : "当前使用预置数据"}</p>
           </div>
 
           <button type="button" className="ghost-button" onClick={handleSignOut}>

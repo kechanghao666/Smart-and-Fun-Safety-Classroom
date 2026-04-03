@@ -164,7 +164,7 @@ export function LoginPage() {
                 当前模式：{authModeLabel}
                 {apiEnabled
                   ? `，会优先请求 ${apiBaseUrl}/api/auth/login。`
-                  : "，未配置后端地址时继续使用本地示例账号与前端状态。"}
+                  : "，未配置数据服务地址时继续使用预置账号与当前学习状态。"}
               </p>
 
               {error ? <p className="form-error">{error}</p> : null}
@@ -182,11 +182,11 @@ export function LoginPage() {
           <article className="surface-card auth-card">
             <div>
               <span className="section-block__eyebrow">账号说明</span>
-              <h2>{apiEnabled ? "当前已处于后端联调模式" : "三类角色示例账号"}</h2>
+              <h2>{apiEnabled ? "当前使用服务数据登录" : "三类角色登录账号"}</h2>
               <p>
                 {apiEnabled
-                  ? "如果后端已导入种子数据，可继续使用以下账号联调；如果未导入，请以服务端实际返回为准。"
-                  : "当前前端基线使用固定示例账号，后续会由真实鉴权接口替换。"}
+                  ? "如果服务端已准备好账号数据，可直接使用以下账号进入对应角色。"
+                  : "当前页面使用预置账号完成登录，后续会由统一鉴权服务接管。"}
               </p>
             </div>
 
