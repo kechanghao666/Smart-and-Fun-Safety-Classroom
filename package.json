@@ -1,0 +1,20 @@
+{
+  "name": "smart-and-fun-safety-classroom",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "build": "npm --prefix frontend run build",
+    "build:backend": "npm --prefix backend run build",
+    "check:backend": "npm --prefix backend run check",
+    "preview": "npm --prefix frontend run preview"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
