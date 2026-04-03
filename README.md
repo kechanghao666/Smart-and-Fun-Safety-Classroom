@@ -1,131 +1,155 @@
-# 智趣安全学堂
+﻿# 智趣安全学堂
 
-一个面向学生的儿童安全教育互动学习系统。  
-系统以“主题学习 + 闯关游戏 + AI 助手 + 主题考试 + 结果反馈”为核心，首版重点实现**道路安全教育主题**，通过轻量化互动方式提升学生的学习兴趣与安全意识。
-
----
-
-## 当前状态
-
-- 已完成远端仓库接入，本地默认跟踪 `origin/main`
-- 已补齐多人协作基线：工作分支、PR 模板、M0 盘点文档、协作规范
-- 已新增 `frontend/` 前端骨架，用于承载学生端、教师端、管理员端的原型实现
-- 当前仓库仍以前端原型和文档为主，后端与真实接口暂未接入
-
----
-
-## 核心范围
-
-### 学生端
-- 学生账号登录与角色切换原型
-- 首页主题卡片展示
-- 道路安全教育主题学习
-- 三关闯关式互动学习
-- 学习进度自动记录与快捷续学
-- AI 助手浮窗、提示、主题问答
-- 三关完成后自动解锁主题考试
-- 错题查看与 AI 学习结果卡片
-
-### 教师端
-- 班级学习总览
-- 学生完成情况查看
-- 学生个体学习结果查看
-
-### 管理员端
-- 主题管理入口
-- 关卡内容管理入口
-- 题库管理入口
-- AI 文案管理入口
-- 用户管理与平台统计入口
-
----
-
-## 快速开始
-
-> 当前环境未安装 Node.js，本仓库尚未在此机器上完成依赖安装和启动验证。
-> 下面命令用于你们后续在本地开发环境中直接启动。
-
-```bash
-npm install
-npm run dev
-```
-
-默认前端工程位于 `frontend/`，根目录脚本会转发到该子项目。
-
----
-
-## 协作约定
-
-- `main` 只接收经过 PR 审核的变更，不直接开发
-- 功能分支命名建议使用 `feature/<模块>-<任务>`
-- Codex 或临时基线分支使用 `codex/<任务>`
-- 页面、状态模型、共享类型发生变化时，同步更新 `docs/`
-- 提交前至少自检角色权限、学习流程、考试解锁和继续学习路径
-
-详细规则见：
-
-- `docs/m0-setup-baseline.md`
-- `docs/collaboration-guide.md`
-- `docs/v1-contracts.md`
-- `docs/project-1.0-implementation-plan.md`
-
-## 当前执行计划
-
-- 当前正式协作基线见 [docs/project-1.0-implementation-plan.md](docs/project-1.0-implementation-plan.md)
-- 该文档已明确约定：
-  - 项目以功能说明书和界面说明书为唯一产品真源
-  - 前端由项目发起人负责
-  - 后端由协作同事负责
-  - 所有实现以 `project-1.0` 为共同工作分支推进
-
----
+面向小学生的互动式安全教育系统，首发主题为“道路安全教育”。项目包含学生端、教师端、管理员端三套入口，支持闯关学习、主题考试、错题重学、成长档案、AI 助手、教师班级视图和管理员内容维护。
 
 ## 项目结构
 
-```bash
+```text
 project/
-├─ .github/
-│  └─ pull_request_template.md
+├─ backend/                  # Express + TypeScript + SQLite
+├─ frontend/                 # React + Vite + TypeScript
 ├─ docs/
+│  ├─ backend-frontend-handoff.md
 │  ├─ collaboration-guide.md
-│  └─ m0-setup-baseline.md
-├─ frontend/
-│  ├─ src/
-│  │  ├─ components/
-│  │  ├─ data/
-│  │  ├─ pages/
-│  │  ├─ state/
-│  │  └─ types.ts
-│  ├─ index.html
-│  ├─ package.json
-│  ├─ tsconfig.json
-│  └─ vite.config.ts
+│  └─ v1-contracts.md
 ├─ 功能设计说明书.docx
 ├─ 界面设计说明书.docx
+├─ 鉴权信息.docx
 └─ README.md
 ```
 
----
+## 环境要求
 
-## 道路安全主题结构
+- Node.js `20+`
+- npm `10+`
+- Windows / macOS / Linux 均可
 
-### 第一关：城市交通观察员
-学生在街道路口场景中识别红绿灯、斑马线、交通标志和危险行为，通过点击热点完成任务。
+## 环境变量
 
-### 第二关：放学回家路线挑战
-学生沿着放学回家的路线逐步前进，在不同节点中做出安全选择，完成路线挑战。
+### 前端
 
-### 第三关：安全出行守护任务
-学生在公交车、私家车、电动车等场景中完成安全准备与危险行为纠正任务。
+复制 [frontend/.env.example](/E:/实践部工作/启智科创/易班技术创新大会/project/frontend/.env.example) 为 `frontend/.env.local`：
 
-### 主题考试
-三关全部完成后自动解锁考试，用于课后巩固与错题反馈。
+```bash
+VITE_API_BASE_URL=http://127.0.0.1:3001
+VITE_API_TIMEOUT_MS=8000
+```
 
----
+不配置 `VITE_API_BASE_URL` 时，前端会回退到预置演示数据模式。
 
-## 下一步建议
+### 后端
 
-- 安装 Node.js 20+ 并验证 `frontend/` 工程可正常运行
-- 将 mock 数据逐步替换为后端接口
-- 按学生端、教师端、管理员端拆分 owner 并开始并行开发
-- 为三关互动与考试流程补充自动化测试
+复制 [backend/.env.example](/E:/实践部工作/启智科创/易班技术创新大会/project/backend/.env.example) 为 `backend/.env`：
+
+```bash
+PORT=3001
+CORS_ORIGIN=http://127.0.0.1:5173
+DB_PATH=./data/smart-and-fun-safety-classroom.sqlite
+SESSION_TTL_HOURS=72
+SPARK_API_URL=https://spark-api-open.xf-yun.com/v1/chat/completions
+SPARK_MODEL=lite
+SPARK_APP_ID=
+SPARK_API_KEY=
+SPARK_API_SECRET=
+SPARK_API_PASSWORD=
+AI_FALLBACK_ENABLED=true
+```
+
+如果需要真实 Spark 联调，只填写 `SPARK_*` 凭据；不要把凭据提交到仓库。
+
+## 启动方法
+
+在仓库根目录执行：
+
+```bash
+npm install
+```
+
+启动前端：
+
+```bash
+npm run dev
+```
+
+启动后端：
+
+```bash
+npm run dev:backend
+```
+
+常用检查命令：
+
+```bash
+npm run check:backend
+npm run build:backend
+npm run build
+```
+
+默认地址：
+
+- 前端：[http://127.0.0.1:5173](http://127.0.0.1:5173)
+- 后端健康检查：[http://127.0.0.1:3001/api/health](http://127.0.0.1:3001/api/health)
+
+## 测试入口
+
+### 学生端
+
+- 登录页：`/`
+- 资料补全：`/student/profile-setup`
+- 首页：`/student/home`
+- 主题页：`/student/theme/road-safety`
+- 关卡页：`/student/theme/road-safety/level/level-1`
+- 考试页：`/student/theme/road-safety/exam`
+- 错题页：`/student/theme/road-safety/wrong-questions`
+- 成长档案：`/student/growth`
+- 学习记录：`/student/records`
+- AI 结果卡：`/student/ai-report`
+
+### 教师端
+
+- 总览：`/teacher/dashboard`
+- 班级管理：`/teacher/classes`
+- 学生列表：`/teacher/students`
+- 学生详情：`/teacher/students/:studentId`
+
+### 管理员端
+
+- 后台首页：`/admin/dashboard`
+- 主题管理：`/admin/themes`
+- 关卡管理：`/admin/levels`
+- 题库管理：`/admin/question-bank`
+- AI 文案管理：`/admin/ai-copy`
+- 用户管理：`/admin/users`
+- 统计与成长规则：`/admin/stats`
+
+## 种子账号
+
+- 学生：`student001 / 123456`
+- 教师：`teacher001 / 123456`
+- 管理员：`admin001 / 123456`
+
+额外演示学生账号：
+
+- `student002 / 123456`
+- `student003 / 123456`
+- `student004 / 123456`
+
+说明：
+
+- `student001` 默认用于验证首次登录和资料补全过程。
+- 其余学生账号用于教师班级统计、筛选和管理员统计联调。
+
+## 联调说明
+
+- 前后端交接文档在 [docs/backend-frontend-handoff.md](/E:/实践部工作/启智科创/易班技术创新大会/project/docs/backend-frontend-handoff.md)，不是仓库根目录下的 `backend-fronted-handoff.md`。
+- 前端共享契约在 [docs/v1-contracts.md](/E:/实践部工作/启智科创/易班技术创新大会/project/docs/v1-contracts.md)。
+- 学生端在 API 模式下以 `GET /api/student/progress`、`GET /api/student/growth`、`GET /api/student/records`、`GET /api/student/ai-report` 为准，不再自行计算解锁、成长值和奖励。
+- 教师端使用后端提供的班级 CRUD、学生筛选和学生详情数据。
+- 管理员端的主题、关卡、题库、AI 文案、用户状态和成长规则均已设计为真实保存流；未配置后端时才回退到预置数据模式。
+
+## 文档索引
+
+- [docs/backend-frontend-handoff.md](/E:/实践部工作/启智科创/易班技术创新大会/project/docs/backend-frontend-handoff.md)
+- [docs/v1-contracts.md](/E:/实践部工作/启智科创/易班技术创新大会/project/docs/v1-contracts.md)
+- [docs/collaboration-guide.md](/E:/实践部工作/启智科创/易班技术创新大会/project/docs/collaboration-guide.md)
+- [backend/README.md](/E:/实践部工作/启智科创/易班技术创新大会/project/backend/README.md)

@@ -1,10 +1,12 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { StatusBadge } from "../../components/StatusBadge";
 import { themeCards } from "../../data/mockData";
+import { fetchStudentGrowth } from "../../services/student";
 import { useAppState } from "../../state/AppState";
-import type { LevelId } from "../../types";
+import type { LevelId, StudentGrowthResponse } from "../../types";
 import { buildGrowthSnapshot } from "../../utils/studentGrowth";
+import { useApiResource } from "../../utils/useApiResource";
 import { useStudentAiScene } from "../../utils/useStudentAiScene";
 import { buildStageGuide } from "../../utils/studentOnboarding";
 import { STREAK_REWARD_POINTS, WRONG_QUESTION_REVIEW_REWARD } from "../../utils/studentRewards";
@@ -19,13 +21,12 @@ export function StudentHomePage() {
   const navigate = useNavigate();
   const { claimStreakReward, state } = useAppState();
   const profile = state.studentProfile;
-  const growth = buildGrowthSnapshot(state);
+  const fallbackGrowth = buildGrowthSnapshot(state);
+  const apiEnabled = state.authSource === "api" && Boolean(state.authToken);
   const avatarAccent = profile
     ? avatarAccentMap[profile.avatarId as keyof typeof avatarAccentMap] ?? "sky"
     : "sky";
-  const completedLevels = state.progress.levels.filter(
-    (level) => level.status === "completed",
-  ).length;
+  const completedLevels = state.progress.levels.filter((level) => level.status === "completed").length;
   const nextLevel = state.progress.levels.find((level) => level.status === "available");
   const [unavailableThemeNotice, setUnavailableThemeNotice] = useState("");
   const examStatusLabel =
@@ -43,10 +44,46 @@ export function StudentHomePage() {
         ? "/student/theme/road-safety/exam/result"
         : state.progress.lastVisitedRoute;
 
+  const fallbackGrowthData: StudentGrowthResponse = {
+    characterName: profile?.nickname ?? "安全学员",
+    linkedAiRole: "安全小助手",
+    totalGrowthPoints: fallbackGrowth.points,
+    nextLevelTarget: fallbackGrowth.nextTier?.minPoints ?? null,
+    nextLevelRemaining: fallbackGrowth.nextTier ? fallbackGrowth.pointsToNext : null,
+    nextLevelLabel: fallbackGrowth.nextTier?.title ?? null,
+    streakDays: fallbackGrowth.currentStreakDays,
+    stageLabel: fallbackGrowth.currentTier.title,
+    growthSummary: fallbackGrowth.currentTier.description,
+    currentAppearance: fallbackGrowth.selectedAppearance,
+    currentScene: fallbackGrowth.selectedScene,
+    currentAbilityTag: fallbackGrowth.currentTier.ability,
+    dimensions: fallbackGrowth.dimensions.map((item) => ({
+      id: item.id === "observe" ? "appearance" : item.id === "judge" ? "safety" : "scene",
+      label: item.label,
+      points: item.score,
+      level: 0,
+      progressPercent: item.score,
+      currentUnlockLabel: item.label,
+      nextUnlockLabel: null,
+    })),
+    unlockedAppearances: fallbackGrowth.appearanceOptions.filter((item) => item.unlocked).map((item) => item.label),
+    unlockedAbilityTags: [fallbackGrowth.currentTier.ability],
+    unlockedScenes: fallbackGrowth.sceneOptions.filter((item) => item.unlocked).map((item) => item.label),
+    history: [],
+  };
+
+  const { data: growthData } = useApiResource({
+    enabled: apiEnabled,
+    fallbackData: fallbackGrowthData,
+    fetcher: () => fetchStudentGrowth(state.authToken!),
+    dependencies: [state.authToken, state.progress.points, state.progress.rewardProgress.reviewedWrongQuestionIds.join("|")],
+    fallbackMessage: "首页成长数据暂时无法连接后端，当前展示本地结果。",
+  });
+
   const homeAiPrompt = useMemo(
     () =>
-      `请用儿童友好的语气欢迎我继续学习道路安全。当前已完成 ${completedLevels} / 3 关，考试状态是 ${examStatusLabel}，连续学习 ${growth.currentStreakDays} 天，请告诉我今天最适合先做什么。`,
-    [completedLevels, examStatusLabel, growth.currentStreakDays],
+      `请用儿童友好的语气欢迎我继续学习道路安全。当前已完成 ${completedLevels} / 3 关，考试状态是 ${examStatusLabel}，连续学习 ${growthData.streakDays} 天，请告诉我今天最适合先做什么。`,
+    [completedLevels, examStatusLabel, growthData.streakDays],
   );
 
   const {
@@ -76,39 +113,24 @@ export function StudentHomePage() {
             <div>
               <h1>{profile?.nickname ?? "安全小卫士"}，欢迎回来</h1>
               <p className="student-summary__meta">
-                {profile
-                  ? `${profile.avatarLabel} · ${profile.stage}`
-                  : "先完善学生资料，再开始正式学习"}
+                {profile ? `${profile.avatarLabel} · ${profile.stage}` : "先完善学生资料，再开始正式学习"}
               </p>
             </div>
           </div>
           <p>
-            你已经完成 {completedLevels} / 3 关，当前成长阶段为
-            <strong> {growth.currentTier.title}</strong>，主题考试状态为
+            你已经完成 {completedLevels} / 3 关，当前成长阶段为 <strong>{growthData.stageLabel}</strong>，主题考试状态为
             <strong> {examStatusLabel}</strong>。
           </p>
         </div>
 
         <div className="hero-banner__actions">
-          <button
-            type="button"
-            className="primary-button"
-            onClick={() => navigate(continueRoute)}
-          >
+          <button type="button" className="primary-button" onClick={() => navigate(continueRoute)}>
             继续学习
           </button>
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => navigate("/student/theme/road-safety")}
-          >
+          <button type="button" className="ghost-button" onClick={() => navigate("/student/theme/road-safety")}>
             查看主题页
           </button>
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => navigate("/student/records")}
-          >
+          <button type="button" className="ghost-button" onClick={() => navigate("/student/records")}>
             查看学习记录
           </button>
         </div>
@@ -117,10 +139,7 @@ export function StudentHomePage() {
       <section className="card-grid card-grid--three">
         <article className="surface-card stat-card">
           <span>今日入口</span>
-          <strong>
-            {nextLevel?.title ??
-              (state.progress.exam.status === "available" ? "主题考试" : "AI 结果卡")}
-          </strong>
+          <strong>{nextLevel?.title ?? (state.progress.exam.status === "available" ? "主题考试" : "AI 结果卡")}</strong>
           <p>系统会根据当前关卡进度、考试状态和最近学习位置，推荐你最适合先做的动作。</p>
         </article>
 
@@ -132,9 +151,12 @@ export function StudentHomePage() {
 
         <article className="surface-card stat-card">
           <span>成长快照</span>
-          <strong>{growth.currentTier.title}</strong>
+          <strong>{growthData.stageLabel}</strong>
           <p>
-            当前积分 {state.progress.points}，再获得 {growth.pointsToNext} 分可继续点亮下一阶段内容。
+            当前成长值 {growthData.totalGrowthPoints}，
+            {growthData.nextLevelRemaining !== null
+              ? `再获得 ${growthData.nextLevelRemaining} 分可继续点亮下一阶段内容。`
+              : "当前阶段内容已经全部点亮。"}
           </p>
         </article>
       </section>
@@ -145,11 +167,7 @@ export function StudentHomePage() {
           <div className="row-between">
             <h2>开始学习前先听一句提醒</h2>
             <span className="surface-tag">
-              {isGreetingLoading
-                ? "生成中"
-                : state.authSource === "api"
-                  ? "AI 实时提示"
-                  : "AI 学习提示"}
+              {isGreetingLoading ? "生成中" : apiEnabled ? "AI 实时提示" : "AI 学习提示"}
             </span>
           </div>
           <p className="ai-insight-card__message">
@@ -157,14 +175,7 @@ export function StudentHomePage() {
           </p>
           {greetingNotice ? <p className="inline-note">{greetingNotice}</p> : null}
           <div className="button-row">
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={() => {
-                void refreshGreeting();
-              }}
-              disabled={isGreetingLoading}
-            >
+            <button type="button" className="ghost-button" onClick={() => void refreshGreeting()} disabled={isGreetingLoading}>
               {isGreetingLoading ? "生成中..." : "刷新建议"}
             </button>
             <Link className="ghost-button link-button" to="/student/ai">
@@ -175,26 +186,18 @@ export function StudentHomePage() {
 
         <article className="surface-card">
           <span className="section-block__eyebrow">学习概览区</span>
-          <h2>今天先做什么</h2>
+          <h2>今天先做什么？</h2>
           <ul className="plain-list">
-            <li>优先动作：{growth.nextFocus}</li>
+            <li>优先动作：{nextLevel ? `继续 ${nextLevel.title}` : state.progress.exam.status === "available" ? "进入主题考试" : "查看考试结果与 AI 结果卡"}</li>
             <li>考试状态：{examStatusLabel}</li>
             <li>最近学习位置：{state.progress.lastVisitedRoute}</li>
             <li>学段建议：{stageGuide.starterRoute}</li>
           </ul>
           <div className="button-row">
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => navigate(continueRoute)}
-            >
+            <button type="button" className="primary-button" onClick={() => navigate(continueRoute)}>
               前往当前重点
             </button>
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={() => navigate("/student/growth")}
-            >
+            <button type="button" className="ghost-button" onClick={() => navigate("/student/growth")}>
               查看成长档案
             </button>
           </div>
@@ -204,37 +207,24 @@ export function StudentHomePage() {
       <section className="card-grid card-grid--two">
         <article className="surface-card reward-overview-card">
           <span className="section-block__eyebrow">连续学习奖励</span>
-          <h2>把坚持学习转成成长礼包</h2>
+          <h2>把坚持学习转成成长礼盒</h2>
           <ul className="plain-list">
-            <li>当前已连续学习：{growth.currentStreakDays} 天</li>
-            <li>已领取礼包：{growth.claimedStreakRewards.length > 0 ? growth.claimedStreakRewards.map((day) => `${day} 天`).join(" / ") : "暂未领取"}</li>
-            <li>
-              当前可领取：
-              {growth.availableStreakRewards.length > 0
-                ? growth.availableStreakRewards
-                    .map((day) => `${day} 天礼包（+${STREAK_REWARD_POINTS[day]}）`)
-                    .join(" / ")
-                : "继续保持连续学习"}
-            </li>
+            <li>当前已连续学习：{growthData.streakDays} 天</li>
+            <li>已登记奖励：{state.progress.rewardProgress.claimedStreakDays.join(" / ") || "暂无"}</li>
+            <li>3 天礼盒：+{STREAK_REWARD_POINTS[3]} 成长值</li>
+            <li>7 天礼盒：+{STREAK_REWARD_POINTS[7]} 成长值</li>
           </ul>
           <div className="button-row">
-            {growth.availableStreakRewards.length > 0 ? (
-              growth.availableStreakRewards.map((day) => (
-                <button
-                  key={day}
-                  type="button"
-                  className="primary-button"
-                  onClick={() => claimStreakReward(day)}
-                >
-                  领取 {day} 天礼包
+            {apiEnabled ? (
+              <span className="surface-tag">连续学习奖励由后端自动结算</span>
+            ) : fallbackGrowth.availableStreakRewards.length > 0 ? (
+              fallbackGrowth.availableStreakRewards.map((day) => (
+                <button key={day} type="button" className="primary-button" onClick={() => claimStreakReward(day)}>
+                  领取 {day} 天礼盒
                 </button>
               ))
             ) : (
-              <button
-                type="button"
-                className="ghost-button"
-                onClick={() => navigate("/student/growth")}
-              >
+              <button type="button" className="ghost-button" onClick={() => navigate("/student/growth")}>
                 查看成长目标
               </button>
             )}
@@ -245,8 +235,8 @@ export function StudentHomePage() {
           <span className="section-block__eyebrow">错题重学奖励</span>
           <h2>回看错题也会继续积累成长值</h2>
           <ul className="plain-list">
-            <li>当前错题数量：{growth.wrongQuestionCount} 题</li>
-            <li>已完成错题重学：{growth.reviewedWrongQuestionIds.length} 题</li>
+            <li>当前错题数量：{state.progress.exam.wrongQuestionIds.length} 题</li>
+            <li>已完成错题重学：{state.progress.rewardProgress.reviewedWrongQuestionIds.length} 题</li>
             <li>每完成 1 道错题重学：+{WRONG_QUESTION_REVIEW_REWARD} 成长值</li>
           </ul>
           <div className="button-row">
@@ -282,20 +272,11 @@ export function StudentHomePage() {
             const isCurrentTheme = theme.id === "road-safety";
 
             return (
-              <article
-                key={theme.id}
-                className={`surface-card theme-card theme-card--${theme.accent}`}
-              >
+              <article key={theme.id} className={`surface-card theme-card theme-card--${theme.accent}`}>
                 <div className="theme-card__top">
                   <span className="surface-tag">{theme.progressLabel}</span>
                   {isCurrentTheme ? (
-                    <StatusBadge
-                      status={
-                        state.progress.exam.status === "completed"
-                          ? "completed"
-                          : "available"
-                      }
-                    />
+                    <StatusBadge status={state.progress.exam.status === "completed" ? "completed" : "available"} />
                   ) : null}
                 </div>
                 <h3>{theme.title}</h3>
@@ -326,11 +307,7 @@ export function StudentHomePage() {
             <li>关卡状态：{completedLevels} / 3 已完成</li>
             <li>考试状态：{examStatusLabel}</li>
           </ul>
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => navigate(state.progress.lastVisitedRoute)}
-          >
+          <button type="button" className="ghost-button" onClick={() => navigate(state.progress.lastVisitedRoute)}>
             从最近位置继续
           </button>
         </article>
@@ -339,13 +316,14 @@ export function StudentHomePage() {
           <span className="section-block__eyebrow">成长提示</span>
           <h3>这轮学习带来的变化</h3>
           <ul className="plain-list">
-            <li>累计星级：{growth.totalStars} 星</li>
-            <li>当前外观：{growth.selectedAppearance}</li>
-            <li>专属场景：{growth.selectedScene}</li>
-            <li>下一步重点：{growth.nextFocus}</li>
+            <li>当前外观：{growthData.currentAppearance}</li>
+            <li>专属场景：{growthData.currentScene}</li>
+            <li>能力标签：{growthData.currentAbilityTag}</li>
+            <li>下一步重点：{growthData.nextLevelLabel ?? "继续保持当前节奏"}</li>
           </ul>
         </article>
       </section>
     </div>
   );
 }
+

@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { AdminEditorStatusBar } from "../../components/AdminEditorStatusBar";
 import { aiCopyTemplateItems } from "../../data/mockData";
-import { fetchAdminAiCopy } from "../../services/admin";
+import { fetchAdminAiCopy, saveAdminAiCopy } from "../../services/admin";
 import { useAppState } from "../../state/AppState";
 import type { AiCopyTemplateItem } from "../../types";
 import { useEditableAdminResource } from "../../utils/useEditableAdminResource";
 
 const previewTitleMap: Record<string, string> = {
-  welcome: "首页欢迎提示预览",
-  hint: "关卡提示预览",
-  report: "结果卡总结预览",
+  welcome: "棣栭〉娆㈣繋鎻愮ず棰勮",
+  hint: "鍏冲崱鎻愮ず棰勮",
+  report: "缁撴灉鍗℃€荤粨棰勮",
 };
 
 export function AdminAiCopyPage() {
@@ -20,8 +20,9 @@ export function AdminAiCopyPage() {
     fallbackData: aiCopyTemplateItems,
     enabled: canUseApi,
     fetcher: () => fetchAdminAiCopy(state.authToken ?? ""),
+    saveHandler: (draftData, savedData) => saveAdminAiCopy(state.authToken ?? "", draftData, savedData),
     dependencies: [state.authToken],
-    fallbackMessage: "暂时无法获取 AI 文案模板，当前继续使用预置内容。",
+    fallbackMessage: "鏆傛椂鏃犳硶鑾峰彇 AI 鏂囨妯℃澘锛屽綋鍓嶇户缁娇鐢ㄩ缃唴瀹广€?,
   });
   const templates = editor.draftData;
   const categories = useMemo(
@@ -74,9 +75,9 @@ export function AdminAiCopyPage() {
     <div className="page-stack">
       <section className="hero-banner hero-banner--admin">
         <div>
-          <span className="hero-banner__eyebrow">AI 文案管理</span>
-          <h1>按分类标签维护模板，并在右侧同步预览</h1>
-          <p>这一页对应说明书中的“分类标签页 + 编辑区 + 预览区”结构，用来统一管理欢迎语、提示语和结果卡模板。</p>
+          <span className="hero-banner__eyebrow">AI 鏂囨绠＄悊</span>
+          <h1>鎸夊垎绫绘爣绛剧淮鎶ゆā鏉匡紝骞跺湪鍙充晶鍚屾棰勮</h1>
+          <p>杩欎竴椤靛搴旇鏄庝功涓殑鈥滃垎绫绘爣绛鹃〉 + 缂栬緫鍖?+ 棰勮鍖衡€濈粨鏋勶紝鐢ㄦ潵缁熶竴绠＄悊娆㈣繋璇€佹彁绀鸿鍜岀粨鏋滃崱妯℃澘銆?/p>
         </div>
       </section>
 
@@ -95,26 +96,26 @@ export function AdminAiCopyPage() {
 
       <section className="card-grid card-grid--three">
         <article className="surface-card stat-card admin-summary-card">
-          <span>模板总数</span>
+          <span>妯℃澘鎬绘暟</span>
           <strong>{templates.length}</strong>
-          <p>欢迎语、关卡提示和结果卡模板都从这里统一维护。</p>
+          <p>娆㈣繋璇€佸叧鍗℃彁绀哄拰缁撴灉鍗℃ā鏉块兘浠庤繖閲岀粺涓€缁存姢銆?/p>
         </article>
         <article className="surface-card stat-card admin-summary-card">
-          <span>分类数量</span>
+          <span>鍒嗙被鏁伴噺</span>
           <strong>{categories.length}</strong>
-          <p>建议分类保持精简，避免同一场景拆成过多模板。</p>
+          <p>寤鸿鍒嗙被淇濇寔绮剧畝锛岄伩鍏嶅悓涓€鍦烘櫙鎷嗘垚杩囧妯℃澘銆?/p>
         </article>
         <article className="surface-card stat-card admin-summary-card">
-          <span>欢迎 / 提示 / 总结</span>
+          <span>娆㈣繋 / 鎻愮ず / 鎬荤粨</span>
           <strong>
             {welcomeCount} / {hintCount} / {reportCount}
           </strong>
-          <p>结果类模板会影响 AI 结果卡页的语气和总结风格。</p>
+          <p>缁撴灉绫绘ā鏉夸細褰卞搷 AI 缁撴灉鍗￠〉鐨勮姘斿拰鎬荤粨椋庢牸銆?/p>
         </article>
       </section>
 
       <section className="surface-card">
-        <span className="section-block__eyebrow">分类标签页</span>
+        <span className="section-block__eyebrow">鍒嗙被鏍囩椤?/span>
         <div className="admin-tab-row">
           {categories.map((category) => (
             <button
@@ -150,8 +151,8 @@ export function AdminAiCopyPage() {
             ))
           ) : (
             <article className="surface-card empty-state-card">
-              <strong>当前分类下没有模板</strong>
-              <p>请先恢复最近版本，或切换到其他文案分类查看。</p>
+              <strong>褰撳墠鍒嗙被涓嬫病鏈夋ā鏉?/strong>
+              <p>璇峰厛鎭㈠鏈€杩戠増鏈紝鎴栧垏鎹㈠埌鍏朵粬鏂囨鍒嗙被鏌ョ湅銆?/p>
             </article>
           )}
         </div>
@@ -159,7 +160,7 @@ export function AdminAiCopyPage() {
         {selectedTemplate ? (
           <div className="page-stack">
             <article className="surface-card editor-panel">
-              <span className="section-block__eyebrow">编辑文案模板</span>
+              <span className="section-block__eyebrow">缂栬緫鏂囨妯℃澘</span>
               <h2>{selectedTemplate.title}</h2>
               <div className="chip-row">
                 <span className="surface-tag">{selectedTemplate.category}</span>
@@ -168,7 +169,7 @@ export function AdminAiCopyPage() {
 
               <div className="editor-grid">
                 <label className="form-field">
-                  <span>分类</span>
+                  <span>鍒嗙被</span>
                   <input
                     value={selectedTemplate.category}
                     onChange={(event) =>
@@ -178,7 +179,7 @@ export function AdminAiCopyPage() {
                 </label>
 
                 <label className="form-field">
-                  <span>场景标识</span>
+                  <span>鍦烘櫙鏍囪瘑</span>
                   <input
                     value={selectedTemplate.scene}
                     onChange={(event) =>
@@ -188,7 +189,7 @@ export function AdminAiCopyPage() {
                 </label>
 
                 <label className="form-field">
-                  <span>模板标题</span>
+                  <span>妯℃澘鏍囬</span>
                   <input
                     value={selectedTemplate.title}
                     onChange={(event) =>
@@ -198,7 +199,7 @@ export function AdminAiCopyPage() {
                 </label>
 
                 <label className="form-field form-field--wide">
-                  <span>模板正文</span>
+                  <span>妯℃澘姝ｆ枃</span>
                   <textarea
                     rows={7}
                     value={selectedTemplate.promptText}
@@ -212,8 +213,8 @@ export function AdminAiCopyPage() {
 
             <section className="card-grid card-grid--two">
               <article className="surface-card admin-preview-card admin-preview-card--ai">
-                <span className="section-block__eyebrow">预览区</span>
-                <h3>{previewTitleMap[selectedTemplate.scene] ?? "AI 文案预览"}</h3>
+                <span className="section-block__eyebrow">棰勮鍖?/span>
+                <h3>{previewTitleMap[selectedTemplate.scene] ?? "AI 鏂囨棰勮"}</h3>
                 <article className="chat-bubble chat-bubble--assistant">
                   {selectedTemplate.promptText}
                 </article>
@@ -221,28 +222,30 @@ export function AdminAiCopyPage() {
 
               <div className="page-stack">
                 <article className="surface-card admin-preview-card">
-                  <span className="section-block__eyebrow">模板策略提醒</span>
+                  <span className="section-block__eyebrow">妯℃澘绛栫暐鎻愰啋</span>
                   <ul className="plain-list">
-                    <li>欢迎语要短、友好、明确告诉学生先做什么。</li>
-                    <li>提示语优先给方向，不直接给完整答案。</li>
-                    <li>结果类模板要同时覆盖亮点、补强重点和下一步动作。</li>
+                    <li>娆㈣繋璇鐭€佸弸濂姐€佹槑纭憡璇夊鐢熷厛鍋氫粈涔堛€?/li>
+                    <li>鎻愮ず璇紭鍏堢粰鏂瑰悜锛屼笉鐩存帴缁欏畬鏁寸瓟妗堛€?/li>
+                    <li>缁撴灉绫绘ā鏉胯鍚屾椂瑕嗙洊浜偣銆佽ˉ寮洪噸鐐瑰拰涓嬩竴姝ュ姩浣溿€?/li>
                   </ul>
                 </article>
 
                 <article className="surface-card admin-preview-card">
-                  <span className="section-block__eyebrow">数据说明</span>
-                  <p>当前保存会先写入本地配置版本，后续接入服务端后可直接切换为统一模板管理。</p>
+                  <span className="section-block__eyebrow">鏁版嵁璇存槑</span>
+                  <p>褰撳墠淇濆瓨浼氬厛鍐欏叆鏈湴閰嶇疆鐗堟湰锛屽悗缁帴鍏ユ湇鍔＄鍚庡彲鐩存帴鍒囨崲涓虹粺涓€妯℃澘绠＄悊銆?/p>
                 </article>
               </div>
             </section>
           </div>
         ) : (
           <article className="surface-card empty-state-card">
-            <strong>请选择一个文案模板</strong>
-            <p>左侧选中模板后，就可以维护分类、场景标识、正文和右侧预览。</p>
+            <strong>璇烽€夋嫨涓€涓枃妗堟ā鏉?/strong>
+            <p>宸︿晶閫変腑妯℃澘鍚庯紝灏卞彲浠ョ淮鎶ゅ垎绫汇€佸満鏅爣璇嗐€佹鏂囧拰鍙充晶棰勮銆?/p>
           </article>
         )}
       </section>
     </div>
   );
 }
+
+

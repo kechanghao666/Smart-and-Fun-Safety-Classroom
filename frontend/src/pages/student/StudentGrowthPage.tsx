@@ -1,11 +1,12 @@
+﻿import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAppState } from "../../state/AppState";
 import {
-  buildGrowthSnapshot,
-  getGrowthSceneVisualClass,
-  growthTierDefinitions,
-} from "../../utils/studentGrowth";
-import { STREAK_REWARD_POINTS, WRONG_QUESTION_REVIEW_REWARD } from "../../utils/studentRewards";
+  fetchStudentGrowth,
+  saveStudentGrowthPreferences,
+} from "../../services/student";
+import { useAppState } from "../../state/AppState";
+import type { StudentGrowthResponse } from "../../types";
+import { buildGrowthSnapshot, getGrowthSceneVisualClass } from "../../utils/studentGrowth";
 
 const avatarAccentMap = {
   "sunny-guard": "sky",
@@ -15,13 +16,133 @@ const avatarAccentMap = {
 
 export function StudentGrowthPage() {
   const navigate = useNavigate();
-  const { claimStreakReward, saveGrowthPreferences, state } = useAppState();
-  const growth = buildGrowthSnapshot(state);
+  const { saveGrowthPreferences, state } = useAppState();
+  const fallbackGrowth = buildGrowthSnapshot(state);
   const profile = state.studentProfile;
+  const apiEnabled = state.authSource === "api" && Boolean(state.authToken);
   const avatarAccent = profile
     ? avatarAccentMap[profile.avatarId as keyof typeof avatarAccentMap] ?? "sky"
     : "sky";
-  const sceneVisualClass = getGrowthSceneVisualClass(growth.selectedScene);
+
+  const fallbackGrowthData: StudentGrowthResponse = useMemo(
+    () => ({
+      characterName: profile?.nickname ?? "安全学员",
+      linkedAiRole: "安全小助手",
+      totalGrowthPoints: fallbackGrowth.points,
+      nextLevelTarget: fallbackGrowth.nextTier?.minPoints ?? null,
+      nextLevelRemaining: fallbackGrowth.nextTier ? fallbackGrowth.pointsToNext : null,
+      nextLevelLabel: fallbackGrowth.nextTier?.title ?? null,
+      streakDays: fallbackGrowth.currentStreakDays,
+      stageLabel: fallbackGrowth.currentTier.title,
+      growthSummary: fallbackGrowth.currentTier.description,
+      currentAppearance: fallbackGrowth.selectedAppearance,
+      currentScene: fallbackGrowth.selectedScene,
+      currentAbilityTag: fallbackGrowth.currentTier.ability,
+      dimensions: fallbackGrowth.dimensions.map((item) => ({
+        id: item.id === "observe" ? "appearance" : item.id === "judge" ? "safety" : "scene",
+        label: item.label,
+        points: item.score,
+        level: 0,
+        progressPercent: item.score,
+        currentUnlockLabel: item.label,
+        nextUnlockLabel: null,
+      })),
+      unlockedAppearances: fallbackGrowth.appearanceOptions.filter((item) => item.unlocked).map((item) => item.label),
+      unlockedAbilityTags: [fallbackGrowth.currentTier.ability],
+      unlockedScenes: fallbackGrowth.sceneOptions.filter((item) => item.unlocked).map((item) => item.label),
+      history: fallbackGrowth.journal.map((item) => ({
+        id: item.id,
+        sourceType: "level_completed",
+        title: item.title,
+        description: item.detail,
+        points: 0,
+        createdAt: item.href,
+      })),
+    }),
+    [fallbackGrowth, profile?.nickname],
+  );
+
+  const [growthData, setGrowthData] = useState<StudentGrowthResponse>(fallbackGrowthData);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(apiEnabled);
+  const [isSavingSelection, setIsSavingSelection] = useState(false);
+
+  useEffect(() => {
+    setGrowthData(fallbackGrowthData);
+  }, [fallbackGrowthData]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!apiEnabled || !state.authToken) {
+      setIsLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setIsLoading(true);
+    setError("");
+
+    void fetchStudentGrowth(state.authToken)
+      .then((result) => {
+        if (!cancelled) {
+          setGrowthData(result);
+        }
+      })
+      .catch((requestError) => {
+        if (!cancelled) {
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "成长档案暂时无法连接后端，当前展示本地数据。",
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiEnabled, state.authToken, state.progress.points, state.progress.rewardProgress.reviewedWrongQuestionIds.join("|")]);
+
+  async function handleSelection(type: "appearance" | "scene", value: string) {
+    if (isSavingSelection) {
+      return;
+    }
+
+    setError("");
+
+    if (!apiEnabled || !state.authToken) {
+      saveGrowthPreferences({ [type]: value });
+      return;
+    }
+
+    setIsSavingSelection(true);
+
+    try {
+      const nextGrowth = await saveStudentGrowthPreferences(state.authToken, {
+        [type]: value,
+      });
+      setGrowthData(nextGrowth);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "成长展示设置保存失败，请稍后重试。",
+      );
+    } finally {
+      setIsSavingSelection(false);
+    }
+  }
+
+  const sceneVisualClass = getGrowthSceneVisualClass(growthData.currentScene);
+  const appearanceOptions = Array.from(new Set([growthData.currentAppearance, ...growthData.unlockedAppearances]));
+  const sceneOptions = Array.from(new Set([growthData.currentScene, ...growthData.unlockedScenes]));
 
   return (
     <div className="page-stack">
@@ -35,31 +156,35 @@ export function StudentGrowthPage() {
               </span>
             ) : null}
             <div>
-              <h1>{profile?.nickname ?? "安全学员"}的成长档案</h1>
+              <h1>{profile?.nickname ?? "安全学员"} 的成长档案</h1>
               <p className="student-summary__meta">
-                {profile
-                  ? `${profile.avatarLabel} · ${profile.stage}`
-                  : "完善资料后会获得更完整的成长档案展示"}
+                {profile ? `${profile.avatarLabel} · ${profile.stage}` : "完善资料后会获得更完整的成长档案展示"}
               </p>
             </div>
           </div>
           <p>
-            当前处于 <strong>{growth.currentTier.title}</strong>，{growth.currentTier.description}
+            当前处于 <strong>{growthData.stageLabel}</strong>，{growthData.growthSummary}
           </p>
+          {error ? <p className="inline-note">{error}</p> : null}
         </div>
 
         <article className="growth-progress-panel">
           <span className="surface-tag">成长值</span>
-          <strong>{growth.points}</strong>
+          <strong>{growthData.totalGrowthPoints}</strong>
           <p>
-            {growth.nextTier
-              ? `距离 ${growth.nextTier.title} 还差 ${growth.pointsToNext} 分`
+            {growthData.nextLevelLabel && growthData.nextLevelRemaining !== null
+              ? `距离 ${growthData.nextLevelLabel} 还差 ${growthData.nextLevelRemaining} 分`
               : "当前阶段内容已经全部点亮"}
           </p>
           <div className="growth-track">
             <span
               className="growth-track__fill"
-              style={{ width: `${growth.nextTierProgress}%` }}
+              style={{
+                width:
+                  growthData.nextLevelTarget && growthData.nextLevelRemaining !== null
+                    ? `${Math.max(0, Math.min(100, Math.round(((growthData.nextLevelTarget - growthData.nextLevelRemaining) / growthData.nextLevelTarget) * 100)))}%`
+                    : "100%",
+              }}
             />
           </div>
         </article>
@@ -68,11 +193,11 @@ export function StudentGrowthPage() {
       <section className="card-grid card-grid--three">
         <article className="surface-card growth-highlight-card">
           <span className="section-block__eyebrow">成长结果</span>
-          <h2>{growth.currentTier.title}</h2>
+          <h2>{growthData.stageLabel}</h2>
           <ul className="plain-list">
-            <li>当前外观：{growth.selectedAppearance}</li>
-            <li>专属场景：{growth.selectedScene}</li>
-            <li>能力标签：{growth.currentTier.ability}</li>
+            <li>当前外观：{growthData.currentAppearance}</li>
+            <li>专属场景：{growthData.currentScene}</li>
+            <li>能力标签：{growthData.currentAbilityTag}</li>
           </ul>
         </article>
 
@@ -80,20 +205,21 @@ export function StudentGrowthPage() {
           <span className="section-block__eyebrow">成长概览</span>
           <h2>学习闭环带来的变化</h2>
           <ul className="plain-list">
-            <li>累计通关：{growth.completedLevels} / 3 关</li>
-            <li>累计星级：{growth.totalStars} 星</li>
-            <li>考试成绩：{growth.examScore ?? "尚未完成主题考试"}</li>
-            <li>当前关注：{growth.nextFocus}</li>
+            <li>累计通关：{state.progress.levels.filter((level) => level.status === "completed").length} / {state.progress.levels.length} 关</li>
+            <li>考试成绩：{state.progress.exam.score ?? "尚未完成主题考试"}</li>
+            <li>连续学习：{growthData.streakDays} 天</li>
+            <li>下一个阶段：{growthData.nextLevelLabel ?? "当前已达到最高阶段"}</li>
           </ul>
         </article>
 
         <article className="surface-card growth-highlight-card">
           <span className="section-block__eyebrow">成长奖励</span>
-          <h2>连续学习与错题重学</h2>
+          <h2>错题重学与连续学习</h2>
           <ul className="plain-list">
-            <li>当前连续学习：{growth.currentStreakDays} 天</li>
-            <li>待完成错题重学：{growth.remainingWrongQuestionRewards} 题</li>
-            <li>已完成错题重学：{growth.reviewedWrongQuestionIds.length} 题</li>
+            <li>已回看错题：{state.progress.rewardProgress.reviewedWrongQuestionIds.length} 题</li>
+            <li>已领取连续学习奖励：{state.progress.rewardProgress.claimedStreakDays.join(" / ") || "暂无"}</li>
+            <li>当前后端积分：{state.progress.points}</li>
+            <li>{isLoading ? "正在同步成长状态..." : "成长奖励以后端结算为准。"}</li>
           </ul>
         </article>
       </section>
@@ -103,121 +229,51 @@ export function StudentGrowthPage() {
           <span className="section-block__eyebrow">当前展示形态</span>
           <h2>外观、能力与场景正在这样组合展示</h2>
           <div className={`growth-showcase-card__preview ${sceneVisualClass}`}>
-            <strong>{growth.selectedAppearance}</strong>
-            <p>{growth.selectedScene}</p>
+            <strong>{growthData.currentAppearance}</strong>
+            <p>{growthData.currentScene}</p>
           </div>
           <div className="chip-row">
-            <span className="surface-tag">{growth.currentTier.title}</span>
-            <span className="surface-tag">{growth.currentTier.ability}</span>
-            <span className="surface-tag">{growth.selectedScene}</span>
+            <span className="surface-tag">{growthData.stageLabel}</span>
+            <span className="surface-tag">{growthData.currentAbilityTag}</span>
+            <span className="surface-tag">{growthData.currentScene}</span>
           </div>
         </article>
 
         <article className="surface-card growth-showcase-card">
-          <span className="section-block__eyebrow">成长展示说明</span>
-          <h2>已解锁内容会同步出现在首页、主题页和结果卡页</h2>
+          <span className="section-block__eyebrow">成长说明</span>
+          <h2>后端会统一结算成长规则，前端只负责展示最新结果</h2>
           <ul className="plain-list">
-            <li>当前外观：{growth.selectedAppearance}</li>
-            <li>当前场景：{growth.selectedScene}</li>
-            <li>能力标签：{growth.currentTier.ability}</li>
-            <li>已解锁外观与场景可在本页自由切换</li>
+            <li>已解锁外观：{growthData.unlockedAppearances.join(" / ") || "暂无"}</li>
+            <li>已解锁场景：{growthData.unlockedScenes.join(" / ") || "暂无"}</li>
+            <li>已解锁能力标签：{growthData.unlockedAbilityTags.join(" / ") || "暂无"}</li>
+            <li>成长规则如有调整，会通过后端配置即时生效。</li>
           </ul>
-        </article>
-      </section>
-
-      <section className="card-grid card-grid--two">
-        <article className="surface-card reward-overview-card">
-          <span className="section-block__eyebrow">连续学习礼包</span>
-          <h2>连续学习会解锁固定成长值奖励</h2>
-          <ul className="plain-list">
-            <li>3 天礼包：+{STREAK_REWARD_POINTS[3]} 成长值</li>
-            <li>7 天礼包：+{STREAK_REWARD_POINTS[7]} 成长值</li>
-            <li>
-              当前可领取：
-              {growth.availableStreakRewards.length > 0
-                ? growth.availableStreakRewards
-                    .map((day) => `${day} 天礼包`)
-                    .join(" / ")
-                : "暂未达到可领取条件"}
-            </li>
-          </ul>
-          <div className="button-row">
-            {growth.availableStreakRewards.length > 0 ? (
-              growth.availableStreakRewards.map((day) => (
-                <button
-                  key={day}
-                  type="button"
-                  className="primary-button"
-                  onClick={() => claimStreakReward(day)}
-                >
-                  领取 {day} 天礼包
-                </button>
-              ))
-            ) : (
-              <span className="surface-tag">继续保持学习节奏</span>
-            )}
-          </div>
-        </article>
-
-        <article className="surface-card reward-overview-card">
-          <span className="section-block__eyebrow">错题重学奖励</span>
-          <h2>完成回看后也会继续点亮成长值</h2>
-          <ul className="plain-list">
-            <li>每完成 1 道错题重学：+{WRONG_QUESTION_REVIEW_REWARD} 成长值</li>
-            <li>已领取错题重学奖励：{growth.reviewedWrongQuestionIds.length} 次</li>
-            <li>当前剩余可领取：{growth.remainingWrongQuestionRewards} 次</li>
-          </ul>
-          <div className="button-row">
-            <button
-              type="button"
-              className="ghost-button"
-              disabled={state.progress.exam.status !== "completed"}
-              onClick={() => navigate("/student/theme/road-safety/wrong-questions")}
-            >
-              前往错题回看
-            </button>
-          </div>
         </article>
       </section>
 
       <section className="surface-card">
         <div className="section-block__header">
           <div>
-            <span className="section-block__eyebrow">成长等级路线</span>
-            <h2>从萌芽到守护，当前走到哪一步</h2>
+            <span className="section-block__eyebrow">成长维度</span>
+            <h2>观察力、判断力与防护力</h2>
           </div>
         </div>
 
         <div className="card-grid card-grid--three">
-          {growthTierDefinitions.map((tier) => {
-            const isCurrent = tier.id === growth.currentTier.id;
-            const isUnlocked = growth.points >= tier.minPoints;
-
-            return (
-              <article
-                key={tier.id}
-                className={
-                  isCurrent
-                    ? "surface-card unlock-card unlock-card--current"
-                    : isUnlocked
-                      ? "surface-card unlock-card unlock-card--unlocked"
-                      : "surface-card unlock-card"
-                }
-              >
-                <div className="row-between">
-                  <span className="section-block__eyebrow">{tier.title}</span>
-                  <span className="surface-tag">{tier.minPoints} 分</span>
-                </div>
-                <h3>{tier.appearance}</h3>
-                <p>{tier.description}</p>
-                <ul className="plain-list">
-                  <li>能力：{tier.ability}</li>
-                  <li>场景：{tier.scene}</li>
-                  <li>{isCurrent ? "当前所处阶段" : isUnlocked ? "已解锁阶段" : "待解锁阶段"}</li>
-                </ul>
-              </article>
-            );
-          })}
+          {growthData.dimensions.map((dimension) => (
+            <article key={dimension.id} className="surface-card growth-dimension-card">
+              <span className="section-block__eyebrow">{dimension.label}</span>
+              <strong>{dimension.points}</strong>
+              <div className="growth-track">
+                <span
+                  className="growth-track__fill growth-track__fill--warm"
+                  style={{ width: `${dimension.progressPercent}%` }}
+                />
+              </div>
+              <p>当前解锁：{dimension.currentUnlockLabel}</p>
+              <p>{dimension.nextUnlockLabel ? `下一档：${dimension.nextUnlockLabel}` : "当前维度已达到最高档。"}</p>
+            </article>
+          ))}
         </div>
       </section>
 
@@ -233,32 +289,21 @@ export function StudentGrowthPage() {
           <article className="surface-card">
             <span className="section-block__eyebrow">外观选择</span>
             <div className="growth-choice-grid">
-              {growth.appearanceOptions.map((option) => {
-                const isSelected = option.label === growth.selectedAppearance;
-
+              {appearanceOptions.map((option) => {
+                const isSelected = option === growthData.currentAppearance;
                 return (
                   <button
-                    key={option.id}
+                    key={option}
                     type="button"
-                    className={
-                      isSelected
-                        ? "growth-choice-card growth-choice-card--selected"
-                        : option.unlocked
-                          ? "growth-choice-card"
-                          : "growth-choice-card growth-choice-card--locked"
-                    }
-                    disabled={!option.unlocked}
-                    onClick={() =>
-                      saveGrowthPreferences({
-                        appearance: option.label,
-                      })
-                    }
+                    className={isSelected ? "growth-choice-card growth-choice-card--selected" : "growth-choice-card"}
+                    disabled={isSelected || isSavingSelection}
+                    onClick={() => {
+                      void handleSelection("appearance", option);
+                    }}
                   >
-                    <span className="growth-choice-card__status">
-                      {isSelected ? "当前使用" : option.unlocked ? "已解锁" : "待解锁"}
-                    </span>
-                    <strong>{option.label}</strong>
-                    <span>{option.detail}</span>
+                    <span className="growth-choice-card__status">{isSelected ? "当前使用" : "点击切换"}</span>
+                    <strong>{option}</strong>
+                    <span>已解锁外观展示</span>
                   </button>
                 );
               })}
@@ -268,135 +313,27 @@ export function StudentGrowthPage() {
           <article className="surface-card">
             <span className="section-block__eyebrow">场景选择</span>
             <div className="growth-choice-grid">
-              {growth.sceneOptions.map((option) => {
-                const isSelected = option.label === growth.selectedScene;
-
+              {sceneOptions.map((option) => {
+                const isSelected = option === growthData.currentScene;
                 return (
                   <button
-                    key={option.id}
+                    key={option}
                     type="button"
-                    className={
-                      isSelected
-                        ? "growth-choice-card growth-choice-card--selected"
-                        : option.unlocked
-                          ? "growth-choice-card"
-                          : "growth-choice-card growth-choice-card--locked"
-                    }
-                    disabled={!option.unlocked}
-                    onClick={() =>
-                      saveGrowthPreferences({
-                        scene: option.label,
-                      })
-                    }
+                    className={isSelected ? "growth-choice-card growth-choice-card--selected" : "growth-choice-card"}
+                    disabled={isSelected || isSavingSelection}
+                    onClick={() => {
+                      void handleSelection("scene", option);
+                    }}
                   >
-                    <span className="growth-choice-card__status">
-                      {isSelected ? "当前使用" : option.unlocked ? "已解锁" : "待解锁"}
-                    </span>
-                    <strong>{option.label}</strong>
-                    <span>{option.detail}</span>
+                    <span className="growth-choice-card__status">{isSelected ? "当前使用" : "点击切换"}</span>
+                    <strong>{option}</strong>
+                    <span>已解锁场景展示</span>
                   </button>
                 );
               })}
             </div>
           </article>
         </div>
-      </section>
-
-      <section className="surface-card">
-        <div className="section-block__header">
-          <div>
-            <span className="section-block__eyebrow">三类成长维度</span>
-            <h2>观察力、判断力与防护力</h2>
-          </div>
-        </div>
-
-        <div className="card-grid card-grid--three">
-          {growth.dimensions.map((dimension) => (
-            <article key={dimension.id} className="surface-card growth-dimension-card">
-              <span className="section-block__eyebrow">{dimension.label}</span>
-              <strong>{dimension.score} / 100</strong>
-              <div className="growth-track">
-                <span
-                  className="growth-track__fill growth-track__fill--warm"
-                  style={{ width: `${dimension.score}%` }}
-                />
-              </div>
-              <p>{dimension.note}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="surface-card">
-        <div className="section-block__header">
-          <div>
-            <span className="section-block__eyebrow">已解锁内容</span>
-            <h2>外观、能力与场景</h2>
-          </div>
-        </div>
-
-        <div className="card-grid card-grid--three">
-          {growth.unlocks.map((unlock) => (
-            <article key={unlock.label} className="surface-card unlock-card">
-              <span className="section-block__eyebrow">{unlock.label}</span>
-              <h3>{unlock.value}</h3>
-              <p>{unlock.note}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="card-grid card-grid--two">
-        <article className="surface-card admin-preview-card">
-          <span className="section-block__eyebrow">成长目标</span>
-          <h2>下一次学习最值得关注的事</h2>
-          <article className="feedback-box">
-            <strong>{growth.nextFocus}</strong>
-            <p>
-              {growth.nextTier
-                ? `再获得 ${growth.pointsToNext} 分，就能进入 ${growth.nextTier.title}。`
-                : "当前阶段内容已经全部点亮，接下来重点保持连续学习。"}
-            </p>
-          </article>
-          <div className="button-row">
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => navigate("/student/theme/road-safety")}
-            >
-              返回主题页
-            </button>
-            <Link className="ghost-button link-button" to="/student/records">
-              查看学习记录
-            </Link>
-          </div>
-        </article>
-
-        <article className="surface-card admin-preview-card">
-          <span className="section-block__eyebrow">成长奖励</span>
-          <h2>本轮学习已经点亮的激励内容</h2>
-          <div className="mini-stat-list">
-            <div className="stat-pair">
-              <strong>{growth.points}</strong>
-              <span>成长值</span>
-            </div>
-            <div className="stat-pair">
-              <strong>{growth.totalStars}</strong>
-              <span>累计星级</span>
-            </div>
-            <div className="stat-pair">
-              <strong>{state.progress.badges.length}</strong>
-              <span>已获徽章</span>
-            </div>
-          </div>
-          <ul className="plain-list">
-            {state.progress.badges.length > 0 ? (
-              state.progress.badges.map((badge) => <li key={badge}>{badge}</li>)
-            ) : (
-              <li>继续完成关卡、考试、错题重学和连续学习后，这里会点亮新的奖励。</li>
-            )}
-          </ul>
-        </article>
       </section>
 
       <section className="surface-card">
@@ -408,23 +345,76 @@ export function StudentGrowthPage() {
         </div>
 
         <div className="timeline-list">
-          {growth.journal.map((item) => (
-            <article key={item.id} className={`timeline-item timeline-item--${item.status}`}>
-              <span className="timeline-item__dot" />
-              <div className="timeline-item__content">
-                <div className="row-between">
-                  <div>
-                    <h3>{item.title}</h3>
-                    <p>{item.detail}</p>
+          {growthData.history.length > 0 ? (
+            growthData.history.map((item, index) => (
+              <article key={item.id} className={`timeline-item timeline-item--${index === 0 ? "current" : "done"}`}>
+                <span className="timeline-item__dot" />
+                <div className="timeline-item__content">
+                  <div className="row-between">
+                    <div>
+                      <h3>{item.title}</h3>
+                      <p>{item.description}</p>
+                      <p className="inline-note">{item.createdAt}</p>
+                    </div>
+                    <span className="surface-tag">+{item.points}</span>
                   </div>
-                  <Link className="ghost-button link-button" to={item.href}>
-                    {item.ctaLabel}
-                  </Link>
                 </div>
-              </div>
+              </article>
+            ))
+          ) : (
+            <article className="feedback-box">
+              <strong>当前还没有后端成长历史</strong>
+              <p>继续完成关卡、考试和错题重学后，这里会自动累积成长轨迹。</p>
             </article>
-          ))}
+          )}
         </div>
+      </section>
+
+      <section className="card-grid card-grid--two">
+        <article className="surface-card admin-preview-card">
+          <span className="section-block__eyebrow">成长目标</span>
+          <h2>下一次学习最值得关注的事</h2>
+          <article className="feedback-box">
+            <strong>{growthData.nextLevelLabel ?? "继续保持当前节奏"}</strong>
+            <p>
+              {growthData.nextLevelRemaining !== null
+                ? `再获得 ${growthData.nextLevelRemaining} 分，就能进入 ${growthData.nextLevelLabel}。`
+                : "当前阶段内容已经全部点亮，接下来重点保持连续学习。"}
+            </p>
+          </article>
+          <div className="button-row">
+            <button type="button" className="primary-button" onClick={() => navigate("/student/theme/road-safety")}>返回主题页</button>
+            <Link className="ghost-button link-button" to="/student/records">
+              查看学习记录
+            </Link>
+          </div>
+        </article>
+
+        <article className="surface-card admin-preview-card">
+          <span className="section-block__eyebrow">成长奖励</span>
+          <h2>本轮学习已经点亮的激励内容</h2>
+          <div className="mini-stat-list">
+            <div className="stat-pair">
+              <strong>{growthData.totalGrowthPoints}</strong>
+              <span>成长值</span>
+            </div>
+            <div className="stat-pair">
+              <strong>{growthData.unlockedAppearances.length}</strong>
+              <span>外观</span>
+            </div>
+            <div className="stat-pair">
+              <strong>{growthData.unlockedScenes.length}</strong>
+              <span>场景</span>
+            </div>
+          </div>
+          <ul className="plain-list">
+            {growthData.unlockedAbilityTags.length > 0 ? (
+              growthData.unlockedAbilityTags.map((item) => <li key={item}>{item}</li>)
+            ) : (
+              <li>继续完成关卡、考试和错题重学后，这里会点亮新的能力标签。</li>
+            )}
+          </ul>
+        </article>
       </section>
     </div>
   );

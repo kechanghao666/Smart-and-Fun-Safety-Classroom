@@ -1,4 +1,4 @@
-import type { EditorStatus } from "../utils/useEditableAdminResource";
+﻿import type { EditorStatus } from "../utils/useEditableAdminResource";
 
 interface AdminEditorStatusBarProps {
   source: "api" | "mock";
@@ -18,7 +18,7 @@ const statusLabelMap: Record<EditorStatus, string> = {
   dirty: "未保存修改",
   saved: "已保存",
   reset: "已回退",
-  sync_error: "更新失败",
+  sync_error: "同步失败",
 };
 
 export function AdminEditorStatusBar({
@@ -34,14 +34,14 @@ export function AdminEditorStatusBar({
   onRestoreBaseline,
 }: AdminEditorStatusBarProps) {
   const summary = isHydrating
-    ? "正在更新最新配置..."
+    ? "正在同步最新配置..."
     : syncError
       ? syncError
       : hasUnsavedChanges
-        ? "当前配置稿存在未保存修改，点击“保存当前修改”后会写入本地配置版本。"
+        ? "当前配置稿存在未保存修改，点击“保存当前修改”后会写入当前数据源。"
         : lastSavedAt
           ? `最近一次保存时间：${lastSavedAt}`
-          : "当前配置已经准备就绪，可以开始编辑。";
+          : "当前配置已经就绪，可以开始编辑。";
 
   return (
     <article className="surface-card editor-status-bar">

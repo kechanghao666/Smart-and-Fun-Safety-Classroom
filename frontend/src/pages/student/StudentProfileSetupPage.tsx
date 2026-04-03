@@ -1,6 +1,10 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { studentAvatarOptions, studentStageOptions } from "../../data/mockData";
+import {
+  fetchStudentProgress,
+  saveStudentProfile as saveStudentProfileToApi,
+} from "../../services/student";
 import { useAppState } from "../../state/AppState";
 import type { StudentStage } from "../../types";
 import {
@@ -12,11 +16,12 @@ import {
 
 export function StudentProfileSetupPage() {
   const navigate = useNavigate();
-  const { saveStudentProfile, state } = useAppState();
+  const { replaceProgress, saveStudentProfile, state } = useAppState();
   const [nickname, setNickname] = useState(state.studentProfile?.nickname ?? "");
   const [avatarId, setAvatarId] = useState(state.studentProfile?.avatarId ?? "");
   const [stage, setStage] = useState<StudentStage | "">(state.studentProfile?.stage ?? "");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedAvatar =
     studentAvatarOptions.find((item) => item.id === avatarId) ?? undefined;
@@ -29,7 +34,7 @@ export function StudentProfileSetupPage() {
     avatarLabel: selectedAvatar?.label ?? "",
     stage: stage || "小学低段",
   });
-  const canSubmit = Boolean(nickname.trim() && selectedAvatar && stage);
+  const canSubmit = Boolean(nickname.trim() && selectedAvatar && stage) && !isSubmitting;
   const profileAccent = selectedAvatar?.accent ?? "sky";
   const previewTags = useMemo(
     () => [
@@ -39,6 +44,47 @@ export function StudentProfileSetupPage() {
     ],
     [nickname, selectedAvatar?.label, stage],
   );
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const matchedAvatar = studentAvatarOptions.find((item) => item.id === avatarId);
+
+    if (!nickname.trim() || !matchedAvatar || !stage) {
+      setError("请完整填写昵称、头像和学段后再进入首页。");
+      return;
+    }
+
+    const profile = {
+      nickname: nickname.trim(),
+      avatarId: matchedAvatar.id,
+      avatarLabel: matchedAvatar.label,
+      stage,
+    };
+
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      if (state.authSource === "api" && state.authToken) {
+        const savedProfile = await saveStudentProfileToApi(state.authToken, profile);
+        const progress = await fetchStudentProgress(state.authToken);
+        saveStudentProfile(savedProfile);
+        replaceProgress(progress);
+      } else {
+        saveStudentProfile(profile);
+      }
+
+      navigate("/student/home");
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "资料保存失败，请稍后重试。",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
     <div className="page-shell">
@@ -63,30 +109,10 @@ export function StudentProfileSetupPage() {
             <div>
               <span className="section-block__eyebrow">基础信息</span>
               <h2>保存并进入首页</h2>
-              <p>首版只保留最基础的档案信息，确保首页、记录页和成长页都能正确展示。</p>
+              <p>这一页只保留最基础的档案信息，确保首页、记录页和成长页都能正确展示。</p>
             </div>
 
-            <form
-              className="profile-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                const matchedAvatar = studentAvatarOptions.find((item) => item.id === avatarId);
-
-                if (!nickname.trim() || !matchedAvatar || !stage) {
-                  setError("请完整填写昵称、头像和学段后再进入首页。");
-                  return;
-                }
-
-                setError("");
-                saveStudentProfile({
-                  nickname: nickname.trim(),
-                  avatarId: matchedAvatar.id,
-                  avatarLabel: matchedAvatar.label,
-                  stage,
-                });
-                navigate("/student/home");
-              }}
-            >
+            <form className="profile-form" onSubmit={handleSubmit}>
               <label className="field-group">
                 <span className="field-label">昵称</span>
                 <input
@@ -154,12 +180,8 @@ export function StudentProfileSetupPage() {
 
               {error ? <p className="form-error">{error}</p> : null}
 
-              <button
-                type="submit"
-                className="primary-button primary-button--wide"
-                disabled={!canSubmit}
-              >
-                保存并进入首页
+              <button type="submit" className="primary-button primary-button--wide" disabled={!canSubmit}>
+                {isSubmitting ? "保存中..." : "保存并进入首页"}
               </button>
             </form>
           </article>
@@ -205,7 +227,7 @@ export function StudentProfileSetupPage() {
 
             <article className="surface-card onboarding-card onboarding-card--soft">
               <span className="section-block__eyebrow">填写说明</span>
-              <h3>为什么要先补充资料</h3>
+              <h3>为什么要先补充资料？</h3>
               <ul className="plain-list">
                 <li>昵称和头像会用于首页欢迎区、学习记录和成长档案展示。</li>
                 <li>学段信息会为后续内容适配和教师查看提供基础参考。</li>

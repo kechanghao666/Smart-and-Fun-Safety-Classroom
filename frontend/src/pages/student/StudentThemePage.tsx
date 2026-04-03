@@ -1,42 +1,72 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { StatusBadge } from "../../components/StatusBadge";
+import { fetchStudentGrowth } from "../../services/student";
 import { useAppState } from "../../state/AppState";
-import type { LevelId } from "../../types";
+import type { LevelId, StudentGrowthResponse } from "../../types";
+import { useApiResource } from "../../utils/useApiResource";
 import { useStudentAiScene } from "../../utils/useStudentAiScene";
-import {
-  buildGrowthSnapshot,
-  getGrowthSceneVisualClass,
-} from "../../utils/studentGrowth";
+import { buildGrowthSnapshot, getGrowthSceneVisualClass } from "../../utils/studentGrowth";
 import { usePersistedState } from "../../utils/usePersistedState";
 
 export function StudentThemePage() {
   const navigate = useNavigate();
   const { state } = useAppState();
-  const completedLevels = state.progress.levels.filter(
-    (level) => level.status === "completed",
-  ).length;
-  const growth = buildGrowthSnapshot(state);
-  const sceneVisualClass = getGrowthSceneVisualClass(growth.selectedScene);
-  const nextLevel = state.progress.levels.find(
-    (level) => level.status === "available",
-  );
+  const fallbackGrowth = buildGrowthSnapshot(state);
+  const apiEnabled = state.authSource === "api" && Boolean(state.authToken);
+  const completedLevels = state.progress.levels.filter((level) => level.status === "completed").length;
+  const nextLevel = state.progress.levels.find((level) => level.status === "available");
   const examUnlocked = state.progress.exam.status !== "locked";
   const examCompleted = state.progress.exam.status === "completed";
   const accountKey = state.sessionAccount ?? "student-demo";
-  const [unlockAcknowledged, setUnlockAcknowledged] = usePersistedState<
-    Record<string, boolean>
-  >("student-theme-exam-unlock", {});
+  const [unlockAcknowledged, setUnlockAcknowledged] = usePersistedState<Record<string, boolean>>(
+    "student-theme-exam-unlock",
+    {},
+  );
   const [showExamUnlock, setShowExamUnlock] = useState(false);
 
-  const homeRoute =
-    nextLevel?.status === "completed" && state.progress.levelResults[nextLevel.id]
-      ? `/student/theme/road-safety/level/${nextLevel.id}/result`
-      : nextLevel
-        ? `/student/theme/road-safety/level/${nextLevel.id}`
-        : examCompleted
-          ? "/student/theme/road-safety/exam/result"
-          : "/student/theme/road-safety/exam";
+  const fallbackGrowthData: StudentGrowthResponse = {
+    characterName: state.studentProfile?.nickname ?? "安全学员",
+    linkedAiRole: "安全小助手",
+    totalGrowthPoints: fallbackGrowth.points,
+    nextLevelTarget: fallbackGrowth.nextTier?.minPoints ?? null,
+    nextLevelRemaining: fallbackGrowth.nextTier ? fallbackGrowth.pointsToNext : null,
+    nextLevelLabel: fallbackGrowth.nextTier?.title ?? null,
+    streakDays: fallbackGrowth.currentStreakDays,
+    stageLabel: fallbackGrowth.currentTier.title,
+    growthSummary: fallbackGrowth.currentTier.description,
+    currentAppearance: fallbackGrowth.selectedAppearance,
+    currentScene: fallbackGrowth.selectedScene,
+    currentAbilityTag: fallbackGrowth.currentTier.ability,
+    dimensions: fallbackGrowth.dimensions.map((item) => ({
+      id: item.id === "observe" ? "appearance" : item.id === "judge" ? "safety" : "scene",
+      label: item.label,
+      points: item.score,
+      level: 0,
+      progressPercent: item.score,
+      currentUnlockLabel: item.label,
+      nextUnlockLabel: null,
+    })),
+    unlockedAppearances: fallbackGrowth.appearanceOptions.filter((item) => item.unlocked).map((item) => item.label),
+    unlockedAbilityTags: [fallbackGrowth.currentTier.ability],
+    unlockedScenes: fallbackGrowth.sceneOptions.filter((item) => item.unlocked).map((item) => item.label),
+    history: [],
+  };
+
+  const { data: growthData } = useApiResource({
+    enabled: apiEnabled,
+    fallbackData: fallbackGrowthData,
+    fetcher: () => fetchStudentGrowth(state.authToken!),
+    dependencies: [state.authToken, state.progress.points, state.progress.rewardProgress.reviewedWrongQuestionIds.join("|")],
+    fallbackMessage: "主题页成长数据暂时无法连接后端，当前展示本地结果。",
+  });
+
+  const sceneVisualClass = getGrowthSceneVisualClass(growthData.currentScene);
+  const homeRoute = nextLevel
+    ? `/student/theme/road-safety/level/${nextLevel.id}`
+    : examCompleted
+      ? "/student/theme/road-safety/exam/result"
+      : "/student/theme/road-safety/exam";
 
   const themeAiPrompt = useMemo(
     () =>
@@ -76,13 +106,7 @@ export function StudentThemePage() {
     if (examCompleted) {
       setShowExamUnlock(false);
     }
-  }, [
-    accountKey,
-    examCompleted,
-    examUnlocked,
-    setUnlockAcknowledged,
-    unlockAcknowledged,
-  ]);
+  }, [accountKey, examCompleted, examUnlocked, setUnlockAcknowledged, unlockAcknowledged]);
 
   function acknowledgeUnlock(nextRoute?: string) {
     setUnlockAcknowledged((current) => ({
@@ -108,18 +132,10 @@ export function StudentThemePage() {
         </div>
 
         <div className="hero-banner__actions">
-          <button
-            type="button"
-            className="primary-button"
-            onClick={() => navigate(homeRoute)}
-          >
+          <button type="button" className="primary-button" onClick={() => navigate(homeRoute)}>
             继续当前学习
           </button>
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => navigate("/student/records")}
-          >
+          <button type="button" className="ghost-button" onClick={() => navigate("/student/records")}>
             查看学习记录
           </button>
         </div>
@@ -132,10 +148,7 @@ export function StudentThemePage() {
           <ul className="plain-list">
             <li>当前主题：道路安全教育</li>
             <li>已完成关卡：{completedLevels} / 3</li>
-            <li>
-              主题考试：
-              {examCompleted ? "已完成" : examUnlocked ? "已解锁" : "未解锁"}
-            </li>
+            <li>主题考试：{examCompleted ? "已完成" : examUnlocked ? "已解锁" : "未解锁"}</li>
             <li>最近学习位置：{state.progress.lastVisitedRoute}</li>
           </ul>
         </article>
@@ -161,27 +174,9 @@ export function StudentThemePage() {
         </div>
 
         <div className="flow-strip">
-          <div
-            className={
-              completedLevels === 3 ? "flow-step flow-step--done" : "flow-step flow-step--active"
-            }
-          >
-            三关学习
-          </div>
-          <div
-            className={
-              examCompleted
-                ? "flow-step flow-step--done"
-                : examUnlocked
-                  ? "flow-step flow-step--active"
-                  : "flow-step"
-            }
-          >
-            主题考试
-          </div>
-          <div className={examCompleted ? "flow-step flow-step--done" : "flow-step"}>
-            结果反馈
-          </div>
+          <div className={completedLevels === 3 ? "flow-step flow-step--done" : "flow-step flow-step--active"}>三关学习</div>
+          <div className={examCompleted ? "flow-step flow-step--done" : examUnlocked ? "flow-step flow-step--active" : "flow-step"}>主题考试</div>
+          <div className={examCompleted ? "flow-step flow-step--done" : "flow-step"}>结果反馈</div>
         </div>
       </section>
 
@@ -190,27 +185,12 @@ export function StudentThemePage() {
           <span className="section-block__eyebrow">AI 学习提醒</span>
           <div className="row-between">
             <h2>进入主题前先看一眼</h2>
-            <span className="surface-tag">
-              {isHintLoading
-                ? "生成中"
-                : state.authSource === "api"
-                  ? "AI 实时提示"
-                  : "AI 学习提示"}
-            </span>
+            <span className="surface-tag">{isHintLoading ? "生成中" : apiEnabled ? "AI 实时提示" : "AI 学习提示"}</span>
           </div>
-          <p className="ai-insight-card__message">
-            {isHintLoading ? "AI 正在整理本轮学习提醒..." : hintMessage}
-          </p>
+          <p className="ai-insight-card__message">{isHintLoading ? "AI 正在整理本轮学习提醒..." : hintMessage}</p>
           {hintNotice ? <p className="inline-note">{hintNotice}</p> : null}
           <div className="button-row">
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={() => {
-                void refreshHint();
-              }}
-              disabled={isHintLoading}
-            >
+            <button type="button" className="ghost-button" onClick={() => void refreshHint()} disabled={isHintLoading}>
               {isHintLoading ? "生成中..." : "刷新提醒"}
             </button>
             <Link className="ghost-button link-button" to="/student/ai">
@@ -223,20 +203,15 @@ export function StudentThemePage() {
           <span className="section-block__eyebrow">成长展示区</span>
           <h2>当前人物成长状态</h2>
           <div className={`growth-scene-preview ${sceneVisualClass}`}>
-            <strong>{growth.selectedAppearance}</strong>
-            <p>{growth.selectedScene}</p>
+            <strong>{growthData.currentAppearance}</strong>
+            <p>{growthData.currentScene}</p>
           </div>
           <ul className="plain-list">
-            <li>成长阶段：{growth.currentTier.title}</li>
-            <li>当前外观：{growth.selectedAppearance}</li>
-            <li>能力标签：{growth.currentTier.ability}</li>
-            <li>专属场景：{growth.selectedScene}</li>
-            <li>
-              下一阶段：
-              {growth.nextTier
-                ? `再获得 ${growth.pointsToNext} 分可进入 ${growth.nextTier.title}`
-                : "当前阶段内容已全部点亮"}
-            </li>
+            <li>成长阶段：{growthData.stageLabel}</li>
+            <li>当前外观：{growthData.currentAppearance}</li>
+            <li>能力标签：{growthData.currentAbilityTag}</li>
+            <li>专属场景：{growthData.currentScene}</li>
+            <li>{growthData.nextLevelRemaining !== null ? `再获得 ${growthData.nextLevelRemaining} 分可进入 ${growthData.nextLevelLabel}` : "当前阶段内容已经全部点亮"}</li>
           </ul>
         </article>
 
@@ -244,29 +219,15 @@ export function StudentThemePage() {
           <span className="section-block__eyebrow">辅助按钮区</span>
           <h2>当前优先动作</h2>
           <ul className="plain-list">
-            <li>
-              {nextLevel
-                ? `优先完成：${nextLevel.title}`
-                : examCompleted
-                  ? "优先查看考试结果和 AI 结果卡"
-                  : "优先进入主题考试"}
-            </li>
+            <li>{nextLevel ? `优先完成：${nextLevel.title}` : examCompleted ? "优先查看考试结果和 AI 结果卡" : "优先进入主题考试"}</li>
             <li>考试只会在三关全部完成后自动解锁。</li>
             <li>考试完成后会进入独立结果页、错题页和 AI 结果卡页。</li>
           </ul>
           <div className="button-row">
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => navigate(homeRoute)}
-            >
+            <button type="button" className="primary-button" onClick={() => navigate(homeRoute)}>
               前往当前重点
             </button>
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={() => navigate("/student/growth")}
-            >
+            <button type="button" className="ghost-button" onClick={() => navigate("/student/growth")}>
               查看成长档案
             </button>
           </div>
@@ -315,11 +276,7 @@ export function StudentThemePage() {
                   disabled={level.status === "locked"}
                   onClick={() => navigate(target)}
                 >
-                  {level.status === "completed"
-                    ? hasResult
-                      ? "查看本关结算"
-                      : "重新进入关卡"
-                    : "进入本关"}
+                  {level.status === "completed" ? (hasResult ? "查看本关结算" : "重新进入关卡") : "进入本关"}
                 </button>
               </article>
             );
@@ -328,11 +285,7 @@ export function StudentThemePage() {
       </section>
 
       <section className="card-grid card-grid--two">
-        <article
-          className={`surface-card exam-card ${
-            examUnlocked ? "exam-card--unlocked" : "exam-card--locked"
-          }`}
-        >
+        <article className={`surface-card exam-card ${examUnlocked ? "exam-card--unlocked" : "exam-card--locked"}`}>
           <div className="level-card__header">
             <div>
               <span className="surface-tag">考试入口区</span>
@@ -352,21 +305,12 @@ export function StudentThemePage() {
               type="button"
               className={examUnlocked ? "primary-button" : "ghost-button"}
               disabled={!examUnlocked}
-              onClick={() =>
-                navigate(
-                  examCompleted
-                    ? "/student/theme/road-safety/exam/result"
-                    : "/student/theme/road-safety/exam",
-                )
-              }
+              onClick={() => navigate(examCompleted ? "/student/theme/road-safety/exam/result" : "/student/theme/road-safety/exam")}
             >
               {examCompleted ? "查看考试结果" : "进入考试"}
             </button>
             {examCompleted ? (
-              <Link
-                className="ghost-button link-button"
-                to="/student/theme/road-safety/wrong-questions"
-              >
+              <Link className="ghost-button link-button" to="/student/theme/road-safety/wrong-questions">
                 错题回看
               </Link>
             ) : null}
@@ -395,22 +339,12 @@ export function StudentThemePage() {
           <article className="surface-card overlay-modal">
             <span className="section-block__eyebrow">已解锁主题考试</span>
             <h2>三关学习已经全部完成</h2>
-            <p>
-              你已经完成道路安全主题的三关学习，现在可以进入主题考试，完成本轮学习闭环。
-            </p>
+            <p>你已经完成道路安全主题的三关学习，现在可以进入主题考试，完成本轮学习闭环。</p>
             <div className="button-row">
-              <button
-                type="button"
-                className="ghost-button"
-                onClick={() => acknowledgeUnlock()}
-              >
+              <button type="button" className="ghost-button" onClick={() => acknowledgeUnlock()}>
                 稍后去完成
               </button>
-              <button
-                type="button"
-                className="primary-button"
-                onClick={() => acknowledgeUnlock("/student/theme/road-safety/exam")}
-              >
+              <button type="button" className="primary-button" onClick={() => acknowledgeUnlock("/student/theme/road-safety/exam")}>
                 立即进入
               </button>
             </div>

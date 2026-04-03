@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+﻿import { Link, useParams } from "react-router-dom";
 import { StatusBadge } from "../../components/StatusBadge";
 import { teacherStudentDetails } from "../../data/mockData";
 import { fetchTeacherStudentDetail } from "../../services/teacher";
@@ -14,10 +14,8 @@ import {
 export function TeacherStudentDetailPage() {
   const { studentId } = useParams();
   const { state } = useAppState();
-  const canUseApi =
-    state.authSource === "api" && Boolean(state.authToken) && Boolean(studentId);
-  const fallbackStudent =
-    teacherStudentDetails.find((item) => item.id === studentId) ?? null;
+  const canUseApi = state.authSource === "api" && Boolean(state.authToken) && Boolean(studentId);
+  const fallbackStudent = teacherStudentDetails.find((item) => item.id === studentId) ?? null;
   const { data: student, error, isLoading, source } = useApiResource({
     enabled: canUseApi,
     fallbackData: fallbackStudent,
@@ -38,7 +36,11 @@ export function TeacherStudentDetailPage() {
   const attentionLabel = getTeacherAttentionLabel(attentionLevel);
   const suggestedActions = buildTeacherStudentActions(student);
   const closedLoopRate = Math.round((student.completedLevels / 3) * 100);
-  const sceneVisualClass = getGrowthSceneVisualClass(student.currentScene);
+  const currentAppearance = student.currentAppearance ?? "成长展示待同步";
+  const currentScene = student.currentScene ?? student.unlockedScenes?.[0] ?? "成长场景待同步";
+  const currentAbility = student.currentAbility ?? student.motivationLabel;
+  const growthLevelLabel = student.growthLevelLabel ?? (student.growthPoints ? `成长值 ${student.growthPoints}` : "成长档案");
+  const sceneVisualClass = getGrowthSceneVisualClass(currentScene);
   const wrongTopics =
     student.wrongTopics.length > 0
       ? student.wrongTopics
@@ -53,7 +55,7 @@ export function TeacherStudentDetailPage() {
           <div className="chip-row">
             <span className="surface-tag">{student.className}</span>
             <span className="surface-tag">{student.growthStage}</span>
-            <span className="surface-tag">{student.growthLevelLabel}</span>
+            <span className="surface-tag">{growthLevelLabel}</span>
             <span className={`teacher-attention-pill teacher-attention-pill--${attentionLevel}`}>
               {attentionLabel}
             </span>
@@ -69,11 +71,7 @@ export function TeacherStudentDetailPage() {
 
       <article className="feedback-box">
         <strong>{source === "api" ? "学生详情已接入服务数据" : "学生详情当前使用预置数据"}</strong>
-        <p>
-          {isLoading
-            ? "正在同步学生详情..."
-            : error || "学生详情页会根据当前数据来源自动更新学习与成长信息。"}
-        </p>
+        <p>{isLoading ? "正在同步学生详情..." : error || "学生详情页现在以后端学习与成长数据为准。"}</p>
       </article>
 
       <section className="card-grid card-grid--four">
@@ -95,7 +93,7 @@ export function TeacherStudentDetailPage() {
         <article className="surface-card stat-card">
           <span>跟进等级</span>
           <strong>{attentionLabel}</strong>
-          <p>综合关卡完成、考试状态和薄弱点得出的前端分析等级。</p>
+          <p>综合关卡完成、考试状态和薄弱点得出的跟进等级。</p>
         </article>
       </section>
 
@@ -151,41 +149,27 @@ export function TeacherStudentDetailPage() {
           <h2>把学习结果转成可持续推进的反馈</h2>
           <div className="page-stack">
             <article className="teacher-growth-showcase">
-              <div
-                className={`teacher-growth-showcase__visual ${sceneVisualClass}`}
-              >
-                <strong>{student.currentAppearance}</strong>
-                <p>{student.currentScene}</p>
+              <div className={`teacher-growth-showcase__visual ${sceneVisualClass}`}>
+                <strong>{currentAppearance}</strong>
+                <p>{currentScene}</p>
               </div>
               <div className="chip-row">
-                <span className="surface-tag">{student.growthLevelLabel}</span>
+                <span className="surface-tag">{growthLevelLabel}</span>
                 <span className="surface-tag">{student.growthStage}</span>
-                <span className="surface-tag">{student.currentAbility}</span>
+                <span className="surface-tag">{currentAbility}</span>
               </div>
             </article>
             <article className="teacher-analysis-card">
               <strong>人物当前形态</strong>
-              <p>{student.currentAppearance}</p>
-            </article>
-            <article className="teacher-analysis-card">
-              <strong>成长等级</strong>
-              <p>
-                {student.growthLevelLabel} · {student.growthStage}
-              </p>
+              <p>{currentAppearance}</p>
             </article>
             <article className="teacher-analysis-card">
               <strong>已解锁能力 / 场景</strong>
-              <p>
-                {student.currentAbility} · {student.currentScene}
-              </p>
+              <p>{currentAbility} · {currentScene}</p>
             </article>
             <article className="teacher-analysis-card">
               <strong>成长总结</strong>
               <p>{student.growthSummary}</p>
-            </article>
-            <article className="teacher-analysis-card">
-              <strong>当前激励标签</strong>
-              <p>{student.motivationLabel}</p>
             </article>
           </div>
         </article>

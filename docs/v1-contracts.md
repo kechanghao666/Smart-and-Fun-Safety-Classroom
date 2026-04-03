@@ -1,8 +1,11 @@
-# V1 共享契约基线
+﻿# V1 共享契约基线
+
+本文档用于约束当前一体化版本的前后端交互结构，和 [docs/backend-frontend-handoff.md](/E:/实践部工作/启智科创/易班技术创新大会/project/docs/backend-frontend-handoff.md) 保持一致。
 
 ## 路由分组
 
 ### 学生端
+
 - `/student/profile-setup`
 - `/student/home`
 - `/student/theme/road-safety`
@@ -17,12 +20,14 @@
 - `/student/ai-report`
 
 ### 教师端
+
 - `/teacher/dashboard`
 - `/teacher/classes`
 - `/teacher/students`
 - `/teacher/students/:studentId`
 
 ### 管理员端
+
 - `/admin/dashboard`
 - `/admin/themes`
 - `/admin/levels`
@@ -31,15 +36,16 @@
 - `/admin/users`
 - `/admin/stats`
 
-## 共享状态枚举
+## 共享基础类型
 
 ```ts
-type LearningStatus = "locked" | "available" | "completed";
-type UserRole = "student" | "teacher" | "admin";
-type LevelId = "level-1" | "level-2" | "level-3";
+export type UserRole = "student" | "teacher" | "admin";
+export type LearningStatus = "locked" | "available" | "in_progress" | "completed";
+export type LevelId = "level-1" | "level-2" | "level-3";
+export type StudentStage = "小学低段" | "小学中段" | "小学高段";
 ```
 
-## 学生核心数据结构
+## 学生端核心结构
 
 ```ts
 interface StudentProgress {
@@ -64,18 +70,6 @@ interface StudentRewardProgress {
 ```
 
 ```ts
-interface LevelResult {
-  levelId: LevelId;
-  score: number;
-  stars: number;
-  completedAt: string;
-  highlight: string;
-  caution: string;
-  aiSummary: string;
-}
-```
-
-```ts
 interface ExamProgress {
   status: LearningStatus;
   totalQuestions: number;
@@ -86,110 +80,276 @@ interface ExamProgress {
 ```
 
 ```ts
-interface ExamQuestion {
-  id: string;
-  prompt: string;
-  options: string[];
-  correctIndex: number;
-  explanation: string;
-  reviewLevelId: LevelId;
-  reviewLabel: string;
-  reviewSuggestion: string;
+interface StudentRecordsResponse {
+  overview: {
+    themeId: string;
+    themeTitle: string;
+    completedLevels: number;
+    totalLevels: number;
+    examStatus: LearningStatus;
+    examScore: number | null;
+    lastVisitedRoute: string;
+    lastLearnedAt: string | null;
+    continueRoute: string;
+    badges: string[];
+    points: number;
+  };
+  records: LearningRecordItem[];
 }
 ```
-
-## 前端扩展状态
 
 ```ts
-interface StudentProfile {
-  nickname: string;
-  avatarId: string;
-  avatarLabel: string;
-  stage: "小学低段" | "小学中段" | "小学高段";
-}
-
-interface AppState {
-  role: UserRole | null;
-  sessionAccount: string | null;
-  authToken: string | null;
-  authSource: "mock" | "api";
-  studentProfile: StudentProfile | null;
-  progress: StudentProgress;
+interface StudentExamReviewResponse {
+  totalWrongQuestions: number;
+  suggestion: string;
+  items: Array<{
+    questionId: string;
+    prompt: string;
+    studentAnswer: string | null;
+    correctAnswer: string;
+    explanation: string;
+    reviewLevelId: LevelId;
+    reviewLabel: string;
+    reviewSuggestion: string;
+    reviewed: boolean;
+    reviewedAt: string | null;
+  }>;
 }
 ```
 
-## 成长奖励默认规则
+```ts
+interface StudentGrowthResponse {
+  characterName: string;
+  linkedAiRole: string;
+  totalGrowthPoints: number;
+  nextLevelTarget: number | null;
+  nextLevelRemaining: number | null;
+  nextLevelLabel: string | null;
+  streakDays: number;
+  stageLabel: string;
+  growthSummary: string;
+  currentAppearance: string;
+  currentScene: string;
+  currentAbilityTag: string;
+  dimensions: GrowthDimensionSummary[];
+  unlockedAppearances: string[];
+  unlockedAbilityTags: string[];
+  unlockedScenes: string[];
+  history: GrowthHistoryItem[];
+}
+```
 
-- `progress.rewardProgress` 当前用于前端保存连续学习进度、礼包领取状态与错题重学记录。
-- 当前前端默认成长奖励规则如下：
-  - 每完成 1 道错题重学：`+10` 成长值
-  - 连续学习 `3` 天礼包：`+20` 成长值
-  - 连续学习 `7` 天礼包：`+40` 成长值
-- 以上数值为当前原型默认规则，后端接入后可以覆盖这些数值，不影响前端页面结构和交互流程。
+```ts
+interface StudentAiReportResponse {
+  completion: StudentAiReportCard;
+  performance: StudentAiReportCard;
+  suggestion: StudentAiReportCard;
+  reward: StudentAiReportCard;
+  growth: StudentAiReportCard;
+}
+```
 
-## 当前前端行为规则
+## 教师端核心结构
 
-- 学生首次登录后，若未完善资料，则优先进入 `/student/profile-setup`。
-- 学生端统一采用“顶部导航 + 主内容区 + 右下角 AI 浮窗”布局。
-- 教师端与管理员端统一采用“左侧菜单 + 右侧内容区”后台布局，并在顶部显示页面标题与面包屑。
-- 第一关默认 `available`。
-- 第二关、第三关默认 `locked`。
-- 完成前一关后，下一关切换为 `available`。
-- 每关完成后进入独立结算页 `/student/theme/road-safety/level/:levelId/result`。
-- 三关全部完成后，主题考试切换为 `available`。
-- 主题页在考试解锁时会弹出居中的“已解锁主题考试”提示层。
-- 考试页只负责答题与统一提交；考试结果页和错题页拆成独立路由。
-- 错题页优先读取 `progress.exam.studentAnswers` 展示学生作答；该字段当前作为前端本地回看缓存使用。
-- 成长档案页和 AI 结果卡页都固定展示成长阶段、当前形态、能力、场景和成长值进度。
-- 学生端壳层会在积分跨过成长阶段阈值时弹出居中升级提醒。
-- 学生首页对未开放主题只展示页内轻提示，不再使用浏览器阻断式弹窗。
+```ts
+interface TeacherClassManagementItem {
+  id: string;
+  name: string;
+  studentCount: number;
+  completedRate: number;
+  examCompletionRate: number;
+  focusLabel: string;
+  description: string;
+  createdAt: string;
+}
+```
 
-## 联调模式约定
+```ts
+interface TeacherStudentDetail {
+  id: string;
+  name: string;
+  className: string;
+  completedLevels: number;
+  examStatus: string;
+  score: number | null;
+  lastActiveAt: string;
+  weakSpot: string;
+  growthStage: string;
+  growthSummary: string;
+  motivationLabel: string;
+  currentAppearance?: string;
+  currentAbility?: string;
+  currentScene?: string;
+  growthLevelLabel?: string;
+  levelStatuses: TeacherStudentLevelStatus[];
+  wrongTopics: string[];
+  recommendations: string[];
+  growthPoints?: number;
+  unlockedScenes?: string[];
+}
+```
 
-- 在 `frontend/.env.local` 中配置 `VITE_API_BASE_URL=http://localhost:3000` 后，登录页切换为后端联调模式。
-- 未配置 `VITE_API_BASE_URL` 时，默认继续使用本地示例账号和前端状态。
-- 登录接口 `POST /api/auth/login` 至少返回 `token`、`role`，并可选返回 `account`、`studentProfile`、`progress`。
-- 当前前端在切换到新的学生账号、教师账号或管理员账号时，会主动清空上一位学生的本地资料和学习进度；只有“同一个学生账号重新登录”时才会沿用本地资料等待后端刷新。
-- 学生端在后端联调模式下会于进入学生壳层时自动请求一次 `GET /api/student/progress`，窗口重新聚焦后也会静默刷新。
-- 学生首页 AI 欢迎卡调用 `POST /api/ai/chat`，使用 `scene: "welcome"`。
-- 学生主题页 AI 提醒卡、关卡页 AI 提示卡调用 `POST /api/ai/chat`，使用 `scene: "hint"`。
-- AI 接口失败时，前端自动回退为本地提示，不阻断学习流程。
-- AI 结果卡页继续采用“数据 + 模板”生成，不依赖真实 AI 返回。
+## 管理员端核心结构
 
-## 预留接口
+```ts
+interface ThemeManagementItem {
+  id: string;
+  title: string;
+  description: string;
+  coverLabel: string;
+  coverAccent: "sky" | "mint" | "orange";
+  coverIllustration: string;
+  isOpen: boolean;
+  sortOrder: number;
+}
+```
+
+```ts
+interface LevelManagementItem {
+  id: LevelId;
+  title: string;
+  focus: string;
+  duration: string;
+  displayOrder: number;
+  sceneAssetLabel: string;
+  taskOutline: string[];
+  rewardLabel: string;
+  feedbackStyle: string;
+  feedbackCopy: string;
+  hotspotItems: string[];
+  propItems: string[];
+  targetAreaNotes: string[];
+}
+```
+
+```ts
+interface QuestionBankManagementItem {
+  id: string;
+  themeId: string;
+  themeTitle: string;
+  prompt: string;
+  options: string[];
+  correctOptionIndex: number;
+  correctLabel: string;
+  explanation: string;
+  reviewLevelId: LevelId;
+  status: "enabled" | "draft";
+}
+```
+
+```ts
+interface AiCopyTemplateItem {
+  id: string;
+  category: string;
+  title: string;
+  scene: string;
+  promptText: string;
+}
+```
+
+```ts
+interface GrowthConfigItem {
+  id: string;
+  title: string;
+  levelAwards: Record<LevelId, GrowthAwardConfigItem>;
+  levelThreeStarBonusRate: number;
+  examBasePoints: number;
+  examBonus80: number;
+  examBonus90: number;
+  examAppearanceRatio: number;
+  examSafetyRatio: number;
+  wrongQuestionReviewAward: GrowthAwardConfigItem;
+  streakAwards: {
+    threeDay: GrowthAwardConfigItem;
+    sevenDay: GrowthAwardConfigItem;
+  };
+  appearanceThresholds: GrowthThresholdItem[];
+  safetyThresholds: GrowthThresholdItem[];
+  sceneThresholds: GrowthThresholdItem[];
+  stageThresholds: Array<GrowthThresholdItem & { summary: string }>;
+}
+```
+
+## 行为约束
 
 ### 学生端
+
+- 首次登录且 `studentProfile === null` 时，必须进入 `/student/profile-setup`。
+- API 模式下，前端以 `GET /api/student/progress` 返回的关卡状态、考试状态、积分、徽章和错题为准，不自行推导。
+- 关卡完成页必须消费 `POST /api/student/levels/:levelId/complete` 返回的 `{ progress, result }`。
+- 错题页以 `GET /api/student/exam/review` 返回的题目详情为准；完成单题重学后调用 `POST /api/student/exam/review/:questionId/complete` 刷新成长结果。
+- 成长页和 AI 结果页以 `GET /api/student/growth`、`GET /api/student/ai-report` 为准，不再使用本地成长规则推演。
+- AI 助手统一走 `POST /api/ai/chat`，不直连 Spark。
+
+### 教师端
+
+- 班级页走 `GET /api/teacher/classes`、`POST /api/teacher/classes`、`PUT /api/teacher/classes/:id`。
+- 学生列表页支持 `className`、`completionStatus`、`examStatus` 查询参数。
+- 学生详情页以后端返回的完成情况、考试结果、成长状态和建议为主数据源。
+
+### 管理员端
+
+- 主题、关卡、题库、AI 文案页面使用显式保存流，但“保存”必须对应真实后端写请求。
+- 用户管理页的停用/恢复动作必须调用 `PATCH /api/admin/users/:id`。
+- 成长规则配置入口固定放在 `/admin/stats` 页面内，不新增新的一级导航。
+- 未配置后端时可回退到预置数据模式，但只作为开发兜底。
+
+## 联调环境约定
+
+- 前端接口地址：`VITE_API_BASE_URL=http://127.0.0.1:3001`
+- 前端默认地址：`http://127.0.0.1:5173`
+- 后端默认地址：`http://127.0.0.1:3001`
+- 健康检查：`GET /api/health`
+
+## 当前 API 清单
+
+### 鉴权
+
+- `POST /api/auth/login`
+
+### 学生端
+
+- `POST /api/student/profile`
 - `GET /api/student/progress`
 - `POST /api/student/levels/:levelId/start`
 - `POST /api/student/levels/:levelId/complete`
 - `POST /api/student/exam/submit`
+- `GET /api/student/records`
+- `GET /api/student/exam/review`
+- `POST /api/student/exam/review/:questionId/complete`
+- `GET /api/student/growth`
+- `PUT /api/student/growth/preferences`
+- `GET /api/student/ai-report`
 - `POST /api/ai/chat`
 
 ### 教师端
+
 - `GET /api/teacher/dashboard`
+- `GET /api/teacher/classes`
+- `POST /api/teacher/classes`
+- `PUT /api/teacher/classes/:id`
 - `GET /api/teacher/students`
 - `GET /api/teacher/students/:studentId`
 
 ### 管理员端
+
 - `GET /api/admin/modules`
 - `GET /api/admin/themes`
+- `POST /api/admin/themes`
+- `PUT /api/admin/themes/:id`
+- `DELETE /api/admin/themes/:id`
 - `GET /api/admin/levels`
+- `PUT /api/admin/levels/:id`
 - `GET /api/admin/question-bank`
+- `POST /api/admin/question-bank`
+- `PUT /api/admin/question-bank/:id`
+- `DELETE /api/admin/question-bank/:id`
 - `GET /api/admin/ai-copy`
+- `POST /api/admin/ai-copy`
+- `PUT /api/admin/ai-copy/:id`
+- `DELETE /api/admin/ai-copy/:id`
 - `GET /api/admin/users`
+- `PATCH /api/admin/users/:id`
 - `GET /api/admin/stats`
-
-## 教师端与管理员端补充约定
-
-- 教师首页、班级页、学生列表页、学生详情页统一采用“读取接口优先，失败后回退 mock”的工作流，并在页面中明确展示当前数据来源。
-- 教师首页顶部稳定展示教师姓名和当前班级选择器。
-- 学生列表页至少具备班级、完成状态、考试状态和关键词筛选。
-- 教师学生详情页稳定展示四类信息：学习闭环概览、关卡表现、考试状态与风险点、成长状态与教师建议动作。
-- 教师学生详情页的成长区需展示成长等级、当前形态、已解锁能力和已解锁场景。
-- 管理后台四个编辑页继续采用显式保存工作流：编辑后先进入未保存状态，点击保存后仅写入 `localStorage`。
-- 主题管理页采用“列表 + 新增/编辑弹窗 + 预览区”结构，并支持封面色调与封面插画预设。
-- 关卡管理页采用“双栏结构：关卡列表 + 场景配置区”，配置项包含场景图、任务内容、反馈文案、展示顺序、热点配置、拖拽道具和目标区域说明。
-- 题库管理页采用“筛选区 + 题目列表 + 编辑面板”，至少支持主题筛选、选项编辑、正确答案、解析、回看关卡和启用状态。
-- AI 文案管理页采用“分类标签页 + 编辑区 + 预览区”结构。
-- 用户管理页补充 `createdAt` 展示位与“异常账号处理”确认弹窗；停用/恢复动作当前仅写入前端本地工作台状态。
-- 后台中的“保存成功”仅表示本地工作稿已更新，不代表已经写入服务器；后续若接入真实写接口，再统一替换保存目标。
+- `GET /api/admin/growth-config`
+- `PUT /api/admin/growth-config`

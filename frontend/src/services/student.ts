@@ -1,4 +1,14 @@
-import type { LevelId, LevelResult, StudentProgress } from "../types";
+﻿import type {
+  LevelId,
+  LevelResult,
+  StudentAiReportResponse,
+  StudentExamReviewItem,
+  StudentExamReviewResponse,
+  StudentGrowthResponse,
+  StudentProfile,
+  StudentProgress,
+  StudentRecordsResponse,
+} from "../types";
 import { requestJson } from "./http";
 
 export interface StudentExamAnswer {
@@ -9,6 +19,11 @@ export interface StudentExamAnswer {
 export interface CompleteLevelResponse {
   progress: StudentProgress;
   result?: LevelResult;
+}
+
+export interface CompleteWrongQuestionReviewResponse {
+  review?: StudentExamReviewItem;
+  growth: StudentGrowthResponse;
 }
 
 export interface AiChatRequest {
@@ -22,8 +37,61 @@ export interface AiChatResponse {
   suggestions?: string[];
 }
 
+export function saveStudentProfile(token: string, payload: StudentProfile) {
+  return requestJson<StudentProfile>("/api/student/profile", {
+    method: "POST",
+    token,
+    body: payload,
+  });
+}
+
 export function fetchStudentProgress(token: string) {
   return requestJson<StudentProgress>("/api/student/progress", {
+    token,
+  });
+}
+
+export function fetchStudentRecords(token: string) {
+  return requestJson<StudentRecordsResponse>("/api/student/records", {
+    token,
+  });
+}
+
+export function fetchStudentExamReview(token: string) {
+  return requestJson<StudentExamReviewResponse>("/api/student/exam/review", {
+    token,
+  });
+}
+
+export function completeStudentWrongQuestionReview(token: string, questionId: string) {
+  return requestJson<CompleteWrongQuestionReviewResponse>(
+    `/api/student/exam/review/${questionId}/complete`,
+    {
+      method: "POST",
+      token,
+    },
+  );
+}
+
+export function fetchStudentGrowth(token: string) {
+  return requestJson<StudentGrowthResponse>("/api/student/growth", {
+    token,
+  });
+}
+
+export function saveStudentGrowthPreferences(
+  token: string,
+  payload: { appearance?: string | null; scene?: string | null },
+) {
+  return requestJson<StudentGrowthResponse>("/api/student/growth/preferences", {
+    method: "PUT",
+    token,
+    body: payload,
+  });
+}
+
+export function fetchStudentAiReport(token: string) {
+  return requestJson<StudentAiReportResponse>("/api/student/ai-report", {
     token,
   });
 }

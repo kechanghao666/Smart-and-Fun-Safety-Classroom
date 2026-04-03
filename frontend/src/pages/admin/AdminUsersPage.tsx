@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
-import { adminUserSummaries } from "../../data/mockData";
-import { fetchAdminUsers } from "../../services/admin";
+﻿import { useEffect, useMemo, useState } from "react";
+import {
+  adminUsersFallback,
+  fetchAdminUsers,
+  updateAdminUser as updateAdminUserToApi,
+} from "../../services/admin";
 import { useAppState } from "../../state/AppState";
 import type { AdminUserSummary } from "../../types";
-import { useApiResource } from "../../utils/useApiResource";
-import { usePersistedState } from "../../utils/usePersistedState";
 
 const roleLabelMap = {
   student: "学生",
@@ -16,11 +17,6 @@ const statusLabelMap = {
   active: "启用中",
   paused: "已停用",
 } as const;
-
-interface UserOverride {
-  status?: AdminUserSummary["status"];
-  note?: string;
-}
 
 function resolveCreatedAt(user: AdminUserSummary) {
   if (user.createdAt) {
@@ -38,36 +34,80 @@ function resolveCreatedAt(user: AdminUserSummary) {
   return "2026-03-15 08:30";
 }
 
+function buildNextNote(nextStatus: AdminUserSummary["status"]) {
+  return nextStatus === "paused"
+    ? "异常账号待核查，当前已在后台停用。"
+    : "账号状态已恢复，可继续进入正式流程。";
+}
+
 export function AdminUsersPage() {
   const { state } = useAppState();
   const canUseApi = state.authSource === "api" && Boolean(state.authToken);
-  const { data, error, isLoading, source } = useApiResource({
-    enabled: canUseApi,
-    fallbackData: adminUserSummaries,
-    fetcher: () => fetchAdminUsers(state.authToken ?? ""),
-    dependencies: [state.authToken],
-  });
+  const [users, setUsers] = useState<AdminUserSummary[]>(adminUsersFallback);
+  const [source, setSource] = useState<"api" | "mock">(canUseApi ? "api" : "mock");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [overrides, setOverrides] = usePersistedState<Record<string, UserOverride>>(
-    "admin-user-overrides",
-    {},
-  );
   const [pendingAction, setPendingAction] = useState<{
     user: AdminUserSummary;
     nextStatus: AdminUserSummary["status"];
   } | null>(null);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!canUseApi || !state.authToken) {
+      setUsers(adminUsersFallback);
+      setSource("mock");
+      setError("");
+      setIsLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setIsLoading(true);
+    setError("");
+
+    void fetchAdminUsers(state.authToken)
+      .then((result) => {
+        if (cancelled) {
+          return;
+        }
+
+        setUsers(result);
+        setSource("api");
+      })
+      .catch((requestError) => {
+        if (cancelled) {
+          return;
+        }
+
+        setUsers(adminUsersFallback);
+        setSource("mock");
+        setError(requestError instanceof Error ? requestError.message : "用户列表加载失败。")
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canUseApi, state.authToken]);
+
   const hydratedUsers = useMemo(
     () =>
-      data.map((user) => ({
+      users.map((user) => ({
         ...user,
-        status: overrides[user.id]?.status ?? user.status,
-        note: overrides[user.id]?.note ?? user.note,
         createdAt: resolveCreatedAt(user),
       })),
-    [data, overrides],
+    [users],
   );
 
   const filteredUsers = useMemo(
@@ -97,24 +137,47 @@ export function AdminUsersPage() {
   const hasFilters =
     query.trim().length > 0 || roleFilter !== "all" || statusFilter !== "all";
 
-  function confirmUserAction() {
+  async function confirmUserAction() {
     if (!pendingAction) {
       return;
     }
 
     const { user, nextStatus } = pendingAction;
+    const nextNote = buildNextNote(nextStatus);
 
-    setOverrides((current) => ({
-      ...current,
-      [user.id]: {
-        status: nextStatus,
-        note:
-          nextStatus === "paused"
-            ? "异常账号待核查，当前已在前端工作台中停用。"
-            : "账号状态已恢复，可继续进入正式流程。",
-      },
-    }));
-    setPendingAction(null);
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      if (canUseApi && state.authToken) {
+        const updatedUser = await updateAdminUserToApi(state.authToken, user.id, {
+          status: nextStatus,
+          note: nextNote,
+        });
+
+        setUsers((current) =>
+          current.map((item) =>
+            item.id === user.id
+              ? updatedUser ?? { ...item, status: nextStatus, note: nextNote }
+              : item,
+          ),
+        );
+        setSource("api");
+      } else {
+        setUsers((current) =>
+          current.map((item) =>
+            item.id === user.id ? { ...item, status: nextStatus, note: nextNote } : item,
+          ),
+        );
+        setSource("mock");
+      }
+
+      setPendingAction(null);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "账号状态更新失败。")
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -122,8 +185,10 @@ export function AdminUsersPage() {
       <section className="hero-banner hero-banner--admin">
         <div>
           <span className="hero-banner__eyebrow">用户管理</span>
-          <h1>按角色、状态和关键字查看平台账号</h1>
-          <p>这一页保持“只读接口优先”的工作方式，同时补上创建时间、异常账号处理确认和标准后台表格结构。</p>
+          <h1>按角色、状态和关键词查看平台账号</h1>
+          <p>
+            这一页保持标准后台表格结构，并把账号启停动作直接接入后端。管理员现在可以真正停用或恢复账号，而不是只在浏览器里做本地标记。
+          </p>
         </div>
       </section>
 
@@ -132,7 +197,8 @@ export function AdminUsersPage() {
         <p>
           {isLoading
             ? "正在同步用户列表..."
-            : error || "异常账号处理会先记录在当前管理版本中，后续可继续接入统一账号服务。"}
+            : error ||
+              "异常账号处理会直接写入后端用户状态；如果当前没有接后端，则会回退到预置演示数据。"}
         </p>
       </article>
 
@@ -145,7 +211,7 @@ export function AdminUsersPage() {
         <article className="surface-card stat-card admin-summary-card">
           <span>筛选结果</span>
           <strong>{filteredUsers.length}</strong>
-          <p>根据关键字、角色和状态组合后可见的账号数量。</p>
+          <p>根据关键词、角色和状态组合后可见的账号数量。</p>
         </article>
         <article className="surface-card stat-card admin-summary-card">
           <span>启用中</span>
@@ -155,7 +221,7 @@ export function AdminUsersPage() {
         <article className="surface-card stat-card admin-summary-card">
           <span>异常停用</span>
           <strong>{pausedCount}</strong>
-          <p>已在当前前端工作台中标记为异常并停用的账号。</p>
+          <p>已被管理员标记为暂停使用的账号。</p>
         </article>
       </section>
 
@@ -192,20 +258,12 @@ export function AdminUsersPage() {
           <span className="section-block__eyebrow">筛选反馈</span>
           <h2>当前查询条件</h2>
           <div className="chip-row">
+            <span className="surface-tag">关键词：{query.trim().length > 0 ? query.trim() : "未设置"}</span>
             <span className="surface-tag">
-              关键字：{query.trim().length > 0 ? query.trim() : "未设置"}
+              角色：{roleFilter === "all" ? "全部角色" : roleLabelMap[roleFilter as keyof typeof roleLabelMap]}
             </span>
             <span className="surface-tag">
-              角色：
-              {roleFilter === "all"
-                ? "全部角色"
-                : roleLabelMap[roleFilter as keyof typeof roleLabelMap]}
-            </span>
-            <span className="surface-tag">
-              状态：
-              {statusFilter === "all"
-                ? "全部状态"
-                : statusLabelMap[statusFilter as keyof typeof statusLabelMap]}
+              状态：{statusFilter === "all" ? "全部状态" : statusLabelMap[statusFilter as keyof typeof statusLabelMap]}
             </span>
           </div>
           <p>{hasFilters ? `当前共筛出 ${filteredUsers.length} 个账号。` : "当前未设置筛选条件，默认展示全部账号。"}</p>
@@ -328,28 +386,34 @@ export function AdminUsersPage() {
       {pendingAction ? (
         <section className="overlay-modal-backdrop">
           <article className="surface-card overlay-modal">
-            <span className="section-block__eyebrow">异常账号处理</span>
-            <h2>
-              {pendingAction.nextStatus === "paused" ? "确认停用这个账号？" : "确认恢复这个账号？"}
-            </h2>
+            <span className="section-block__eyebrow">账号状态处理</span>
+            <h2>{pendingAction.nextStatus === "paused" ? "确认停用这个账号？" : "确认恢复这个账号？"}</h2>
             <p>
               账号：{pendingAction.user.name}（{roleLabelMap[pendingAction.user.role]}）
             </p>
             <p>
               {pendingAction.nextStatus === "paused"
-                ? "当前动作会先把该账号标记为异常并停用，待服务端接入后可再统一同步。"
-                : "当前动作会先恢复该账号的可用状态，待服务端接入后可再统一同步。"}
+                ? "停用后，后端会更新该账号状态，并在需要时清理已有会话。"
+                : "恢复后，该账号可以重新进入正常业务流程。"}
             </p>
             <div className="button-row">
               <button
                 type="button"
                 className="ghost-button"
+                disabled={isSubmitting}
                 onClick={() => setPendingAction(null)}
               >
                 取消
               </button>
-              <button type="button" className="primary-button" onClick={confirmUserAction}>
-                确认
+              <button
+                type="button"
+                className="primary-button"
+                disabled={isSubmitting}
+                onClick={() => {
+                  void confirmUserAction();
+                }}
+              >
+                {isSubmitting ? "提交中..." : "确认"}
               </button>
             </div>
           </article>

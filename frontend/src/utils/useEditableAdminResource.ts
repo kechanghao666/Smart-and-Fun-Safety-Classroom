@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../services/http";
 
 export type EditorStatus = "clean" | "dirty" | "saved" | "reset" | "sync_error";
@@ -15,6 +15,7 @@ interface UseEditableAdminResourceOptions<T> {
   fallbackData: T;
   enabled: boolean;
   fetcher: () => Promise<T>;
+  saveHandler?: (draftData: T, savedData: T) => Promise<T>;
   dependencies?: unknown[];
   fallbackMessage?: string;
 }
@@ -104,12 +105,11 @@ export function useEditableAdminResource<T>({
   fallbackData,
   enabled,
   fetcher,
+  saveHandler,
   dependencies = [],
   fallbackMessage = "暂时无法获取服务数据，当前继续使用预置数据。",
 }: UseEditableAdminResourceOptions<T>) {
-  const initialStateRef = useRef(
-    loadPersistedEditableState(storageKey, fallbackData),
-  );
+  const initialStateRef = useRef(loadPersistedEditableState(storageKey, fallbackData));
   const [draftData, setDraftData] = useState<T>(initialStateRef.current.savedData);
   const [savedData, setSavedData] = useState<T>(initialStateRef.current.savedData);
   const [baselineData, setBaselineData] = useState<T>(initialStateRef.current.baselineData);
@@ -123,6 +123,7 @@ export function useEditableAdminResource<T>({
   const [syncError, setSyncError] = useState("");
   const [isHydrating, setIsHydrating] = useState(false);
   const fetcherRef = useRef(fetcher);
+  const saveHandlerRef = useRef(saveHandler);
   const draftDataRef = useRef(draftData);
   const savedDataRef = useRef(savedData);
   const baselineDataRef = useRef(baselineData);
@@ -130,6 +131,7 @@ export function useEditableAdminResource<T>({
   const hasStoredStateRef = useRef(initialStateRef.current.hasStoredState);
 
   fetcherRef.current = fetcher;
+  saveHandlerRef.current = saveHandler;
   draftDataRef.current = draftData;
   savedDataRef.current = savedData;
   baselineDataRef.current = baselineData;
@@ -226,14 +228,53 @@ export function useEditableAdminResource<T>({
     [],
   );
 
-  const saveChanges = useCallback(() => {
+  const saveChanges = useCallback(async () => {
+    setSyncError("");
+
+    if (saveHandlerRef.current) {
+      setIsHydrating(true);
+
+      try {
+        const nextRemoteData = cloneData(
+          await saveHandlerRef.current(
+            cloneData(draftDataRef.current),
+            cloneData(savedDataRef.current),
+          ),
+        );
+        const savedAt = formatSavedAt();
+
+        setDraftData(nextRemoteData);
+        setSavedData(nextRemoteData);
+        setBaselineData(nextRemoteData);
+        setLastSavedAt(savedAt);
+        setStatus("saved");
+        setSource("api");
+        persistEditableState(storageKey, {
+          savedData: nextRemoteData,
+          baselineData: nextRemoteData,
+          lastSavedAt: savedAt,
+        });
+        hasStoredStateRef.current = true;
+      } catch (requestError) {
+        setStatus("sync_error");
+        setSyncError(
+          requestError instanceof ApiError
+            ? requestError.message
+            : "保存失败，请稍后重试。",
+        );
+      } finally {
+        setIsHydrating(false);
+      }
+
+      return;
+    }
+
     const nextSavedData = cloneData(draftDataRef.current);
     const savedAt = formatSavedAt();
 
     setSavedData(nextSavedData);
     setLastSavedAt(savedAt);
     setStatus("saved");
-    setSyncError("");
     persistEditableState(storageKey, {
       savedData: nextSavedData,
       baselineData: baselineDataRef.current,

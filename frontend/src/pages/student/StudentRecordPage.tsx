@@ -1,19 +1,85 @@
-import { Link, useNavigate } from "react-router-dom";
+﻿import { Link, useNavigate } from "react-router-dom";
 import { StatusBadge } from "../../components/StatusBadge";
-import { examQuestions } from "../../data/mockData";
+import { fetchStudentGrowth, fetchStudentRecords } from "../../services/student";
 import { useAppState } from "../../state/AppState";
+import type { StudentGrowthResponse, StudentRecordsResponse } from "../../types";
 import { buildGrowthSnapshot } from "../../utils/studentGrowth";
+import { useApiResource } from "../../utils/useApiResource";
 
 export function StudentRecordPage() {
   const navigate = useNavigate();
   const { state } = useAppState();
-  const growth = buildGrowthSnapshot(state);
-  const wrongQuestionDetails = examQuestions.filter((question) =>
-    state.progress.exam.wrongQuestionIds.includes(question.id),
-  );
-  const continueRoute =
-    growth.journal.find((item) => item.status === "current")?.href ??
-    state.progress.lastVisitedRoute;
+  const fallbackGrowth = buildGrowthSnapshot(state);
+  const apiEnabled = state.authSource === "api" && Boolean(state.authToken);
+
+  const fallbackRecords: StudentRecordsResponse = {
+    overview: {
+      themeId: state.progress.themeId,
+      themeTitle: state.progress.themeTitle,
+      completedLevels: state.progress.levels.filter((level) => level.status === "completed").length,
+      totalLevels: state.progress.levels.length,
+      examStatus: state.progress.exam.status,
+      examScore: state.progress.exam.score,
+      lastVisitedRoute: state.progress.lastVisitedRoute,
+      lastLearnedAt: null,
+      continueRoute: state.progress.lastVisitedRoute,
+      badges: state.progress.badges,
+      points: state.progress.points,
+    },
+    records: [],
+  };
+
+  const fallbackGrowthData: StudentGrowthResponse = {
+    characterName: state.studentProfile?.nickname ?? "安全学员",
+    linkedAiRole: "安全小助手",
+    totalGrowthPoints: fallbackGrowth.points,
+    nextLevelTarget: fallbackGrowth.nextTier?.minPoints ?? null,
+    nextLevelRemaining: fallbackGrowth.nextTier ? fallbackGrowth.pointsToNext : null,
+    nextLevelLabel: fallbackGrowth.nextTier?.title ?? null,
+    streakDays: fallbackGrowth.currentStreakDays,
+    stageLabel: fallbackGrowth.currentTier.title,
+    growthSummary: fallbackGrowth.currentTier.description,
+    currentAppearance: fallbackGrowth.selectedAppearance,
+    currentScene: fallbackGrowth.selectedScene,
+    currentAbilityTag: fallbackGrowth.currentTier.ability,
+    dimensions: fallbackGrowth.dimensions.map((item) => ({
+      id: item.id === "observe" ? "appearance" : item.id === "judge" ? "safety" : "scene",
+      label: item.label,
+      points: item.score,
+      level: 0,
+      progressPercent: item.score,
+      currentUnlockLabel: item.label,
+      nextUnlockLabel: null,
+    })),
+    unlockedAppearances: fallbackGrowth.appearanceOptions.filter((item) => item.unlocked).map((item) => item.label),
+    unlockedAbilityTags: [fallbackGrowth.currentTier.ability],
+    unlockedScenes: fallbackGrowth.sceneOptions.filter((item) => item.unlocked).map((item) => item.label),
+    history: [],
+  };
+
+  const {
+    data: recordsData,
+    error: recordsError,
+    isLoading: recordsLoading,
+    source: recordsSource,
+  } = useApiResource({
+    enabled: apiEnabled,
+    fallbackData: fallbackRecords,
+    fetcher: () => fetchStudentRecords(state.authToken!),
+    dependencies: [state.authToken, state.progress.lastVisitedRoute, state.progress.points],
+    fallbackMessage: "学习记录页暂时无法连接后端，当前展示本地数据。",
+  });
+
+  const { data: growthData } = useApiResource({
+    enabled: apiEnabled,
+    fallbackData: fallbackGrowthData,
+    fetcher: () => fetchStudentGrowth(state.authToken!),
+    dependencies: [state.authToken, state.progress.points, state.progress.rewardProgress.reviewedWrongQuestionIds.join("|")],
+    fallbackMessage: "成长信息暂时无法连接后端，当前展示本地数据。",
+  });
+
+  const continueRoute = recordsData.overview.continueRoute || state.progress.lastVisitedRoute;
+  const wrongCount = state.progress.exam.wrongQuestionIds.length;
 
   return (
     <div className="page-stack">
@@ -22,22 +88,15 @@ export function StudentRecordPage() {
           <span className="hero-banner__eyebrow">学习记录页</span>
           <h1>把主题进度、结算回看、错题和成长放在一起</h1>
           <p>
-            学习记录页承担“快捷续学 + 主题进度 + 结算回看 + 错题入口 + 成长快照”的中转功能，方便学生快速回到下一步。
+            学习记录页承担“快捷续学 + 主题进度 + 结果回顾 + 错题入口 + 成长快照”的中转功能，方便快速回到下一步。
           </p>
+          {recordsError ? <p className="inline-note">{recordsError}</p> : null}
         </div>
         <div className="hero-banner__actions">
-          <button
-            type="button"
-            className="primary-button"
-            onClick={() => navigate(continueRoute)}
-          >
+          <button type="button" className="primary-button" onClick={() => navigate(continueRoute)}>
             继续学习
           </button>
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => navigate("/student/growth")}
-          >
+          <button type="button" className="ghost-button" onClick={() => navigate("/student/growth")}>
             查看成长档案
           </button>
         </div>
@@ -46,30 +105,30 @@ export function StudentRecordPage() {
       <section className="card-grid card-grid--three">
         <article className="surface-card stat-card">
           <span>当前主题</span>
-          <strong>{state.progress.themeTitle}</strong>
-          <p>最近学习位置：{state.progress.lastVisitedRoute}</p>
+          <strong>{recordsData.overview.themeTitle}</strong>
+          <p>最近学习位置：{recordsData.overview.lastVisitedRoute}</p>
         </article>
 
         <article className="surface-card stat-card">
           <span>考试状态</span>
           <strong>
-            {state.progress.exam.status === "completed"
-              ? `${state.progress.exam.score ?? 0} 分`
-              : state.progress.exam.status === "available"
+            {recordsData.overview.examStatus === "completed"
+              ? `${recordsData.overview.examScore ?? 0} 分`
+              : recordsData.overview.examStatus === "available"
                 ? "已解锁"
                 : "未解锁"}
           </strong>
           <p>
-            {state.progress.exam.status === "completed"
-              ? `当前共有 ${wrongQuestionDetails.length} 道题可继续回看`
-              : "完成三关后主题考试会自动点亮。"}
+            {recordsData.overview.examStatus === "completed"
+              ? `当前共有 ${wrongCount} 道题可继续回看。`
+              : "完成三关后，主题考试会自动点亮。"}
           </p>
         </article>
 
         <article className="surface-card stat-card">
           <span>成长阶段</span>
-          <strong>{growth.currentTier.title}</strong>
-          <p>{growth.nextFocus}</p>
+          <strong>{growthData.stageLabel}</strong>
+          <p>{growthData.growthSummary}</p>
         </article>
       </section>
 
@@ -99,14 +158,8 @@ export function StudentRecordPage() {
                 </div>
                 <ul className="plain-list">
                   <li>预计时长：{level.duration}</li>
-                  <li>
-                    本关得分：
-                    {result ? `${result.score} 分` : "尚未生成结算"}
-                  </li>
-                  <li>
-                    星级表现：
-                    {result ? `${result.stars} 星` : "完成后显示"}
-                  </li>
+                  <li>本关得分：{result ? `${result.score} 分` : "尚未生成结算"}</li>
+                  <li>星级表现：{result ? `${result.stars} 星` : "完成后显示"}</li>
                 </ul>
                 <button
                   type="button"
@@ -129,25 +182,16 @@ export function StudentRecordPage() {
           {state.progress.exam.status === "completed" ? (
             <div className="page-stack page-stack--compact">
               <div className="button-row">
-                <Link
-                  className="primary-button link-button"
-                  to="/student/theme/road-safety/exam/result"
-                >
+                <Link className="primary-button link-button" to="/student/theme/road-safety/exam/result">
                   查看考试结果页
                 </Link>
-                <Link
-                  className="ghost-button link-button"
-                  to="/student/theme/road-safety/wrong-questions"
-                >
+                <Link className="ghost-button link-button" to="/student/theme/road-safety/wrong-questions">
                   查看错题回看页
                 </Link>
               </div>
               <article className="feedback-box">
                 <strong>本轮考试已收口</strong>
-                <p>
-                  当前得分 {state.progress.exam.score ?? 0} 分，错题 {wrongQuestionDetails.length} 道。
-                  接下来建议先看错题，再返回对应关卡复练。
-                </p>
+                <p>当前得分 {state.progress.exam.score ?? 0} 分，错题 {wrongCount} 道。</p>
               </article>
             </div>
           ) : state.progress.exam.status === "available" ? (
@@ -167,69 +211,11 @@ export function StudentRecordPage() {
           <span className="section-block__eyebrow">成长快照</span>
           <h2>本轮学习带来的变化</h2>
           <ul className="plain-list">
-            <li>成长值：{growth.points}</li>
-            <li>累计星级：{growth.totalStars} 星</li>
-            <li>当前外观：{growth.selectedAppearance}</li>
-            <li>当前场景：{growth.selectedScene}</li>
-            <li>已获得徽章：{state.progress.badges.join(" / ")}</li>
-          </ul>
-        </article>
-      </section>
-
-      <section className="card-grid card-grid--two">
-        <article className="surface-card admin-preview-card">
-          <span className="section-block__eyebrow">结果回看</span>
-          <h2>把每一关结算和考试结果放进同一张总账单</h2>
-          <div className="page-stack page-stack--compact">
-            {state.progress.levels.map((level) => {
-              const result = state.progress.levelResults[level.id];
-
-              return (
-                <article key={`${level.id}-recap`} className="teacher-analysis-card">
-                  <div className="row-between">
-                    <strong>{level.title}</strong>
-                    <StatusBadge status={level.status} />
-                  </div>
-                  <p>
-                    {result
-                      ? `得分 ${result.score} 分，${result.stars} 星，亮点：${result.highlight}`
-                      : "当前还没有生成本关结算，可先进入本关继续学习。"}
-                  </p>
-                  <Link
-                    className="ghost-button link-button"
-                    to={
-                      result
-                        ? `/student/theme/road-safety/level/${level.id}/result`
-                        : `/student/theme/road-safety/level/${level.id}`
-                    }
-                  >
-                    {result ? "查看结算" : "进入本关"}
-                  </Link>
-                </article>
-              );
-            })}
-          </div>
-        </article>
-
-        <article className="surface-card admin-preview-card">
-          <span className="section-block__eyebrow">下一步入口</span>
-          <h2>记录页也承担继续学习与复盘中转</h2>
-          <div className="button-row">
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => navigate(continueRoute)}
-            >
-              继续当前学习
-            </button>
-            <Link className="ghost-button link-button" to="/student/ai-report">
-              查看 AI 结果卡
-            </Link>
-          </div>
-          <ul className="plain-list">
-            <li>如果考试已完成，优先看结果卡和错题页。</li>
-            <li>如果考试已解锁但未完成，建议直接进入主题考试收口。</li>
-            <li>如果仍在闯关阶段，就从这里返回当前可学关卡继续推进。</li>
+            <li>成长值：{growthData.totalGrowthPoints}</li>
+            <li>当前外观：{growthData.currentAppearance}</li>
+            <li>当前场景：{growthData.currentScene}</li>
+            <li>能力标签：{growthData.currentAbilityTag}</li>
+            <li>已获得徽章：{recordsData.overview.badges.join(" / ") || "暂无"}</li>
           </ul>
         </article>
       </section>
@@ -237,29 +223,38 @@ export function StudentRecordPage() {
       <section className="surface-card">
         <div className="section-block__header">
           <div>
-            <span className="section-block__eyebrow">学习轨迹</span>
-            <h2>从资料设置到结果反馈的完整路线</h2>
+            <span className="section-block__eyebrow">最近学习轨迹</span>
+            <h2>{recordsLoading ? "正在同步学习记录..." : "从资料设置到结果反馈的完整轨迹"}</h2>
           </div>
+          <span className="surface-tag">{recordsSource === "api" ? "后端记录" : "本地兜底"}</span>
         </div>
 
-        <div className="timeline-list">
-          {growth.journal.map((item) => (
-            <article key={item.id} className={`timeline-item timeline-item--${item.status}`}>
-              <span className="timeline-item__dot" />
-              <div className="timeline-item__content">
-                <div className="row-between">
-                  <div>
-                    <h3>{item.title}</h3>
-                    <p>{item.detail}</p>
+        {recordsData.records.length > 0 ? (
+          <div className="timeline-list">
+            {recordsData.records.map((item, index) => (
+              <article key={item.id} className={`timeline-item timeline-item--${index === 0 ? "current" : "done"}`}>
+                <span className="timeline-item__dot" />
+                <div className="timeline-item__content">
+                  <div className="row-between">
+                    <div>
+                      <h3>{item.title}</h3>
+                      <p>{item.description}</p>
+                      <p className="inline-note">{item.createdAt}</p>
+                    </div>
+                    <button type="button" className="ghost-button" onClick={() => navigate(item.route)}>
+                      打开入口
+                    </button>
                   </div>
-                  <Link className="ghost-button link-button" to={item.href}>
-                    {item.ctaLabel}
-                  </Link>
                 </div>
-              </div>
-            </article>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <article className="feedback-box">
+            <strong>当前还没有后端学习记录</strong>
+            <p>继续完成关卡、考试和错题重学后，这里会按时间顺序累计展示。</p>
+          </article>
+        )}
       </section>
     </div>
   );
