@@ -25,6 +25,8 @@ export async function createSchema(db: Database) {
       password_hash TEXT NOT NULL,
       password_salt TEXT NOT NULL,
       display_name TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      admin_note TEXT NOT NULL DEFAULT '',
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
@@ -132,7 +134,79 @@ export async function createSchema(db: Database) {
       prompt_text TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS learning_records (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      record_type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      route TEXT NOT NULL,
+      meta_json TEXT NOT NULL DEFAULT '{}',
+      dedupe_key TEXT UNIQUE,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS student_growth_profiles (
+      user_id TEXT PRIMARY KEY,
+      total_points INTEGER NOT NULL DEFAULT 0,
+      appearance_points INTEGER NOT NULL DEFAULT 0,
+      safety_points INTEGER NOT NULL DEFAULT 0,
+      scene_points INTEGER NOT NULL DEFAULT 0,
+      streak_days INTEGER NOT NULL DEFAULT 0,
+      last_learning_date TEXT,
+      selected_appearance TEXT NOT NULL DEFAULT '基础形态',
+      selected_scene TEXT NOT NULL DEFAULT '城市街道',
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS growth_events (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      source_type TEXT NOT NULL,
+      source_ref TEXT,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      points INTEGER NOT NULL DEFAULT 0,
+      appearance_points INTEGER NOT NULL DEFAULT 0,
+      safety_points INTEGER NOT NULL DEFAULT 0,
+      scene_points INTEGER NOT NULL DEFAULT 0,
+      dedupe_key TEXT UNIQUE,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS question_review_progress (
+      user_id TEXT NOT NULL,
+      question_id TEXT NOT NULL,
+      reviewed_at TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (user_id, question_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS teacher_classes (
+      id TEXT PRIMARY KEY,
+      teacher_user_id TEXT NOT NULL,
+      name TEXT NOT NULL UNIQUE,
+      description TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (teacher_user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS growth_settings (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      config_json TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
   `);
+
+  await ensureColumn(db, "users", "status", "TEXT NOT NULL DEFAULT 'active'");
+  await ensureColumn(db, "users", "admin_note", "TEXT NOT NULL DEFAULT ''");
 
   await ensureColumn(db, "question_bank", "options_json", "TEXT NOT NULL DEFAULT '[]'");
   await ensureColumn(db, "question_bank", "correct_index", "INTEGER NOT NULL DEFAULT 0");
@@ -142,5 +216,18 @@ export async function createSchema(db: Database) {
     "question_bank",
     "review_suggestion",
     "TEXT NOT NULL DEFAULT ''",
+  );
+
+  await ensureColumn(
+    db,
+    "student_growth_profiles",
+    "selected_appearance",
+    "TEXT NOT NULL DEFAULT '基础形态'",
+  );
+  await ensureColumn(
+    db,
+    "student_growth_profiles",
+    "selected_scene",
+    "TEXT NOT NULL DEFAULT '城市街道'",
   );
 }

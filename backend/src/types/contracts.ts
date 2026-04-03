@@ -1,4 +1,5 @@
 export type UserRole = "student" | "teacher" | "admin";
+export type AdminUserStatus = "active" | "paused";
 export type LearningStatus =
   | "locked"
   | "available"
@@ -7,6 +8,21 @@ export type LearningStatus =
 export type LevelId = "level-1" | "level-2" | "level-3";
 export type StudentStage = "小学低段" | "小学中段" | "小学高段";
 export type ThemeAccent = "sky" | "mint" | "orange";
+export type GrowthDimensionId = "appearance" | "safety" | "scene";
+export type LearningRecordType =
+  | "login"
+  | "profile_updated"
+  | "level_started"
+  | "level_completed"
+  | "exam_unlocked"
+  | "exam_completed"
+  | "wrong_question_reviewed"
+  | "growth_reward";
+export type GrowthEventSourceType =
+  | "level_completed"
+  | "exam_completed"
+  | "wrong_question_review"
+  | "streak_bonus";
 
 export interface StudentProfile {
   nickname: string;
@@ -85,6 +101,135 @@ export interface CompleteLevelResponse {
   result?: LevelResult;
 }
 
+export interface LearningRecordItem {
+  id: string;
+  type: LearningRecordType;
+  title: string;
+  description: string;
+  route: string;
+  createdAt: string;
+}
+
+export interface StudentRecordOverview {
+  themeId: string;
+  themeTitle: string;
+  completedLevels: number;
+  totalLevels: number;
+  examStatus: LearningStatus;
+  examScore: number | null;
+  lastVisitedRoute: string;
+  lastLearnedAt: string | null;
+  continueRoute: string;
+  badges: string[];
+  points: number;
+}
+
+export interface StudentRecordsResponse {
+  overview: StudentRecordOverview;
+  records: LearningRecordItem[];
+}
+
+export interface StudentExamReviewItem {
+  questionId: string;
+  prompt: string;
+  studentAnswer: string | null;
+  correctAnswer: string;
+  explanation: string;
+  reviewLevelId: LevelId;
+  reviewLabel: string;
+  reviewSuggestion: string;
+  reviewed: boolean;
+  reviewedAt: string | null;
+}
+
+export interface StudentExamReviewResponse {
+  totalWrongQuestions: number;
+  suggestion: string;
+  items: StudentExamReviewItem[];
+}
+
+export interface GrowthDimensionSummary {
+  id: GrowthDimensionId;
+  label: string;
+  points: number;
+  level: number;
+  progressPercent: number;
+  currentUnlockLabel: string;
+  nextUnlockLabel: string | null;
+}
+
+export interface GrowthHistoryItem {
+  id: string;
+  sourceType: GrowthEventSourceType;
+  title: string;
+  description: string;
+  points: number;
+  createdAt: string;
+}
+
+export interface GrowthThresholdItem {
+  threshold: number;
+  label: string;
+  summary?: string;
+}
+
+export interface GrowthAwardConfigItem {
+  appearancePoints: number;
+  safetyPoints: number;
+  scenePoints: number;
+}
+
+export interface GrowthConfigItem {
+  id: string;
+  title: string;
+  levelAwards: Record<LevelId, GrowthAwardConfigItem>;
+  levelThreeStarBonusRate: number;
+  examBasePoints: number;
+  examBonus80: number;
+  examBonus90: number;
+  examAppearanceRatio: number;
+  examSafetyRatio: number;
+  wrongQuestionReviewAward: GrowthAwardConfigItem;
+  streakAwards: {
+    threeDay: GrowthAwardConfigItem;
+    sevenDay: GrowthAwardConfigItem;
+  };
+  appearanceThresholds: GrowthThresholdItem[];
+  safetyThresholds: GrowthThresholdItem[];
+  sceneThresholds: GrowthThresholdItem[];
+  stageThresholds: Array<GrowthThresholdItem & { summary: string }>;
+}
+
+export interface StudentGrowthResponse {
+  characterName: string;
+  linkedAiRole: string;
+  totalGrowthPoints: number;
+  nextLevelTarget: number | null;
+  nextLevelRemaining: number | null;
+  streakDays: number;
+  stageLabel: string;
+  growthSummary: string;
+  dimensions: GrowthDimensionSummary[];
+  unlockedAppearances: string[];
+  unlockedAbilityTags: string[];
+  unlockedScenes: string[];
+  history: GrowthHistoryItem[];
+}
+
+export interface StudentAiReportCard {
+  title: string;
+  summary: string;
+  bullets: string[];
+}
+
+export interface StudentAiReportResponse {
+  completion: StudentAiReportCard;
+  performance: StudentAiReportCard;
+  suggestion: StudentAiReportCard;
+  reward: StudentAiReportCard;
+  growth: StudentAiReportCard;
+}
+
 export interface TeacherStudentSummary {
   id: string;
   name: string;
@@ -105,6 +250,11 @@ export interface TeacherClassSummary {
   focusLabel: string;
 }
 
+export interface TeacherClassManagementItem extends TeacherClassSummary {
+  description: string;
+  createdAt: string;
+}
+
 export interface TeacherStudentLevelStatus {
   levelId: LevelId;
   title: string;
@@ -120,6 +270,8 @@ export interface TeacherStudentDetail extends TeacherStudentSummary {
   levelStatuses: TeacherStudentLevelStatus[];
   wrongTopics: string[];
   recommendations: string[];
+  growthPoints?: number;
+  unlockedScenes?: string[];
 }
 
 export interface AdminModuleCard {
@@ -169,9 +321,10 @@ export interface AdminUserSummary {
   id: string;
   name: string;
   role: UserRole;
-  status: "active" | "paused";
+  status: AdminUserStatus;
   lastActiveAt: string;
   note: string;
+  createdAt?: string;
 }
 
 export interface AdminStatMetric {
@@ -187,6 +340,19 @@ export interface AuthenticatedUser {
   account: string;
   role: UserRole;
   displayName: string;
+}
+
+export interface UserRow {
+  id: string;
+  account: string;
+  role: UserRole;
+  password_hash: string;
+  password_salt: string;
+  display_name: string;
+  status: AdminUserStatus;
+  admin_note: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface StudentProfileRow {
@@ -224,6 +390,69 @@ export interface ExamSubmissionRow {
   score: number;
   wrong_question_ids_json: string;
   submitted_at: string;
+}
+
+export interface LearningRecordRow {
+  id: string;
+  user_id: string;
+  record_type: LearningRecordType;
+  title: string;
+  description: string;
+  route: string;
+  meta_json: string;
+  dedupe_key: string | null;
+  created_at: string;
+}
+
+export interface StudentGrowthProfileRow {
+  user_id: string;
+  total_points: number;
+  appearance_points: number;
+  safety_points: number;
+  scene_points: number;
+  streak_days: number;
+  last_learning_date: string | null;
+  selected_appearance: string;
+  selected_scene: string;
+  updated_at: string;
+}
+
+export interface GrowthEventRow {
+  id: string;
+  user_id: string;
+  source_type: GrowthEventSourceType;
+  source_ref: string | null;
+  title: string;
+  description: string;
+  points: number;
+  appearance_points: number;
+  safety_points: number;
+  scene_points: number;
+  dedupe_key: string | null;
+  created_at: string;
+}
+
+export interface QuestionReviewProgressRow {
+  user_id: string;
+  question_id: string;
+  reviewed_at: string;
+  created_at: string;
+}
+
+export interface TeacherClassRow {
+  id: string;
+  teacher_user_id: string;
+  name: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GrowthConfigRow {
+  id: string;
+  title: string;
+  config_json: string;
+  updated_at: string;
 }
 
 export interface ThemeManagementRow {

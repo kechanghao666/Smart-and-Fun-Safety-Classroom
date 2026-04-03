@@ -1,4 +1,4 @@
-import { randomBytes, scryptSync } from "crypto";
+import { randomBytes, randomUUID, scryptSync } from "crypto";
 import type { Database } from "sqlite";
 import {
   aiCopyTemplateItems,
@@ -7,9 +7,12 @@ import {
   examQuestions,
   levelBlueprints,
   levelManagementItems,
+  levelResultTemplates,
   questionBankManagementItems,
   themeManagementItems,
 } from "../constants/content";
+import { defaultGrowthConfig } from "../constants/growth";
+import type { LevelId, StudentStage } from "../types/contracts";
 
 function hashPassword(password: string, salt: string) {
   return scryptSync(password, salt, 64).toString("hex");
@@ -22,6 +25,8 @@ async function seedUser(
     account: string;
     role: "student" | "teacher" | "admin";
     displayName: string;
+    status?: "active" | "paused";
+    adminNote?: string;
   },
 ) {
   const existing = await db.get<{ id: string }>(
@@ -30,6 +35,15 @@ async function seedUser(
   );
 
   if (existing) {
+    await db.run(
+      `
+        UPDATE users
+        SET status = COALESCE(status, ?), admin_note = COALESCE(admin_note, '')
+        WHERE account = ?
+      `,
+      input.status ?? "active",
+      input.account,
+    );
     return;
   }
 
@@ -39,8 +53,11 @@ async function seedUser(
 
   await db.run(
     `
-      INSERT INTO users (id, account, role, password_hash, password_salt, display_name, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO users (
+        id, account, role, password_hash, password_salt, display_name,
+        status, admin_note, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     input.id,
     input.account,
@@ -48,38 +65,102 @@ async function seedUser(
     passwordHash,
     salt,
     input.displayName,
+    input.status ?? "active",
+    input.adminNote ?? "",
     now,
     now,
   );
 }
 
-async function seedStudentProfile(db: Database, userId: string) {
-  const existing = await db.get<{ user_id: string }>(
-    "SELECT user_id FROM student_profiles WHERE user_id = ?",
-    userId,
+async function seedTeacherClass(
+  db: Database,
+  input: {
+    id: string;
+    teacherUserId: string;
+    name: string;
+    description: string;
+  },
+) {
+  const existing = await db.get<{ id: string }>(
+    "SELECT id FROM teacher_classes WHERE id = ?",
+    input.id,
   );
 
-  if (!existing) {
-    const now = new Date().toISOString();
+  if (existing) {
+    return;
+  }
 
+  const now = new Date().toISOString();
+  await db.run(
+    `
+      INSERT INTO teacher_classes (
+        id, teacher_user_id, name, description, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?)
+    `,
+    input.id,
+    input.teacherUserId,
+    input.name,
+    input.description,
+    now,
+    now,
+  );
+}
+
+async function seedStudentProfile(
+  db: Database,
+  input: {
+    userId: string;
+    className: string;
+    nickname?: string | null;
+    avatarId?: string | null;
+    avatarLabel?: string | null;
+    stage?: StudentStage | null;
+    lastVisitedRoute?: string;
+  },
+) {
+  const existing = await db.get<{ user_id: string }>(
+    "SELECT user_id FROM student_profiles WHERE user_id = ?",
+    input.userId,
+  );
+  const now = new Date().toISOString();
+
+  if (!existing) {
     await db.run(
       `
         INSERT INTO student_profiles (
           user_id, nickname, avatar_id, avatar_label, stage, class_name,
           base_points, starter_badges_json, last_visited_route, created_at, updated_at
         )
-        VALUES (?, NULL, NULL, NULL, NULL, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
-      userId,
-      "三年级（2）班",
+      input.userId,
+      input.nickname ?? null,
+      input.avatarId ?? null,
+      input.avatarLabel ?? null,
+      input.stage ?? null,
+      input.className,
       BASE_POINTS,
       JSON.stringify(BASE_BADGES),
-      "/student/home",
+      input.lastVisitedRoute ?? "/student/home",
       now,
       now,
     );
+    return;
   }
 
+  await db.run(
+    `
+      UPDATE student_profiles
+      SET class_name = COALESCE(class_name, ?), updated_at = updated_at
+      WHERE user_id = ?
+    `,
+    input.className,
+    input.userId,
+  );
+}
+
+async function ensureLevelRows(db: Database, userId: string) {
   for (const [index, level] of levelBlueprints.entries()) {
     const row = await db.get<{ user_id: string }>(
       "SELECT user_id FROM level_progress WHERE user_id = ? AND level_id = ?",
@@ -100,6 +181,110 @@ async function seedStudentProfile(db: Database, userId: string) {
         level.id,
         index === 0 ? "available" : "locked",
         new Date().toISOString(),
+      );
+    }
+  }
+}
+
+async function seedStudentScenario(
+  db: Database,
+  input: {
+    userId: string;
+    completedLevels: Array<{
+      levelId: LevelId;
+      scoreOverride?: number;
+      starsOverride?: number;
+      completedAt: string;
+    }>;
+    nextRoute: string;
+    exam?: {
+      score: number;
+      answers: Array<{ questionId: string; selectedIndex: number }>;
+      wrongQuestionIds: string[];
+      submittedAt: string;
+    };
+  },
+) {
+  await ensureLevelRows(db, input.userId);
+
+  const completedSet = new Set(input.completedLevels.map((item) => item.levelId));
+
+  for (const level of input.completedLevels) {
+    const template = levelResultTemplates[level.levelId];
+    await db.run(
+      `
+        UPDATE level_progress
+        SET
+          status = 'completed',
+          score = ?,
+          stars = ?,
+          highlight = ?,
+          caution = ?,
+          ai_summary = ?,
+          started_at = COALESCE(started_at, ?),
+          completed_at = COALESCE(completed_at, ?),
+          updated_at = ?
+        WHERE user_id = ? AND level_id = ?
+      `,
+      level.scoreOverride ?? template.score,
+      level.starsOverride ?? template.stars,
+      template.highlight,
+      template.caution,
+      template.aiSummary,
+      level.completedAt,
+      level.completedAt,
+      level.completedAt,
+      input.userId,
+      level.levelId,
+    );
+  }
+
+  const firstPendingIndex = levelBlueprints.findIndex((level) => !completedSet.has(level.id));
+
+  if (firstPendingIndex >= 0) {
+    await db.run(
+      `
+        UPDATE level_progress
+        SET status = 'available', updated_at = ?
+        WHERE user_id = ? AND level_id = ? AND status = 'locked'
+      `,
+      new Date().toISOString(),
+      input.userId,
+      levelBlueprints[firstPendingIndex].id,
+    );
+  }
+
+  await db.run(
+    `
+      UPDATE student_profiles
+      SET last_visited_route = ?, updated_at = ?
+      WHERE user_id = ?
+    `,
+    input.nextRoute,
+    new Date().toISOString(),
+    input.userId,
+  );
+
+  if (input.exam) {
+    const existing = await db.get<{ id: string }>(
+      "SELECT id FROM exam_submissions WHERE user_id = ?",
+      input.userId,
+    );
+
+    if (!existing) {
+      await db.run(
+        `
+          INSERT INTO exam_submissions (
+            id, user_id, answers_json, score, wrong_question_ids_json, submitted_at
+          )
+          VALUES (?, ?, ?, ?, ?, ?)
+        `,
+        randomUUID(),
+        input.userId,
+        JSON.stringify(input.exam.answers),
+        input.exam.score,
+        JSON.stringify(input.exam.wrongQuestionIds),
+        input.exam.submittedAt,
       );
     }
   }
@@ -254,12 +439,53 @@ async function seedAiCopyTemplates(db: Database) {
   }
 }
 
+async function seedGrowthSettings(db: Database) {
+  const existing = await db.get<{ id: string }>(
+    "SELECT id FROM growth_settings WHERE id = ?",
+    defaultGrowthConfig.id,
+  );
+
+  if (!existing) {
+    await db.run(
+      `
+        INSERT INTO growth_settings (id, title, config_json, updated_at)
+        VALUES (?, ?, ?, ?)
+      `,
+      defaultGrowthConfig.id,
+      defaultGrowthConfig.title,
+      JSON.stringify(defaultGrowthConfig),
+      new Date().toISOString(),
+    );
+  }
+}
+
 export async function seedDatabase(db: Database) {
   await seedUser(db, {
     id: "stu-1",
     account: "student001",
     role: "student",
     displayName: "学生示例账号",
+  });
+  await seedUser(db, {
+    id: "stu-2",
+    account: "student002",
+    role: "student",
+    displayName: "周乐乐",
+    adminNote: "教师端统计 seed 学生",
+  });
+  await seedUser(db, {
+    id: "stu-3",
+    account: "student003",
+    role: "student",
+    displayName: "陈晓雨",
+    adminNote: "教师端统计 seed 学生",
+  });
+  await seedUser(db, {
+    id: "stu-4",
+    account: "student004",
+    role: "student",
+    displayName: "李小安",
+    adminNote: "教师端统计 seed 学生",
   });
   await seedUser(db, {
     id: "teacher-1",
@@ -274,9 +500,118 @@ export async function seedDatabase(db: Database) {
     displayName: "管理员示例账号",
   });
 
-  await seedStudentProfile(db, "stu-1");
+  await seedTeacherClass(db, {
+    id: "class-3-2",
+    teacherUserId: "teacher-1",
+    name: "三年级（2）班",
+    description: "道路安全教育课堂示范班级",
+  });
+  await seedTeacherClass(db, {
+    id: "class-3-3",
+    teacherUserId: "teacher-1",
+    name: "三年级（3）班",
+    description: "道路安全教育平行班级",
+  });
+
+  await seedStudentProfile(db, {
+    userId: "stu-1",
+    className: "三年级（2）班",
+    nickname: null,
+    avatarId: null,
+    avatarLabel: null,
+    stage: null,
+    lastVisitedRoute: "/student/home",
+  });
+  await seedStudentProfile(db, {
+    userId: "stu-2",
+    className: "三年级（2）班",
+    nickname: "周乐乐",
+    avatarId: "smart-scout",
+    avatarLabel: "机智观察员",
+    stage: "小学中段",
+    lastVisitedRoute: "/student/theme/road-safety/level/level-3",
+  });
+  await seedStudentProfile(db, {
+    userId: "stu-3",
+    className: "三年级（3）班",
+    nickname: "陈晓雨",
+    avatarId: "sunny-guard",
+    avatarLabel: "阳光小卫士",
+    stage: "小学中段",
+    lastVisitedRoute: "/student/theme/road-safety/level/level-2",
+  });
+  await seedStudentProfile(db, {
+    userId: "stu-4",
+    className: "三年级（3）班",
+    nickname: "李小安",
+    avatarId: "brave-captain",
+    avatarLabel: "勇敢守护队长",
+    stage: "小学高段",
+    lastVisitedRoute: "/student/ai-report",
+  });
+
+  await ensureLevelRows(db, "stu-1");
+  await seedStudentScenario(db, {
+    userId: "stu-2",
+    completedLevels: [
+      {
+        levelId: "level-1",
+        scoreOverride: 96,
+        completedAt: "2026-04-01T09:20:00.000Z",
+      },
+      {
+        levelId: "level-2",
+        scoreOverride: 82,
+        completedAt: "2026-04-01T09:38:00.000Z",
+      },
+    ],
+    nextRoute: "/student/theme/road-safety/level/level-3",
+  });
+  await seedStudentScenario(db, {
+    userId: "stu-3",
+    completedLevels: [
+      {
+        levelId: "level-1",
+        scoreOverride: 88,
+        completedAt: "2026-03-31T08:50:00.000Z",
+      },
+    ],
+    nextRoute: "/student/theme/road-safety/level/level-2",
+  });
+  await seedStudentScenario(db, {
+    userId: "stu-4",
+    completedLevels: [
+      {
+        levelId: "level-1",
+        scoreOverride: 100,
+        completedAt: "2026-04-01T08:50:00.000Z",
+      },
+      {
+        levelId: "level-2",
+        scoreOverride: 100,
+        completedAt: "2026-04-01T09:15:00.000Z",
+      },
+      {
+        levelId: "level-3",
+        scoreOverride: 100,
+        completedAt: "2026-04-01T09:36:00.000Z",
+      },
+    ],
+    nextRoute: "/student/ai-report",
+    exam: {
+      score: 100,
+      answers: examQuestions.map((question) => ({
+        questionId: question.id,
+        selectedIndex: question.correctIndex,
+      })),
+      wrongQuestionIds: [],
+      submittedAt: "2026-04-01T10:05:00.000Z",
+    },
+  });
+
   await seedThemes(db);
   await seedAdminLevels(db);
   await seedQuestionBank(db);
   await seedAiCopyTemplates(db);
+  await seedGrowthSettings(db);
 }

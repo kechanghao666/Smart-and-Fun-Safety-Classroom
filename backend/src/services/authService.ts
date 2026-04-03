@@ -2,6 +2,7 @@ import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { env } from "../config/env";
 import { getDb } from "../db/connection";
 import { buildStudentProgress, getStudentProfile } from "./studentService";
+import { recordStudentLogin } from "./growthService";
 import type { AuthenticatedUser, LoginResponse } from "../types/contracts";
 import { HttpError } from "../utils/httpError";
 
@@ -31,9 +32,10 @@ export async function loginWithPassword(
     password_hash: string;
     password_salt: string;
     display_name: string;
+    status: "active" | "paused";
   }>(
     `
-      SELECT id, account, role, password_hash, password_salt, display_name
+      SELECT id, account, role, password_hash, password_salt, display_name, status
       FROM users
       WHERE account = ?
     `,
@@ -42,6 +44,10 @@ export async function loginWithPassword(
 
   if (!user || !verifyPassword(password, user.password_salt, user.password_hash)) {
     throw new HttpError(401, "账号或密码不正确。");
+  }
+
+  if (user.status !== "active") {
+    throw new HttpError(403, "当前账号已暂停，请联系管理员处理。");
   }
 
   const token = `session_${randomBytes(24).toString("hex")}`;
@@ -62,6 +68,8 @@ export async function loginWithPassword(
   );
 
   if (user.role === "student") {
+    await recordStudentLogin(user.id);
+
     return {
       token,
       role: user.role,
@@ -87,10 +95,17 @@ export async function authenticateToken(token: string): Promise<AuthenticatedUse
     account: string;
     role: "student" | "teacher" | "admin";
     display_name: string;
+    status: "active" | "paused";
     expires_at: string;
   }>(
     `
-      SELECT users.id, users.account, users.role, users.display_name, sessions.expires_at
+      SELECT
+        users.id,
+        users.account,
+        users.role,
+        users.display_name,
+        users.status,
+        sessions.expires_at
       FROM sessions
       INNER JOIN users ON users.id = sessions.user_id
       WHERE sessions.token = ?
@@ -105,6 +120,11 @@ export async function authenticateToken(token: string): Promise<AuthenticatedUse
   if (new Date(row.expires_at).getTime() <= Date.now()) {
     await db.run("DELETE FROM sessions WHERE token = ?", token);
     throw new HttpError(401, "登录状态已过期，请重新登录。");
+  }
+
+  if (row.status !== "active") {
+    await db.run("DELETE FROM sessions WHERE token = ?", token);
+    throw new HttpError(403, "当前账号已暂停，请联系管理员处理。");
   }
 
   return {

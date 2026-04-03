@@ -15,6 +15,10 @@ import {
   getLevelBlueprintsFromDb,
   getThemeTitle,
 } from "./courseContentService";
+import {
+  logLearningRecord,
+  syncProgressBasedGrowthEvents,
+} from "./growthService";
 import type {
   CompleteLevelResponse,
   ExamSubmissionRow,
@@ -207,6 +211,15 @@ export async function saveStudentProfile(
     throw new HttpError(500, "学生资料保存失败。");
   }
 
+  await logLearningRecord({
+    userId,
+    type: "profile_updated",
+    title: "完成首次基础信息补充",
+    description: "昵称、头像和学段信息已保存，可继续进入道路安全主题学习。",
+    route: "/student/profile-setup",
+    dedupeKey: `record:profile:${userId}`,
+  });
+
   return profile;
 }
 
@@ -324,17 +337,28 @@ export async function startLevel(
   }
 
   if (row.status === "available") {
+    const startedAt = new Date().toISOString();
     await db.run(
       `
         UPDATE level_progress
         SET status = 'in_progress', started_at = COALESCE(started_at, ?), updated_at = ?
         WHERE user_id = ? AND level_id = ?
       `,
-      new Date().toISOString(),
-      new Date().toISOString(),
+      startedAt,
+      startedAt,
       userId,
       levelId,
     );
+
+    await logLearningRecord({
+      userId,
+      type: "level_started",
+      title: `开始${levelBlueprints.find((item) => item.id === levelId)?.title ?? levelId}`,
+      description: "系统已记录当前关卡位置，稍后可通过“继续学习”直接返回。",
+      route: `/student/theme/${THEME_ID}/level/${levelId}`,
+      createdAt: startedAt,
+      dedupeKey: `record:start:${userId}:${levelId}`,
+    });
   }
 
   await updateLastVisitedRoute(userId, `/student/theme/${THEME_ID}/level/${levelId}`);
@@ -419,6 +443,7 @@ export async function completeLevel(
     userId,
     `/student/theme/${THEME_ID}/level/${levelId}/result`,
   );
+  await syncProgressBasedGrowthEvents(userId);
 
   const progress = await buildStudentProgress(userId);
 
@@ -474,5 +499,6 @@ export async function submitExam(
   );
 
   await updateLastVisitedRoute(userId, `/student/theme/${THEME_ID}/exam`);
+  await syncProgressBasedGrowthEvents(userId);
   return buildStudentProgress(userId);
 }

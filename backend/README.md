@@ -1,6 +1,6 @@
 # Backend
 
-`backend/` 负责学生主链路、教师端/管理员端接口、SQLite 数据库、登录鉴权、AI 代理和 seed 数据。
+`backend/` 负责学生主链路、教师端和管理员端接口、SQLite 数据库、登录鉴权、AI 代理、成长体系、seed 数据与后端文档。
 
 ## 技术栈
 
@@ -50,17 +50,28 @@ npm --prefix backend run start
 说明：
 
 - 真实密钥不能提交到仓库。
-- 前端不能直接访问模型服务，只能调用后端的 `POST /api/ai/chat`。
-- 本项目代码只读取 `SPARK_API_PASSWORD` 作为 Bearer 凭证。
-- 按讯飞官方 2026 年 OpenAI 兼容文档，`SPARK_API_PASSWORD` 可填写控制台可用的 HTTP 鉴权值；当前仓库内这组鉴权信息已经用 `APIKey:APISecret` 形式完成真实联机验收。
+- 前端不能直连模型服务，只能调用后端的 `POST /api/ai/chat`。
+- 当前代码实际读取 `SPARK_API_PASSWORD` 作为 Bearer 凭证。
+- 已按仓库中的 `鉴权信息.docx` 完成真实 Spark 联机验收，且联机时只通过临时环境变量注入。
 
 ## Seed 账号
+
+固定联调账号：
 
 - `student001 / 123456`
 - `teacher001 / 123456`
 - `admin001 / 123456`
 
-学生账号首次登录默认没有资料补全；后端会先创建学习记录和默认进度。
+额外统计 seed：
+
+- `student002 / 123456`
+- `student003 / 123456`
+- `student004 / 123456`
+
+说明：
+
+- `student001` 首次登录时默认没有资料补全，用于验证首次登录流程。
+- 额外 student seed 主要用于教师端班级统计和管理员统计联调。
 
 ## 已实现接口
 
@@ -68,49 +79,48 @@ npm --prefix backend run start
 
 - `POST /api/auth/login`
 
-### 学生主链路
+### 学生端
 
 - `GET /api/student/progress`
+- `GET /api/student/records`
+- `GET /api/student/exam/review`
+- `GET /api/student/growth`
+- `GET /api/student/ai-report`
 - `POST /api/student/profile`
 - `POST /api/student/levels/:levelId/start`
 - `POST /api/student/levels/:levelId/complete`
 - `POST /api/student/exam/submit`
-
-后端强制执行这些规则：
-
-- 第一关默认 `available`
-- 第二、三关默认 `locked`
-- 完成前一关后解锁下一关
-- 三关全部完成后 `exam.status = available`
-- 提交考试后 `exam.status = completed`
-- 后端统一计算并返回 `points`、`badges`、`wrongQuestionIds`、`levelResults`
+- `POST /api/student/exam/review/:questionId/complete`
 
 ### AI 代理
 
 - `POST /api/ai/chat`
 
-规则：
-
-- 只回答道路安全教育主题
-- `hint` 只给方向，不直接给完整答案
-- 无关问题会拒答并引导回主题
-- `ai-copy` 的后台配置会影响 `welcome` / `hint` 的 fallback 文案
-
 ### 教师端
 
+- `GET /api/teacher/classes`
+- `POST /api/teacher/classes`
+- `PUT /api/teacher/classes/:id`
 - `GET /api/teacher/dashboard`
 - `GET /api/teacher/students`
 - `GET /api/teacher/students/:id`
 
+`GET /api/teacher/students` 支持筛选参数：
+
+- `className`
+- `completionStatus`
+- `examStatus`
+
 ### 管理员端
 
-读接口：
+读取接口：
 
 - `GET /api/admin/modules`
 - `GET /api/admin/themes`
 - `GET /api/admin/levels`
 - `GET /api/admin/question-bank`
 - `GET /api/admin/ai-copy`
+- `GET /api/admin/growth-config`
 - `GET /api/admin/users`
 - `GET /api/admin/stats`
 
@@ -126,47 +136,87 @@ npm --prefix backend run start
 - `POST /api/admin/ai-copy`
 - `PUT /api/admin/ai-copy/:id`
 - `DELETE /api/admin/ai-copy/:id`
+- `PUT /api/admin/growth-config`
+- `PATCH /api/admin/users/:id`
 
-说明：
+## 核心业务规则
 
-- 主题、关卡、题库、AI 文案都已落到 SQLite。
-- `question-bank` 的更新会影响考试判分和错题回看基础数据。
-- `ai-copy` 的更新会影响 AI 助手 fallback 文案。
-- `level-1/2/3` 是 v1 固定三关，因此当前只开放更新，不开放新增/删除。
+学生主链路由后端强制执行：
 
-## 鉴权方式
+- 第一关默认 `available`
+- 第二、三关默认 `locked`
+- 完成前一关后自动解锁下一关
+- 三关全部完成后 `exam.status = available`
+- 考试提交后 `exam.status = completed`
+- 后端统一计算并返回 `points`、`badges`、`wrongQuestionIds`、`levelResults`
+- `lastVisitedRoute` 在资料补全、关卡开始、关卡结算、考试提交等关键节点自动更新
 
-除登录接口外，其余接口都需要：
+## 成长体系
+
+后端已落地以下能力：
+
+- 成长值事件存储
+- 三类成长维度存储：形象外观、安全能力、专属场景
+- 成长值来源覆盖：
+  - 关卡通关
+  - 三星额外奖励
+  - 主题考试
+  - 错题重学
+  - 连续 3/7 天学习奖励
+- 成长档案接口
+- AI 结果卡片中的成长板块
+- 教师学生详情页的成长状态
+- 管理员统计中的成长概览
+- 后台成长规则配置预留：
+  - 成长值规则
+  - 升级阈值
+  - 奖励配置
+
+## 前端联调约定
+
+- 除登录外，所有接口都要带：
 
 ```http
 Authorization: Bearer <token>
 ```
 
-## 本机验收
+- 学生端不要自己计算关卡解锁、考试解锁、积分和徽章。
+- `POST /api/student/levels/:levelId/complete` 返回的是 `{ progress, result }`。
+- 错题回看请使用题目上的 `reviewLevelId`、`reviewLabel`、`reviewSuggestion`。
+- AI 结果卡片页可以直接使用 `GET /api/student/ai-report`。
+- 成长档案页可以直接使用 `GET /api/student/growth`。
+
+## 本机验证
 
 本机已通过这些验证：
 
 1. `npm run check:backend`
 2. `npm run build:backend`
 3. `POST /api/auth/login`
-4. `GET /api/student/progress`
-5. `POST /api/student/levels/level-1/start`
+4. `POST /api/student/profile`
+5. `GET /api/student/progress`
 6. 顺序完成三关并验证考试自动解锁
-7. `POST /api/student/exam/submit`
-8. `POST /api/ai/chat`
-9. `GET /api/teacher/dashboard`
-10. `GET /api/admin/modules`
-11. `PUT /api/admin/themes/:id` 等管理员内容更新接口
+7. `GET /api/student/records`
+8. `GET /api/student/growth`
+9. `POST /api/student/exam/submit`
+10. `GET /api/student/exam/review`
+11. `POST /api/student/exam/review/:questionId/complete`
+12. `GET /api/student/ai-report`
+13. `POST /api/ai/chat`
+14. `GET /api/teacher/classes`
+15. `GET /api/teacher/dashboard`
+16. `GET /api/teacher/students` 含筛选
+17. `POST /api/teacher/classes`
+18. `PUT /api/teacher/classes/:id`
+19. `GET /api/admin/users`
+20. `PATCH /api/admin/users/:id`
+21. `GET /api/admin/growth-config`
+22. `PUT /api/admin/growth-config`
+23. `GET /api/admin/stats`
 
 真实 Spark 联机验收结论：
 
 - 已直接请求 Spark 官方 HTTP 接口并拿到有效返回。
-- 已通过后端完整链路验证 `welcome`、`hint`、主题内 `qa` 三类请求走真实 `spark`。
+- 已通过后端完整链路验证 `welcome`、`hint`、主题内 `qa` 走真实 `spark`。
 - 已验证无关主题 `qa` 被后端拒答并记录为 `fallback`。
-- 验证时使用临时环境变量，不写入仓库，不提交密钥。
-
-## 前端联调说明
-
-前端同事优先查看：
-
-- `docs/backend-frontend-handoff.md`
+- 验收时使用临时环境变量，不写入仓库，不提交密钥。

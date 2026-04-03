@@ -1,8 +1,11 @@
 import { getDb } from "../db/connection";
+import { defaultGrowthConfig } from "../constants/growth";
 import type {
   AiCopyTemplateItem,
   AiCopyTemplateRow,
   ExamQuestion,
+  GrowthConfigItem,
+  GrowthConfigRow,
   LevelId,
   LevelManagementItem,
   LevelManagementRow,
@@ -65,6 +68,46 @@ function mapAiCopyRow(row: AiCopyTemplateRow): AiCopyTemplateItem {
     scene: row.scene,
     promptText: row.prompt_text,
   };
+}
+
+function parseGrowthConfig(value: string): GrowthConfigItem {
+  try {
+    const parsed = JSON.parse(value) as GrowthConfigItem;
+    return {
+      ...defaultGrowthConfig,
+      ...parsed,
+      levelAwards: {
+        ...defaultGrowthConfig.levelAwards,
+        ...parsed.levelAwards,
+      },
+      wrongQuestionReviewAward: {
+        ...defaultGrowthConfig.wrongQuestionReviewAward,
+        ...parsed.wrongQuestionReviewAward,
+      },
+      streakAwards: {
+        ...defaultGrowthConfig.streakAwards,
+        ...parsed.streakAwards,
+      },
+      appearanceThresholds:
+        Array.isArray(parsed.appearanceThresholds) && parsed.appearanceThresholds.length
+          ? parsed.appearanceThresholds
+          : defaultGrowthConfig.appearanceThresholds,
+      safetyThresholds:
+        Array.isArray(parsed.safetyThresholds) && parsed.safetyThresholds.length
+          ? parsed.safetyThresholds
+          : defaultGrowthConfig.safetyThresholds,
+      sceneThresholds:
+        Array.isArray(parsed.sceneThresholds) && parsed.sceneThresholds.length
+          ? parsed.sceneThresholds
+          : defaultGrowthConfig.sceneThresholds,
+      stageThresholds:
+        Array.isArray(parsed.stageThresholds) && parsed.stageThresholds.length
+          ? parsed.stageThresholds
+          : defaultGrowthConfig.stageThresholds,
+    };
+  } catch {
+    return defaultGrowthConfig;
+  }
 }
 
 function parseOpenFlag(value: unknown) {
@@ -518,6 +561,85 @@ export async function getAdminAiCopyFromDb() {
   );
 
   return rows.map(mapAiCopyRow);
+}
+
+export async function getGrowthConfigFromDb() {
+  const db = await getDb();
+  const row = await db.get<GrowthConfigRow>(
+    `
+      SELECT id, title, config_json, updated_at
+      FROM growth_settings
+      WHERE id = ?
+    `,
+    defaultGrowthConfig.id,
+  );
+
+  if (!row) {
+    return defaultGrowthConfig;
+  }
+
+  return parseGrowthConfig(row.config_json);
+}
+
+export async function updateGrowthConfig(
+  input: Partial<GrowthConfigItem>,
+) {
+  const db = await getDb();
+  const current = await getGrowthConfigFromDb();
+  const next: GrowthConfigItem = {
+    ...current,
+    ...input,
+    id: current.id,
+    title:
+      typeof input.title === "string" && input.title.trim()
+        ? input.title.trim()
+        : current.title,
+    levelAwards: {
+      ...current.levelAwards,
+      ...input.levelAwards,
+    },
+    wrongQuestionReviewAward: {
+      ...current.wrongQuestionReviewAward,
+      ...input.wrongQuestionReviewAward,
+    },
+    streakAwards: {
+      ...current.streakAwards,
+      ...input.streakAwards,
+    },
+    appearanceThresholds:
+      Array.isArray(input.appearanceThresholds) && input.appearanceThresholds.length
+        ? input.appearanceThresholds
+        : current.appearanceThresholds,
+    safetyThresholds:
+      Array.isArray(input.safetyThresholds) && input.safetyThresholds.length
+        ? input.safetyThresholds
+        : current.safetyThresholds,
+    sceneThresholds:
+      Array.isArray(input.sceneThresholds) && input.sceneThresholds.length
+        ? input.sceneThresholds
+        : current.sceneThresholds,
+    stageThresholds:
+      Array.isArray(input.stageThresholds) && input.stageThresholds.length
+        ? input.stageThresholds
+        : current.stageThresholds,
+  };
+
+  await db.run(
+    `
+      INSERT INTO growth_settings (id, title, config_json, updated_at)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        title = excluded.title,
+        config_json = excluded.config_json,
+        updated_at = excluded.updated_at
+    `,
+    current.id,
+    next.title,
+    JSON.stringify(next),
+    new Date().toISOString(),
+  );
+
+  return getGrowthConfigFromDb();
 }
 
 export async function createAdminAiCopy(input: AiCopyTemplateItem) {

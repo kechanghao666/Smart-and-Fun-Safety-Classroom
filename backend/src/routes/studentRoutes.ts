@@ -8,6 +8,13 @@ import {
   startLevel,
   submitExam,
 } from "../services/studentService";
+import {
+  completeStudentWrongQuestionReview,
+  getStudentAiReport,
+  getStudentExamReview,
+  getStudentGrowth,
+  getStudentRecords,
+} from "../services/studentInsightsService";
 import { HttpError } from "../utils/httpError";
 
 export const studentRouter = Router();
@@ -18,6 +25,51 @@ studentRouter.use(requireRole("student"));
 studentRouter.get("/progress", async (request, response, next) => {
   try {
     response.json(await buildStudentProgress(request.authUser!.id));
+  } catch (error) {
+    next(error);
+  }
+});
+
+studentRouter.get("/records", async (request, response, next) => {
+  try {
+    response.json(await getStudentRecords(request.authUser!.id));
+  } catch (error) {
+    next(error);
+  }
+});
+
+studentRouter.get("/exam/review", async (request, response, next) => {
+  try {
+    response.json(await getStudentExamReview(request.authUser!.id));
+  } catch (error) {
+    next(error);
+  }
+});
+
+studentRouter.post("/exam/review/:questionId/complete", async (request, response, next) => {
+  try {
+    response.json(
+      await completeStudentWrongQuestionReview(
+        request.authUser!.id,
+        String(request.params.questionId),
+      ),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+studentRouter.get("/growth", async (request, response, next) => {
+  try {
+    response.json(await getStudentGrowth(request.authUser!.id));
+  } catch (error) {
+    next(error);
+  }
+});
+
+studentRouter.get("/ai-report", async (request, response, next) => {
+  try {
+    response.json(await getStudentAiReport(request.authUser!.id));
   } catch (error) {
     next(error);
   }

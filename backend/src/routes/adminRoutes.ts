@@ -7,10 +7,12 @@ import {
   deleteAdminAiCopy,
   deleteAdminQuestionBank,
   deleteAdminTheme,
+  getGrowthConfigFromDb,
   getAdminAiCopyFromDb,
   getAdminLevelsFromDb,
   getAdminQuestionBankFromDb,
   getAdminThemesFromDb,
+  updateGrowthConfig,
   updateAdminAiCopy,
   updateAdminLevel,
   updateAdminQuestionBank,
@@ -20,6 +22,7 @@ import {
   getAdminModules,
   getAdminStats,
   getAdminUsers,
+  updateAdminUser,
 } from "../services/reportingService";
 
 export const adminRouter = Router();
@@ -82,6 +85,14 @@ adminRouter.get("/ai-copy", async (_request, response, next) => {
   }
 });
 
+adminRouter.get("/growth-config", async (_request, response, next) => {
+  try {
+    response.json(await getGrowthConfigFromDb());
+  } catch (error) {
+    next(error);
+  }
+});
+
 adminRouter.post("/ai-copy", async (request, response, next) => {
   try {
     response.status(201).json(await createAdminAiCopy(request.body ?? {}));
@@ -90,9 +101,17 @@ adminRouter.post("/ai-copy", async (request, response, next) => {
   }
 });
 
-adminRouter.get("/users", async (_request, response, next) => {
+adminRouter.get("/users", async (request, response, next) => {
   try {
-    response.json(await getAdminUsers());
+    response.json(
+      await getAdminUsers({
+        query:
+          typeof request.query.query === "string" ? request.query.query : undefined,
+        status:
+          typeof request.query.status === "string" ? request.query.status : undefined,
+        role: typeof request.query.role === "string" ? request.query.role : undefined,
+      }),
+    );
   } catch (error) {
     next(error);
   }
@@ -157,6 +176,27 @@ adminRouter.put("/ai-copy/:id", async (request, response, next) => {
 adminRouter.delete("/ai-copy/:id", async (request, response, next) => {
   try {
     response.json(await deleteAdminAiCopy(request.params.id));
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.put("/growth-config", async (request, response, next) => {
+  try {
+    response.json(await updateGrowthConfig(request.body ?? {}));
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.patch("/users/:id", async (request, response, next) => {
+  try {
+    response.json(
+      await updateAdminUser(request.params.id, {
+        status: request.body?.status,
+        note: request.body?.note,
+      }),
+    );
   } catch (error) {
     next(error);
   }
