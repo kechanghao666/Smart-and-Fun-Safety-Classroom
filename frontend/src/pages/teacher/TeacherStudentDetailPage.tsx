@@ -4,6 +4,7 @@ import { teacherStudentDetails } from "../../data/mockData";
 import { fetchTeacherStudentDetail } from "../../services/teacher";
 import { useAppState } from "../../state/AppState";
 import { useApiResource } from "../../utils/useApiResource";
+import { getGrowthSceneVisualClass } from "../../utils/studentGrowth";
 import {
   buildTeacherStudentActions,
   getTeacherAttentionLabel,
@@ -37,6 +38,7 @@ export function TeacherStudentDetailPage() {
   const attentionLabel = getTeacherAttentionLabel(attentionLevel);
   const suggestedActions = buildTeacherStudentActions(student);
   const closedLoopRate = Math.round((student.completedLevels / 3) * 100);
+  const sceneVisualClass = getGrowthSceneVisualClass(student.currentScene);
   const wrongTopics =
     student.wrongTopics.length > 0
       ? student.wrongTopics
@@ -149,7 +151,9 @@ export function TeacherStudentDetailPage() {
           <h2>把学习结果转成可持续推进的反馈</h2>
           <div className="page-stack">
             <article className="teacher-growth-showcase">
-              <div className="teacher-growth-showcase__visual">
+              <div
+                className={`teacher-growth-showcase__visual ${sceneVisualClass}`}
+              >
                 <strong>{student.currentAppearance}</strong>
                 <p>{student.currentScene}</p>
               </div>

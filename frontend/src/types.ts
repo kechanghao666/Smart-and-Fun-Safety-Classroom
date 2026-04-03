@@ -96,6 +96,12 @@ export interface StudentGrowthPreferences {
   scene: string | null;
 }
 
+export interface StudentRewardProgress {
+  studyDates: string[];
+  claimedStreakDays: number[];
+  reviewedWrongQuestionIds: string[];
+}
+
 export interface TeacherStudentSummary {
   id: string;
   name: string;
@@ -246,6 +252,7 @@ export interface StudentProgress {
   levels: LevelProgress[];
   levelResults: Partial<Record<LevelId, LevelResult>>;
   exam: ExamProgress;
+  rewardProgress: StudentRewardProgress;
 }
 
 export interface AppState {

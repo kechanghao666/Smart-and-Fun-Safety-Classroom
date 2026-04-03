@@ -936,6 +936,7 @@ button {
 .growth-progress-panel,
 .growth-highlight-card,
 .growth-showcase-card,
+.reward-overview-card,
 .growth-dimension-card,
 .unlock-card {
   display: grid;
@@ -1012,7 +1013,8 @@ button {
 }
 
 .growth-showcase-card__preview,
-.teacher-growth-showcase__visual {
+.teacher-growth-showcase__visual,
+.growth-scene-preview {
   display: grid;
   gap: 8px;
   padding: 18px 20px;
@@ -1024,8 +1026,50 @@ button {
 }
 
 .growth-showcase-card__preview strong,
-.teacher-growth-showcase__visual strong {
+.teacher-growth-showcase__visual strong,
+.growth-scene-preview strong {
   font-size: 24px;
+}
+
+.growth-scene-preview {
+  margin: 8px 0 4px;
+}
+
+.scene-visual--campus {
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.42), transparent 34%),
+    linear-gradient(180deg, rgba(78, 169, 255, 0.18), rgba(112, 211, 166, 0.22)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(239, 249, 255, 0.98));
+}
+
+.scene-visual--route {
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.36), transparent 28%),
+    linear-gradient(135deg, rgba(255, 197, 107, 0.18), rgba(69, 153, 243, 0.18)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 250, 255, 0.98));
+}
+
+.scene-visual--city {
+  background:
+    radial-gradient(circle at center top, rgba(255, 255, 255, 0.28), transparent 24%),
+    linear-gradient(135deg, rgba(72, 129, 255, 0.2), rgba(24, 160, 111, 0.22)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(236, 248, 244, 0.98));
+}
+
+.reward-feedback-box {
+  border-color: rgba(240, 147, 43, 0.24);
+  background: rgba(240, 147, 43, 0.08);
+}
+
+.reward-feedback-box--claimed {
+  border-color: rgba(24, 160, 111, 0.24);
+  background: rgba(24, 160, 111, 0.1);
+}
+
+.growth-upgrade-ai-box {
+  background:
+    linear-gradient(180deg, rgba(38, 139, 210, 0.08), rgba(255, 255, 255, 0.88)),
+    rgba(255, 255, 255, 0.9);
 }
 
 .growth-progress-panel {

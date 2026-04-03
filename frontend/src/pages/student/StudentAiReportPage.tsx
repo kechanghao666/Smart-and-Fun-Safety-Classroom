@@ -1,12 +1,16 @@
 import { Link } from "react-router-dom";
 import { useAppState } from "../../state/AppState";
 import { buildStudentAiReport } from "../../utils/studentAiReport";
-import { buildGrowthSnapshot } from "../../utils/studentGrowth";
+import {
+  buildGrowthSnapshot,
+  getGrowthSceneVisualClass,
+} from "../../utils/studentGrowth";
 
 export function StudentAiReportPage() {
   const { state } = useAppState();
   const report = buildStudentAiReport(state);
   const growth = buildGrowthSnapshot(state);
+  const sceneVisualClass = getGrowthSceneVisualClass(growth.selectedScene);
 
   return (
     <div className="page-stack">
@@ -33,6 +37,10 @@ export function StudentAiReportPage() {
           <span className="section-block__eyebrow">成长结果</span>
           <h2>{report.growthLabel}</h2>
           <p>当前积分 {state.progress.points}，成长值、星级和徽章会继续累计。</p>
+          <div className={`growth-scene-preview ${sceneVisualClass}`}>
+            <strong>{growth.selectedAppearance}</strong>
+            <p>{growth.selectedScene}</p>
+          </div>
           <ul className="plain-list">
             <li>当前外观：{growth.selectedAppearance}</li>
             <li>能力标签：{growth.currentTier.ability}</li>

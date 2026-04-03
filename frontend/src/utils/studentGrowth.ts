@@ -1,4 +1,11 @@
 import type { AppState, LevelId } from "../types";
+import {
+  getAvailableStreakRewardDays,
+  getCurrentStreakDays,
+  getNextStreakGoal,
+  STREAK_REWARD_POINTS,
+  WRONG_QUESTION_REVIEW_REWARD,
+} from "./studentRewards";
 
 interface GrowthTierConfig {
   id: "seed" | "rising" | "guardian";
@@ -45,6 +52,11 @@ export interface GrowthSnapshot {
   totalStars: number;
   wrongQuestionCount: number;
   examScore: number | null;
+  currentStreakDays: number;
+  availableStreakRewards: number[];
+  claimedStreakRewards: number[];
+  reviewedWrongQuestionIds: string[];
+  remainingWrongQuestionRewards: number;
   currentTier: GrowthTierConfig;
   nextTier: GrowthTierConfig | null;
   nextTierProgress: number;
@@ -83,8 +95,7 @@ export const growthTierDefinitions: GrowthTierConfig[] = [
   {
     id: "guardian",
     title: "安全守护期",
-    description:
-      "完成主题学习闭环，已经具备较完整的综合出行防护能力。",
+    description: "完成主题学习闭环，已经具备较完整的综合出行防护能力。",
     minPoints: 280,
     appearance: "星级守护勋章外观",
     scene: "城市安全出行场景",
@@ -93,6 +104,34 @@ export const growthTierDefinitions: GrowthTierConfig[] = [
 ];
 
 const levelSequence: LevelId[] = ["level-1", "level-2", "level-3"];
+
+export function getGrowthSceneVisualClass(sceneLabel: string) {
+  if (sceneLabel.includes("校园")) {
+    return "scene-visual--campus";
+  }
+
+  if (sceneLabel.includes("路线")) {
+    return "scene-visual--route";
+  }
+
+  if (sceneLabel.includes("城市")) {
+    return "scene-visual--city";
+  }
+
+  return "scene-visual--campus";
+}
+
+export function buildGrowthUpgradeEncouragement(snapshot: GrowthSnapshot) {
+  if (snapshot.availableStreakRewards.length > 0) {
+    return `AI 助手提示：你已经连续学习 ${snapshot.currentStreakDays} 天，记得领取成长礼包，把这次坚持转成新的成长值。`;
+  }
+
+  if (snapshot.remainingWrongQuestionRewards > 0) {
+    return `AI 助手提示：你已经进入 ${snapshot.currentTier.title}，再完成 ${snapshot.remainingWrongQuestionRewards} 道错题重学，就能把这次升级学得更扎实。`;
+  }
+
+  return `AI 助手提示：新的成长阶段已经点亮，继续沿着“${snapshot.nextFocus}”往前走，外观、能力和场景都会继续升级。`;
+}
 
 function getLevelScore(state: AppState, levelId: LevelId) {
   const storedResult = state.progress.levelResults[levelId];
@@ -138,6 +177,18 @@ export function buildGrowthSnapshot(state: AppState): GrowthSnapshot {
     0,
   );
   const wrongQuestionCount = state.progress.exam.wrongQuestionIds.length;
+  const currentStreakDays = getCurrentStreakDays(
+    state.progress.rewardProgress.studyDates,
+  );
+  const availableStreakRewards = getAvailableStreakRewardDays(
+    state.progress.rewardProgress,
+  );
+  const nextStreakGoal = getNextStreakGoal(state.progress.rewardProgress);
+  const reviewedWrongQuestionIds =
+    state.progress.rewardProgress.reviewedWrongQuestionIds;
+  const remainingWrongQuestionRewards = state.progress.exam.wrongQuestionIds.filter(
+    (questionId) => !reviewedWrongQuestionIds.includes(questionId),
+  ).length;
   const currentTier = getCurrentTier(state.progress.points);
   const nextTier = getNextTier(state.progress.points);
   const unlockedTiers = growthTierDefinitions.filter(
@@ -334,16 +385,49 @@ export function buildGrowthSnapshot(state: AppState): GrowthSnapshot {
     });
   }
 
+  if (availableStreakRewards.length > 0) {
+    journal.push({
+      id: "streak-reward",
+      title: "连续学习礼包可领取",
+      detail: `已达成 ${availableStreakRewards
+        .map((day) => `${day} 天`)
+        .join(" / ")} 连续学习目标，可领取成长值礼包。`,
+      status: "current",
+      href: "/student/growth",
+      ctaLabel: "领取奖励",
+    });
+  }
+
+  if (reviewedWrongQuestionIds.length > 0) {
+    journal.push({
+      id: "wrong-question-review",
+      title: "完成错题重学",
+      detail: `已完成 ${reviewedWrongQuestionIds.length} 道错题重学，每道已获得 ${WRONG_QUESTION_REVIEW_REWARD} 成长值。`,
+      status: "done",
+      href: "/student/theme/road-safety/wrong-questions",
+      ctaLabel: "查看错题",
+    });
+  }
+
   const nextFocus =
-    state.progress.exam.status === "completed"
-      ? wrongQuestionCount > 0
-        ? "先回看错题对应关卡，再补齐本轮薄弱点。"
-        : "继续保持当前节奏，已经可以把重点放到成长档案和连续学习上。"
-      : state.progress.exam.status === "available"
-        ? "主题考试已经解锁，完成它就能补齐本轮学习闭环。"
-        : currentLearningLevel
-          ? `继续完成 ${currentLearningLevel.title}，成长值会在通关后自动上涨。`
-          : "先回到主题页，继续推进当前学习进度。";
+    availableStreakRewards.length > 0
+      ? `先领取 ${availableStreakRewards
+          .map((day) => `${day} 天礼包（+${STREAK_REWARD_POINTS[day]}）`)
+          .join(" 和 ")}，让连续学习直接转成成长值。`
+      : state.progress.exam.status === "completed"
+        ? remainingWrongQuestionRewards > 0
+          ? `先完成 ${remainingWrongQuestionRewards} 道错题重学，每道可获得 ${WRONG_QUESTION_REVIEW_REWARD} 成长值。`
+          : nextStreakGoal
+            ? `继续保持连续学习，再学习 ${Math.max(
+                0,
+                nextStreakGoal - currentStreakDays,
+              )} 天可领取 ${nextStreakGoal} 天成长礼包。`
+            : "继续保持当前节奏，已经可以把重点放到成长档案和个性化展示上。"
+        : state.progress.exam.status === "available"
+          ? "主题考试已经解锁，完成它就能补齐本轮学习闭环。"
+          : currentLearningLevel
+            ? `继续完成 ${currentLearningLevel.title}，成长值会在通关后自动上涨。`
+            : "先回到主题页，继续推进当前学习进度。";
 
   return {
     points: state.progress.points,
@@ -351,6 +435,11 @@ export function buildGrowthSnapshot(state: AppState): GrowthSnapshot {
     totalStars,
     wrongQuestionCount,
     examScore: state.progress.exam.score,
+    currentStreakDays,
+    availableStreakRewards,
+    claimedStreakRewards: state.progress.rewardProgress.claimedStreakDays,
+    reviewedWrongQuestionIds,
+    remainingWrongQuestionRewards,
     currentTier,
     nextTier,
     nextTierProgress,

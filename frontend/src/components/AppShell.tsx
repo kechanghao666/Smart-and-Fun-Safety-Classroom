@@ -12,7 +12,10 @@ import { ApiError } from "../services/http";
 import { fetchStudentProgress } from "../services/student";
 import { useAppState } from "../state/AppState";
 import type { UserRole } from "../types";
-import { buildGrowthSnapshot } from "../utils/studentGrowth";
+import {
+  buildGrowthSnapshot,
+  buildGrowthUpgradeEncouragement,
+} from "../utils/studentGrowth";
 import { usePersistedState } from "../utils/usePersistedState";
 
 interface NavItem {
@@ -339,7 +342,7 @@ export function AppShell({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { replaceProgress, resetDemo, signOut, state } = useAppState();
+  const { recordStudyVisit, replaceProgress, resetDemo, signOut, state } = useAppState();
   const navItems = navByRole[role];
   const canSyncStudentProgress =
     role === "student" && state.authSource === "api" && Boolean(state.authToken);
@@ -360,6 +363,12 @@ export function AppShell({
   useEffect(() => {
     lastVisitedRouteRef.current = state.progress.lastVisitedRoute;
   }, [state.progress.lastVisitedRoute]);
+
+  useEffect(() => {
+    if (role === "student") {
+      recordStudyVisit();
+    }
+  }, [recordStudyVisit, role]);
 
   const syncStudentProgress = useCallback(
     async (silent = false) => {
@@ -634,6 +643,10 @@ export function AppShell({
                 <li>新能力标签：{growthSnapshot.currentTier.ability}</li>
                 <li>新场景：{growthSnapshot.currentTier.scene}</li>
               </ul>
+              <article className="feedback-box growth-upgrade-ai-box">
+                <strong>AI 鼓励语</strong>
+                <p>{buildGrowthUpgradeEncouragement(growthSnapshot)}</p>
+              </article>
               <div className="button-row">
                 <button
                   type="button"

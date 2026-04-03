@@ -4,7 +4,10 @@ import { StatusBadge } from "../../components/StatusBadge";
 import { useAppState } from "../../state/AppState";
 import type { LevelId } from "../../types";
 import { useStudentAiScene } from "../../utils/useStudentAiScene";
-import { buildGrowthSnapshot } from "../../utils/studentGrowth";
+import {
+  buildGrowthSnapshot,
+  getGrowthSceneVisualClass,
+} from "../../utils/studentGrowth";
 import { usePersistedState } from "../../utils/usePersistedState";
 
 export function StudentThemePage() {
@@ -14,6 +17,7 @@ export function StudentThemePage() {
     (level) => level.status === "completed",
   ).length;
   const growth = buildGrowthSnapshot(state);
+  const sceneVisualClass = getGrowthSceneVisualClass(growth.selectedScene);
   const nextLevel = state.progress.levels.find(
     (level) => level.status === "available",
   );
@@ -218,6 +222,10 @@ export function StudentThemePage() {
         <article className="surface-card theme-overview-card">
           <span className="section-block__eyebrow">成长展示区</span>
           <h2>当前人物成长状态</h2>
+          <div className={`growth-scene-preview ${sceneVisualClass}`}>
+            <strong>{growth.selectedAppearance}</strong>
+            <p>{growth.selectedScene}</p>
+          </div>
           <ul className="plain-list">
             <li>成长阶段：{growth.currentTier.title}</li>
             <li>当前外观：{growth.selectedAppearance}</li>

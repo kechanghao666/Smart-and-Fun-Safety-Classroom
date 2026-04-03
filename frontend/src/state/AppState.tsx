@@ -8,6 +8,14 @@ import {
   type ReactNode,
 } from "react";
 import { examQuestions, levelBlueprints } from "../data/mockData";
+import {
+  createInitialRewardProgress,
+  getAvailableStreakRewardDays,
+  getLocalDateKey,
+  normalizeStudyDates,
+  STREAK_REWARD_POINTS,
+  WRONG_QUESTION_REVIEW_REWARD,
+} from "../utils/studentRewards";
 import type {
   AppState,
   AuthSource,
@@ -44,6 +52,7 @@ function createInitialProgress(): AppState["progress"] {
       wrongQuestionIds: [],
       studentAnswers: {},
     },
+    rewardProgress: createInitialRewardProgress(),
   };
 }
 
@@ -105,6 +114,19 @@ function loadInitialState(): AppState {
             ...parsed.progress?.exam?.studentAnswers,
           },
         },
+        rewardProgress: {
+          ...fallback.progress.rewardProgress,
+          ...parsed.progress?.rewardProgress,
+          studyDates: parsed.progress?.rewardProgress?.studyDates?.length
+            ? normalizeStudyDates(parsed.progress.rewardProgress.studyDates)
+            : fallback.progress.rewardProgress.studyDates,
+          claimedStreakDays:
+            parsed.progress?.rewardProgress?.claimedStreakDays ??
+            fallback.progress.rewardProgress.claimedStreakDays,
+          reviewedWrongQuestionIds:
+            parsed.progress?.rewardProgress?.reviewedWrongQuestionIds ??
+            fallback.progress.rewardProgress.reviewedWrongQuestionIds,
+        },
       },
     };
   } catch {
@@ -124,6 +146,9 @@ type AppAction =
   | { type: "saveStudentProfile"; profile: StudentProfile }
   | { type: "saveGrowthPreferences"; preferences: Partial<StudentGrowthPreferences> }
   | { type: "replaceProgress"; progress: AppState["progress"] }
+  | { type: "recordStudyVisit"; dateKey?: string }
+  | { type: "claimStreakReward"; days: number }
+  | { type: "completeWrongQuestionReview"; questionId: string }
   | { type: "setLastVisitedRoute"; route: string }
   | { type: "markLevelInProgress"; levelId: LevelId }
   | { type: "completeLevel"; levelId: LevelId; result?: LevelResult }
@@ -189,6 +214,96 @@ function reducer(state: AppState, action: AppAction): AppState {
             action.progress.exam.studentAnswers ??
             state.progress.exam.studentAnswers ??
             {},
+        },
+        rewardProgress: {
+          ...state.progress.rewardProgress,
+          ...action.progress.rewardProgress,
+          studyDates: action.progress.rewardProgress?.studyDates?.length
+            ? normalizeStudyDates(action.progress.rewardProgress.studyDates)
+            : state.progress.rewardProgress.studyDates,
+          claimedStreakDays:
+            action.progress.rewardProgress?.claimedStreakDays ??
+            state.progress.rewardProgress.claimedStreakDays,
+          reviewedWrongQuestionIds:
+            action.progress.rewardProgress?.reviewedWrongQuestionIds ??
+            state.progress.rewardProgress.reviewedWrongQuestionIds,
+        },
+      },
+    };
+  }
+
+  if (action.type === "recordStudyVisit") {
+    const dateKey = action.dateKey ?? getLocalDateKey();
+
+    if (state.progress.rewardProgress.studyDates.includes(dateKey)) {
+      return state;
+    }
+
+    return {
+      ...state,
+      progress: {
+        ...state.progress,
+        rewardProgress: {
+          ...state.progress.rewardProgress,
+          studyDates: normalizeStudyDates([
+            ...state.progress.rewardProgress.studyDates,
+            dateKey,
+          ]),
+        },
+      },
+    };
+  }
+
+  if (action.type === "claimStreakReward") {
+    const availableRewardDays = getAvailableStreakRewardDays(
+      state.progress.rewardProgress,
+    );
+
+    if (!availableRewardDays.includes(action.days)) {
+      return state;
+    }
+
+    return {
+      ...state,
+      progress: {
+        ...state.progress,
+        points:
+          state.progress.points + (STREAK_REWARD_POINTS[action.days] ?? 0),
+        rewardProgress: {
+          ...state.progress.rewardProgress,
+          claimedStreakDays: [
+            ...state.progress.rewardProgress.claimedStreakDays,
+            action.days,
+          ].sort((left, right) => left - right),
+        },
+      },
+    };
+  }
+
+  if (action.type === "completeWrongQuestionReview") {
+    if (!state.progress.exam.wrongQuestionIds.includes(action.questionId)) {
+      return state;
+    }
+
+    if (
+      state.progress.rewardProgress.reviewedWrongQuestionIds.includes(
+        action.questionId,
+      )
+    ) {
+      return state;
+    }
+
+    return {
+      ...state,
+      progress: {
+        ...state.progress,
+        points: state.progress.points + WRONG_QUESTION_REVIEW_REWARD,
+        rewardProgress: {
+          ...state.progress.rewardProgress,
+          reviewedWrongQuestionIds: [
+            ...state.progress.rewardProgress.reviewedWrongQuestionIds,
+            action.questionId,
+          ],
         },
       },
     };
@@ -345,6 +460,9 @@ interface AppStateContextValue {
   saveStudentProfile: (profile: StudentProfile) => void;
   saveGrowthPreferences: (preferences: Partial<StudentGrowthPreferences>) => void;
   replaceProgress: (progress: AppState["progress"]) => void;
+  recordStudyVisit: () => void;
+  claimStreakReward: (days: number) => void;
+  completeWrongQuestionReview: (questionId: string) => void;
   setLastVisitedRoute: (route: string) => void;
   markLevelInProgress: (levelId: LevelId) => void;
   completeLevel: (levelId: LevelId, result?: LevelResult) => void;
@@ -372,14 +490,19 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       role: UserRole,
       account: string,
       options?: { token?: string | null; source?: AuthSource },
-    ) =>
+    ) => {
       dispatch({
         type: "signIn",
         role,
         account,
         token: options?.token,
         source: options?.source,
-      }),
+      });
+
+      if (role === "student") {
+        dispatch({ type: "recordStudyVisit" });
+      }
+    },
     [],
   );
   const signOut = useCallback(() => dispatch({ type: "signOut" }), []);
@@ -394,6 +517,19 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   );
   const replaceProgress = useCallback(
     (progress: AppState["progress"]) => dispatch({ type: "replaceProgress", progress }),
+    [],
+  );
+  const recordStudyVisit = useCallback(
+    () => dispatch({ type: "recordStudyVisit" }),
+    [],
+  );
+  const claimStreakReward = useCallback(
+    (days: number) => dispatch({ type: "claimStreakReward", days }),
+    [],
+  );
+  const completeWrongQuestionReview = useCallback(
+    (questionId: string) =>
+      dispatch({ type: "completeWrongQuestionReview", questionId }),
     [],
   );
   const setLastVisitedRoute = useCallback(
@@ -428,6 +564,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       saveStudentProfile,
       saveGrowthPreferences,
       replaceProgress,
+      recordStudyVisit,
+      claimStreakReward,
+      completeWrongQuestionReview,
       setLastVisitedRoute,
       markLevelInProgress,
       completeLevel,
@@ -439,6 +578,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       markLevelInProgress,
       resetDemo,
       replaceProgress,
+      recordStudyVisit,
+      claimStreakReward,
+      completeWrongQuestionReview,
       saveStudentProfile,
       saveGrowthPreferences,
       setLastVisitedRoute,

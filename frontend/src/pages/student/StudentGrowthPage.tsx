@@ -2,8 +2,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAppState } from "../../state/AppState";
 import {
   buildGrowthSnapshot,
+  getGrowthSceneVisualClass,
   growthTierDefinitions,
 } from "../../utils/studentGrowth";
+import { STREAK_REWARD_POINTS, WRONG_QUESTION_REVIEW_REWARD } from "../../utils/studentRewards";
 
 const avatarAccentMap = {
   "sunny-guard": "sky",
@@ -13,12 +15,13 @@ const avatarAccentMap = {
 
 export function StudentGrowthPage() {
   const navigate = useNavigate();
-  const { state, saveGrowthPreferences } = useAppState();
+  const { claimStreakReward, saveGrowthPreferences, state } = useAppState();
   const growth = buildGrowthSnapshot(state);
   const profile = state.studentProfile;
   const avatarAccent = profile
     ? avatarAccentMap[profile.avatarId as keyof typeof avatarAccentMap] ?? "sky"
     : "sky";
+  const sceneVisualClass = getGrowthSceneVisualClass(growth.selectedScene);
 
   return (
     <div className="page-stack">
@@ -62,7 +65,7 @@ export function StudentGrowthPage() {
         </article>
       </section>
 
-      <section className="card-grid card-grid--two">
+      <section className="card-grid card-grid--three">
         <article className="surface-card growth-highlight-card">
           <span className="section-block__eyebrow">成长结果</span>
           <h2>{growth.currentTier.title}</h2>
@@ -83,13 +86,23 @@ export function StudentGrowthPage() {
             <li>当前关注：{growth.nextFocus}</li>
           </ul>
         </article>
+
+        <article className="surface-card growth-highlight-card">
+          <span className="section-block__eyebrow">成长奖励</span>
+          <h2>连续学习与错题重学</h2>
+          <ul className="plain-list">
+            <li>当前连续学习：{growth.currentStreakDays} 天</li>
+            <li>待完成错题重学：{growth.remainingWrongQuestionRewards} 题</li>
+            <li>已完成错题重学：{growth.reviewedWrongQuestionIds.length} 题</li>
+          </ul>
+        </article>
       </section>
 
       <section className="card-grid card-grid--two">
         <article className="surface-card growth-showcase-card">
           <span className="section-block__eyebrow">当前展示形态</span>
           <h2>外观、能力与场景正在这样组合展示</h2>
-          <div className="growth-showcase-card__preview">
+          <div className={`growth-showcase-card__preview ${sceneVisualClass}`}>
             <strong>{growth.selectedAppearance}</strong>
             <p>{growth.selectedScene}</p>
           </div>
@@ -109,6 +122,61 @@ export function StudentGrowthPage() {
             <li>能力标签：{growth.currentTier.ability}</li>
             <li>已解锁外观与场景可在本页自由切换</li>
           </ul>
+        </article>
+      </section>
+
+      <section className="card-grid card-grid--two">
+        <article className="surface-card reward-overview-card">
+          <span className="section-block__eyebrow">连续学习礼包</span>
+          <h2>连续学习会解锁固定成长值奖励</h2>
+          <ul className="plain-list">
+            <li>3 天礼包：+{STREAK_REWARD_POINTS[3]} 成长值</li>
+            <li>7 天礼包：+{STREAK_REWARD_POINTS[7]} 成长值</li>
+            <li>
+              当前可领取：
+              {growth.availableStreakRewards.length > 0
+                ? growth.availableStreakRewards
+                    .map((day) => `${day} 天礼包`)
+                    .join(" / ")
+                : "暂未达到可领取条件"}
+            </li>
+          </ul>
+          <div className="button-row">
+            {growth.availableStreakRewards.length > 0 ? (
+              growth.availableStreakRewards.map((day) => (
+                <button
+                  key={day}
+                  type="button"
+                  className="primary-button"
+                  onClick={() => claimStreakReward(day)}
+                >
+                  领取 {day} 天礼包
+                </button>
+              ))
+            ) : (
+              <span className="surface-tag">继续保持学习节奏</span>
+            )}
+          </div>
+        </article>
+
+        <article className="surface-card reward-overview-card">
+          <span className="section-block__eyebrow">错题重学奖励</span>
+          <h2>完成回看后也会继续点亮成长值</h2>
+          <ul className="plain-list">
+            <li>每完成 1 道错题重学：+{WRONG_QUESTION_REVIEW_REWARD} 成长值</li>
+            <li>已领取错题重学奖励：{growth.reviewedWrongQuestionIds.length} 次</li>
+            <li>当前剩余可领取：{growth.remainingWrongQuestionRewards} 次</li>
+          </ul>
+          <div className="button-row">
+            <button
+              type="button"
+              className="ghost-button"
+              disabled={state.progress.exam.status !== "completed"}
+              onClick={() => navigate("/student/theme/road-safety/wrong-questions")}
+            >
+              前往错题回看
+            </button>
+          </div>
         </article>
       </section>
 
@@ -325,7 +393,7 @@ export function StudentGrowthPage() {
             {state.progress.badges.length > 0 ? (
               state.progress.badges.map((badge) => <li key={badge}>{badge}</li>)
             ) : (
-              <li>继续完成关卡与考试后，这里会点亮新的徽章与激励。</li>
+              <li>继续完成关卡、考试、错题重学和连续学习后，这里会点亮新的奖励。</li>
             )}
           </ul>
         </article>

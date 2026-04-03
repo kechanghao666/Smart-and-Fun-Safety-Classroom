@@ -4,9 +4,10 @@ import { StatusBadge } from "../../components/StatusBadge";
 import { themeCards } from "../../data/mockData";
 import { useAppState } from "../../state/AppState";
 import type { LevelId } from "../../types";
-import { useStudentAiScene } from "../../utils/useStudentAiScene";
 import { buildGrowthSnapshot } from "../../utils/studentGrowth";
+import { useStudentAiScene } from "../../utils/useStudentAiScene";
 import { buildStageGuide } from "../../utils/studentOnboarding";
+import { STREAK_REWARD_POINTS, WRONG_QUESTION_REVIEW_REWARD } from "../../utils/studentRewards";
 
 const avatarAccentMap = {
   "sunny-guard": "sky",
@@ -16,7 +17,7 @@ const avatarAccentMap = {
 
 export function StudentHomePage() {
   const navigate = useNavigate();
-  const { state } = useAppState();
+  const { claimStreakReward, state } = useAppState();
   const profile = state.studentProfile;
   const growth = buildGrowthSnapshot(state);
   const avatarAccent = profile
@@ -25,9 +26,7 @@ export function StudentHomePage() {
   const completedLevels = state.progress.levels.filter(
     (level) => level.status === "completed",
   ).length;
-  const nextLevel = state.progress.levels.find(
-    (level) => level.status === "available",
-  );
+  const nextLevel = state.progress.levels.find((level) => level.status === "available");
   const [unavailableThemeNotice, setUnavailableThemeNotice] = useState("");
   const examStatusLabel =
     state.progress.exam.status === "completed"
@@ -36,21 +35,18 @@ export function StudentHomePage() {
         ? "已解锁"
         : "未解锁";
   const stageGuide = buildStageGuide(profile?.stage);
-  const continueRoute =
-    nextLevel?.status === "completed" && state.progress.levelResults[nextLevel.id]
-      ? `/student/theme/road-safety/level/${nextLevel.id}/result`
-      : nextLevel
-        ? `/student/theme/road-safety/level/${nextLevel.id}`
-        : state.progress.exam.status === "available"
-          ? "/student/theme/road-safety/exam"
-          : state.progress.exam.status === "completed"
-            ? "/student/theme/road-safety/exam/result"
-            : state.progress.lastVisitedRoute;
+  const continueRoute = nextLevel
+    ? `/student/theme/road-safety/level/${nextLevel.id}`
+    : state.progress.exam.status === "available"
+      ? "/student/theme/road-safety/exam"
+      : state.progress.exam.status === "completed"
+        ? "/student/theme/road-safety/exam/result"
+        : state.progress.lastVisitedRoute;
 
   const homeAiPrompt = useMemo(
     () =>
-      `请用儿童友好的语气欢迎我继续学习道路安全。当前已完成 ${completedLevels} / 3 关，考试状态是${examStatusLabel}，请告诉我今天最适合先做什么。`,
-    [completedLevels, examStatusLabel],
+      `请用儿童友好的语气欢迎我继续学习道路安全。当前已完成 ${completedLevels} / 3 关，考试状态是 ${examStatusLabel}，连续学习 ${growth.currentStreakDays} 天，请告诉我今天最适合先做什么。`,
+    [completedLevels, examStatusLabel, growth.currentStreakDays],
   );
 
   const {
@@ -63,7 +59,7 @@ export function StudentHomePage() {
     scene: "welcome",
     levelId: nextLevel?.id as LevelId | undefined,
     fallbackText:
-      "欢迎回来，先回到你上次停留的位置，继续把道路安全主题课学完整。",
+      "欢迎回来，先回到你上次停留的位置，继续把道路安全主题课学完整。完成错题重学和连续学习，也会继续点亮成长档案。",
   });
 
   return (
@@ -121,14 +117,17 @@ export function StudentHomePage() {
       <section className="card-grid card-grid--three">
         <article className="surface-card stat-card">
           <span>今日入口</span>
-          <strong>{nextLevel?.title ?? (state.progress.exam.status === "available" ? "主题考试" : "AI 结果卡")}</strong>
-          <p>系统会根据当前关卡进度、考试状态和最近学习位置推荐你最适合先做的动作。</p>
+          <strong>
+            {nextLevel?.title ??
+              (state.progress.exam.status === "available" ? "主题考试" : "AI 结果卡")}
+          </strong>
+          <p>系统会根据当前关卡进度、考试状态和最近学习位置，推荐你最适合先做的动作。</p>
         </article>
 
         <article className="surface-card stat-card">
           <span>学习概览</span>
           <strong>{completedLevels} / 3</strong>
-          <p>完成三关后将自动解锁主题考试，考试完成后再进入结果页和错题页。</p>
+          <p>完成三关后将自动解锁主题考试，考试完成后再进入结果页和错题回看页。</p>
         </article>
 
         <article className="surface-card stat-card">
@@ -197,6 +196,67 @@ export function StudentHomePage() {
               onClick={() => navigate("/student/growth")}
             >
               查看成长档案
+            </button>
+          </div>
+        </article>
+      </section>
+
+      <section className="card-grid card-grid--two">
+        <article className="surface-card reward-overview-card">
+          <span className="section-block__eyebrow">连续学习奖励</span>
+          <h2>把坚持学习转成成长礼包</h2>
+          <ul className="plain-list">
+            <li>当前已连续学习：{growth.currentStreakDays} 天</li>
+            <li>已领取礼包：{growth.claimedStreakRewards.length > 0 ? growth.claimedStreakRewards.map((day) => `${day} 天`).join(" / ") : "暂未领取"}</li>
+            <li>
+              当前可领取：
+              {growth.availableStreakRewards.length > 0
+                ? growth.availableStreakRewards
+                    .map((day) => `${day} 天礼包（+${STREAK_REWARD_POINTS[day]}）`)
+                    .join(" / ")
+                : "继续保持连续学习"}
+            </li>
+          </ul>
+          <div className="button-row">
+            {growth.availableStreakRewards.length > 0 ? (
+              growth.availableStreakRewards.map((day) => (
+                <button
+                  key={day}
+                  type="button"
+                  className="primary-button"
+                  onClick={() => claimStreakReward(day)}
+                >
+                  领取 {day} 天礼包
+                </button>
+              ))
+            ) : (
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => navigate("/student/growth")}
+              >
+                查看成长目标
+              </button>
+            )}
+          </div>
+        </article>
+
+        <article className="surface-card reward-overview-card">
+          <span className="section-block__eyebrow">错题重学奖励</span>
+          <h2>回看错题也会继续积累成长值</h2>
+          <ul className="plain-list">
+            <li>当前错题数量：{growth.wrongQuestionCount} 题</li>
+            <li>已完成错题重学：{growth.reviewedWrongQuestionIds.length} 题</li>
+            <li>每完成 1 道错题重学：+{WRONG_QUESTION_REVIEW_REWARD} 成长值</li>
+          </ul>
+          <div className="button-row">
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => navigate("/student/theme/road-safety/wrong-questions")}
+              disabled={state.progress.exam.status !== "completed"}
+            >
+              前往错题回看
             </button>
           </div>
         </article>

@@ -51,6 +51,15 @@ interface StudentProgress {
   levels: LevelProgress[];
   levelResults: Partial<Record<LevelId, LevelResult>>;
   exam: ExamProgress;
+  rewardProgress: StudentRewardProgress;
+}
+```
+
+```ts
+interface StudentRewardProgress {
+  studyDates: string[];
+  claimedStreakDays: number[];
+  reviewedWrongQuestionIds: string[];
 }
 ```
 
@@ -108,6 +117,15 @@ interface AppState {
   progress: StudentProgress;
 }
 ```
+
+## 成长奖励默认规则
+
+- `progress.rewardProgress` 当前用于前端保存连续学习进度、礼包领取状态与错题重学记录。
+- 当前前端默认成长奖励规则如下：
+  - 每完成 1 道错题重学：`+10` 成长值
+  - 连续学习 `3` 天礼包：`+20` 成长值
+  - 连续学习 `7` 天礼包：`+40` 成长值
+- 以上数值为当前原型默认规则，后端接入后可以覆盖这些数值，不影响前端页面结构和交互流程。
 
 ## 当前前端行为规则
 
