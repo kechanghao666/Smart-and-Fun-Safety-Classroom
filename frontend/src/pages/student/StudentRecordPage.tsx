@@ -127,19 +127,28 @@ export function StudentRecordPage() {
           <span className="section-block__eyebrow">考试与错题</span>
           <h2>考试页、结果页与错题页入口</h2>
           {state.progress.exam.status === "completed" ? (
-            <div className="button-row">
-              <Link
-                className="primary-button link-button"
-                to="/student/theme/road-safety/exam/result"
-              >
-                查看考试结果页
-              </Link>
-              <Link
-                className="ghost-button link-button"
-                to="/student/theme/road-safety/wrong-questions"
-              >
-                查看错题回看页
-              </Link>
+            <div className="page-stack page-stack--compact">
+              <div className="button-row">
+                <Link
+                  className="primary-button link-button"
+                  to="/student/theme/road-safety/exam/result"
+                >
+                  查看考试结果页
+                </Link>
+                <Link
+                  className="ghost-button link-button"
+                  to="/student/theme/road-safety/wrong-questions"
+                >
+                  查看错题回看页
+                </Link>
+              </div>
+              <article className="feedback-box">
+                <strong>本轮考试已收口</strong>
+                <p>
+                  当前得分 {state.progress.exam.score ?? 0} 分，错题 {wrongQuestionDetails.length} 道。
+                  接下来建议先看错题，再返回对应关卡复练。
+                </p>
+              </article>
             </div>
           ) : state.progress.exam.status === "available" ? (
             <button
@@ -162,6 +171,64 @@ export function StudentRecordPage() {
             <li>累计星级：{growth.totalStars} 星</li>
             <li>当前外观：{growth.currentTier.appearance}</li>
             <li>已获得徽章：{state.progress.badges.join(" / ")}</li>
+          </ul>
+        </article>
+      </section>
+
+      <section className="card-grid card-grid--two">
+        <article className="surface-card admin-preview-card">
+          <span className="section-block__eyebrow">结果回看</span>
+          <h2>把每一关结算和考试结果放进同一张总账单</h2>
+          <div className="page-stack page-stack--compact">
+            {state.progress.levels.map((level) => {
+              const result = state.progress.levelResults[level.id];
+
+              return (
+                <article key={`${level.id}-recap`} className="teacher-analysis-card">
+                  <div className="row-between">
+                    <strong>{level.title}</strong>
+                    <StatusBadge status={level.status} />
+                  </div>
+                  <p>
+                    {result
+                      ? `得分 ${result.score} 分，${result.stars} 星，亮点：${result.highlight}`
+                      : "当前还没有生成本关结算，可先进入本关继续学习。"}
+                  </p>
+                  <Link
+                    className="ghost-button link-button"
+                    to={
+                      result
+                        ? `/student/theme/road-safety/level/${level.id}/result`
+                        : `/student/theme/road-safety/level/${level.id}`
+                    }
+                  >
+                    {result ? "查看结算" : "进入本关"}
+                  </Link>
+                </article>
+              );
+            })}
+          </div>
+        </article>
+
+        <article className="surface-card admin-preview-card">
+          <span className="section-block__eyebrow">下一步入口</span>
+          <h2>记录页也承担继续学习与复盘中转</h2>
+          <div className="button-row">
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => navigate(continueRoute)}
+            >
+              继续当前学习
+            </button>
+            <Link className="ghost-button link-button" to="/student/ai-report">
+              查看 AI 结果卡
+            </Link>
+          </div>
+          <ul className="plain-list">
+            <li>如果考试已完成，优先看结果卡和错题页。</li>
+            <li>如果考试已解锁但未完成，建议直接进入主题考试收口。</li>
+            <li>如果仍在闯关阶段，就从这里返回当前可学关卡继续推进。</li>
           </ul>
         </article>
       </section>

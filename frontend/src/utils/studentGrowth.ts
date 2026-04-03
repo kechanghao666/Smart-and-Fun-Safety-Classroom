@@ -48,7 +48,7 @@ export interface GrowthSnapshot {
   nextFocus: string;
 }
 
-const growthTiers: GrowthTierConfig[] = [
+export const growthTierDefinitions: GrowthTierConfig[] = [
   {
     id: "seed",
     title: "安全萌芽期",
@@ -105,11 +105,14 @@ function getLevelScore(state: AppState, levelId: LevelId) {
 }
 
 function getCurrentTier(points: number) {
-  return [...growthTiers].reverse().find((tier) => points >= tier.minPoints) ?? growthTiers[0];
+  return (
+    [...growthTierDefinitions].reverse().find((tier) => points >= tier.minPoints) ??
+    growthTierDefinitions[0]
+  );
 }
 
 function getNextTier(points: number) {
-  return growthTiers.find((tier) => points < tier.minPoints) ?? null;
+  return growthTierDefinitions.find((tier) => points < tier.minPoints) ?? null;
 }
 
 export function buildGrowthSnapshot(state: AppState): GrowthSnapshot {

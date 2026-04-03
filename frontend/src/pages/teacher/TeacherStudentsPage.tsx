@@ -11,6 +11,12 @@ import {
 
 type CompletionFilter = "all" | "completed" | "incomplete";
 
+const attentionRank = {
+  urgent: 0,
+  watch: 1,
+  stable: 2,
+} as const;
+
 export function TeacherStudentsPage() {
   const { state } = useAppState();
   const canUseApi = state.authSource === "api" && Boolean(state.authToken);
@@ -55,6 +61,23 @@ export function TeacherStudentsPage() {
   const fullyCompletedCount = filteredStudents.filter(
     (student) => student.completedLevels === 3,
   ).length;
+  const priorityStudents = filteredStudents
+    .slice()
+    .sort((left, right) => {
+      const leftLevel = getTeacherAttentionLevel(left);
+      const rightLevel = getTeacherAttentionLevel(right);
+
+      return (
+        attentionRank[leftLevel] - attentionRank[rightLevel] ||
+        left.completedLevels - right.completedLevels
+      );
+    })
+    .slice(0, 3);
+  const hasFilters =
+    query.trim().length > 0 ||
+    classFilter !== "all" ||
+    examFilter !== "all" ||
+    completionFilter !== "all";
 
   return (
     <div className="page-stack">
@@ -143,7 +166,7 @@ export function TeacherStudentsPage() {
           <h2>当前教师筛选条件</h2>
           <div className="chip-row">
             <span className="surface-tag">
-              关键字：{query.trim().length > 0 ? query.trim() : "未设置"}
+              关键词：{query.trim().length > 0 ? query.trim() : "未设置"}
             </span>
             <span className="surface-tag">班级：{classFilter === "all" ? "全部班级" : classFilter}</span>
             <span className="surface-tag">
@@ -164,15 +187,91 @@ export function TeacherStudentsPage() {
             </span>
           </div>
           <p>当前未完成考试学生 {pendingExamCount} 人，建议优先补齐“三关 + 考试”的闭环。</p>
+          {hasFilters ? (
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => {
+                setQuery("");
+                setClassFilter("all");
+                setExamFilter("all");
+                setCompletionFilter("all");
+              }}
+            >
+              清空筛选
+            </button>
+          ) : null}
         </article>
 
         <article className="surface-card admin-preview-card">
           <span className="section-block__eyebrow">跟进建议</span>
-          <h2>筛选后最值得先处理什么</h2>
+          <h2>筛选后最值得先处理什么？</h2>
           <ul className="plain-list">
             <li>优先打开高风险学生详情页，查看错题和成长状态。</li>
             <li>对未完成三关的学生，先追踪停留在哪一关。</li>
             <li>对已完成三关但未考试的学生，优先提醒收口。</li>
+          </ul>
+        </article>
+      </section>
+
+      <section className="card-grid card-grid--two">
+        <article className="surface-card admin-preview-card">
+          <span className="section-block__eyebrow">优先跟进名单</span>
+          <h2>把最该先看的学生排到前面</h2>
+          {priorityStudents.length > 0 ? (
+            <div className="page-stack page-stack--compact">
+              {priorityStudents.map((student) => {
+                const attentionLevel = getTeacherAttentionLevel(student);
+
+                return (
+                  <article key={`${student.id}-priority`} className="teacher-analysis-card">
+                    <div className="row-between">
+                      <div>
+                        <strong>{student.name}</strong>
+                        <p className="teacher-analysis-card__meta">
+                          {student.className} · 已完成 {student.completedLevels} / 3 关
+                        </p>
+                      </div>
+                      <span
+                        className={`teacher-attention-pill teacher-attention-pill--${attentionLevel}`}
+                      >
+                        {getTeacherAttentionLabel(attentionLevel)}
+                      </span>
+                    </div>
+                    <p>{student.weakSpot}</p>
+                    <Link className="ghost-button link-button" to={`/teacher/students/${student.id}`}>
+                      查看详情
+                    </Link>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <p>当前筛选结果为空，暂无可跟进学生。</p>
+          )}
+        </article>
+
+        <article className="surface-card admin-preview-card">
+          <span className="section-block__eyebrow">课堂收口建议</span>
+          <h2>结合当前列表状态安排下一次课堂提醒</h2>
+          <div className="mini-stat-list">
+            <div className="stat-pair">
+              <strong>{fullyCompletedCount}</strong>
+              <span>已完成三关</span>
+            </div>
+            <div className="stat-pair">
+              <strong>{pendingExamCount}</strong>
+              <span>待完成考试</span>
+            </div>
+            <div className="stat-pair">
+              <strong>{urgentCount}</strong>
+              <span>高风险学生</span>
+            </div>
+          </div>
+          <ul className="plain-list">
+            <li>若高风险学生较多，建议先讲解薄弱点，再安排分组复盘。</li>
+            <li>若待考试人数较多，建议把课堂收尾聚焦到考试解锁与统一提交。</li>
+            <li>若已完成三关人数较多，可直接引导进入结果页和错题回看。</li>
           </ul>
         </article>
       </section>

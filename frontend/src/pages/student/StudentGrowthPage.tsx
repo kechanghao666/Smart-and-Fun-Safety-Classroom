@@ -1,6 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAppState } from "../../state/AppState";
-import { buildGrowthSnapshot } from "../../utils/studentGrowth";
+import {
+  buildGrowthSnapshot,
+  growthTierDefinitions,
+} from "../../utils/studentGrowth";
 
 const avatarAccentMap = {
   "sunny-guard": "sky",
@@ -85,6 +88,47 @@ export function StudentGrowthPage() {
       <section className="surface-card">
         <div className="section-block__header">
           <div>
+            <span className="section-block__eyebrow">成长等级路线</span>
+            <h2>从萌芽到守护，当前走到哪一步</h2>
+          </div>
+        </div>
+
+        <div className="card-grid card-grid--three">
+          {growthTierDefinitions.map((tier) => {
+            const isCurrent = tier.id === growth.currentTier.id;
+            const isUnlocked = growth.points >= tier.minPoints;
+
+            return (
+              <article
+                key={tier.id}
+                className={
+                  isCurrent
+                    ? "surface-card unlock-card unlock-card--current"
+                    : isUnlocked
+                      ? "surface-card unlock-card unlock-card--unlocked"
+                      : "surface-card unlock-card"
+                }
+              >
+                <div className="row-between">
+                  <span className="section-block__eyebrow">{tier.title}</span>
+                  <span className="surface-tag">{tier.minPoints} 分</span>
+                </div>
+                <h3>{tier.appearance}</h3>
+                <p>{tier.description}</p>
+                <ul className="plain-list">
+                  <li>能力：{tier.ability}</li>
+                  <li>场景：{tier.scene}</li>
+                  <li>{isCurrent ? "当前所处阶段" : isUnlocked ? "已解锁阶段" : "待解锁阶段"}</li>
+                </ul>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="surface-card">
+        <div className="section-block__header">
+          <div>
             <span className="section-block__eyebrow">三类成长维度</span>
             <h2>观察力、判断力与防护力</h2>
           </div>
@@ -126,6 +170,59 @@ export function StudentGrowthPage() {
         </div>
       </section>
 
+      <section className="card-grid card-grid--two">
+        <article className="surface-card admin-preview-card">
+          <span className="section-block__eyebrow">成长目标</span>
+          <h2>下一次学习最值得关注的事</h2>
+          <article className="feedback-box">
+            <strong>{growth.nextFocus}</strong>
+            <p>
+              {growth.nextTier
+                ? `再获得 ${growth.pointsToNext} 分，就能进入 ${growth.nextTier.title}。`
+                : "当前阶段内容已经全部点亮，接下来重点保持连续学习。"}
+            </p>
+          </article>
+          <div className="button-row">
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => navigate("/student/theme/road-safety")}
+            >
+              返回主题页
+            </button>
+            <Link className="ghost-button link-button" to="/student/records">
+              查看学习记录
+            </Link>
+          </div>
+        </article>
+
+        <article className="surface-card admin-preview-card">
+          <span className="section-block__eyebrow">成长奖励</span>
+          <h2>本轮学习已经点亮的激励内容</h2>
+          <div className="mini-stat-list">
+            <div className="stat-pair">
+              <strong>{growth.points}</strong>
+              <span>成长值</span>
+            </div>
+            <div className="stat-pair">
+              <strong>{growth.totalStars}</strong>
+              <span>累计星级</span>
+            </div>
+            <div className="stat-pair">
+              <strong>{state.progress.badges.length}</strong>
+              <span>已获徽章</span>
+            </div>
+          </div>
+          <ul className="plain-list">
+            {state.progress.badges.length > 0 ? (
+              state.progress.badges.map((badge) => <li key={badge}>{badge}</li>)
+            ) : (
+              <li>继续完成关卡与考试后，这里会点亮新的徽章与激励。</li>
+            )}
+          </ul>
+        </article>
+      </section>
+
       <section className="surface-card">
         <div className="section-block__header">
           <div>
@@ -153,19 +250,6 @@ export function StudentGrowthPage() {
           ))}
         </div>
       </section>
-
-      <div className="button-row">
-        <button
-          type="button"
-          className="primary-button"
-          onClick={() => navigate("/student/theme/road-safety")}
-        >
-          返回主题页
-        </button>
-        <Link className="ghost-button link-button" to="/student/records">
-          查看学习记录
-        </Link>
-      </div>
     </div>
   );
 }

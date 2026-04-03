@@ -941,6 +941,21 @@ button {
   gap: 14px;
 }
 
+.unlock-card--unlocked {
+  border-color: rgba(24, 160, 111, 0.24);
+  background:
+    linear-gradient(180deg, rgba(24, 160, 111, 0.08), rgba(255, 255, 255, 0.84)),
+    var(--surface);
+}
+
+.unlock-card--current {
+  border-color: rgba(38, 139, 210, 0.28);
+  background:
+    linear-gradient(180deg, rgba(38, 139, 210, 0.1), rgba(255, 255, 255, 0.84)),
+    var(--surface);
+  box-shadow: 0 14px 28px rgba(38, 139, 210, 0.12);
+}
+
 .growth-progress-panel {
   min-width: min(280px, 100%);
   padding: 22px;
@@ -1060,6 +1075,21 @@ button {
 .teacher-alert-card:hover,
 .class-card:hover {
   transform: translateY(-1px);
+}
+
+.module-status-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.module-status-card {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.78);
 }
 
 .management-list-card--active {
@@ -1491,6 +1521,7 @@ button {
 
   .filter-bar,
   .management-layout,
+  .module-status-grid,
   .editor-grid,
   .level-layout,
   .ai-study-layout {
