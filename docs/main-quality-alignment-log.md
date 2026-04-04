@@ -336,3 +336,86 @@ AI 不再在前端本地生成“伪答案”，而是以后端 `/api/ai/chat` �
 - `docs/backend-frontend-handoff.md`
 - `功能设计说明书.docx`
 - `界面设计说明书.docx`
+## 2026-04-04 UI density follow-up
+
+### Scope
+
+This follow-up round focused on UI density and scan efficiency across the three roles. No backend API, database, or auth behavior changed in this round.
+
+- Working branch: `codex/ui-growth-pagination-ai`
+- Key commits:
+  - `72dc91f` `Polish growth visuals and paginate dashboard lists`
+  - `bee17ca` `Compact cross-role cards and teacher list density`
+
+### What changed
+
+#### Teacher side
+
+- Reworked the student list into a denser scan-oriented layout.
+- Reduced vertical space per student row.
+- Moved status pill and action button into a tighter right-side action area.
+- Kept name, class, level progress, exam status, recent activity, note text, and action hierarchy intact.
+- Added line clamp handling for long weak-spot text while preserving full text via `title`.
+- Applied the same density pass to dashboard cards, class management cards, and student detail analysis cards.
+
+Affected files:
+
+- `frontend/src/pages/teacher/TeacherStudentsPage.tsx`
+- `frontend/src/pages/teacher/TeacherDashboardPage.tsx`
+- `frontend/src/pages/teacher/TeacherClassesPage.tsx`
+- `frontend/src/pages/teacher/TeacherStudentDetailPage.tsx`
+- `frontend/src/styles.css`
+
+#### Student side
+
+- Tightened learning record cards and AI report cards.
+- Reduced excess padding and card height on summary/result blocks.
+- Applied compact list spacing and line clamp rules where descriptive text was too tall.
+
+Affected files:
+
+- `frontend/src/pages/student/StudentRecordPage.tsx`
+- `frontend/src/pages/student/StudentAiReportPage.tsx`
+- `frontend/src/styles.css`
+
+#### Admin side
+
+- Continued compressing the question bank page into a fixed-height working area.
+- Kept the left list + right editor pattern, but reduced unused space in non-selected items.
+- Tightened dashboard, stats, and AI copy cards so the admin pages no longer stretch as aggressively.
+
+Affected files:
+
+- `frontend/src/pages/admin/AdminQuestionBankPage.tsx`
+- `frontend/src/pages/admin/AdminDashboardPage.tsx`
+- `frontend/src/pages/admin/AdminStatsPage.tsx`
+- `frontend/src/pages/admin/AdminAiCopyPage.tsx`
+- `frontend/src/styles.css`
+
+#### AI quick prompts
+
+- Verified that the live AI entry points still use the dedicated `aiQuickPrompts` data source.
+- Kept recommendation prompts limited to road-safety knowledge points.
+- This round did not add fallback prompts that reference “being stuck on level 1” or similar process-oriented wording.
+
+Relevant files:
+
+- `frontend/src/data/aiQuickPrompts.ts`
+- `frontend/src/utils/aiAssistant.ts`
+- `frontend/src/components/FloatingAiAssistant.tsx`
+- `frontend/src/pages/student/StudentAiPage.tsx`
+
+### Validation
+
+Validated in this round:
+
+- `npm.cmd run build`
+- Frontend reachable at `http://127.0.0.1:5173`
+- Backend health reachable at `http://127.0.0.1:3001/api/health`
+
+### Remaining notes
+
+- The student growth character style is still not treated as final visual quality. It was intentionally left out of this round.
+- If a later round wants a materially better character presentation, that work should be scoped separately as either:
+  - a higher-quality 2D illustration system, or
+  - a dedicated 3D rendering track with new dependencies and model assets.
