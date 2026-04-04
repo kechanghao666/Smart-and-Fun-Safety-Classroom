@@ -210,7 +210,7 @@ export function AdminQuestionBankPage() {
           ) : (
             <article className="surface-card empty-state-card">
               <strong>当前筛选下没有题目</strong>
-              <p>请切换到其他主题，或等待后端返回对应题库内容。</p>
+              <p>请切换到其他主题，或稍后刷新当前题库内容。</p>
             </article>
           )}
         </div>

@@ -98,8 +98,8 @@ export function AdminStatsPage() {
       title: "成长规则状态",
       detail:
         growthEditor.source === "api"
-          ? "成长规则配置已接入后端，可在本页直接编辑并保存。"
-          : "成长规则当前仍使用预置配置，可先完成页面联调后再切入服务端。",
+          ? "成长规则已经同步到当前配置，可在本页直接编辑并保存。"
+          : "成长规则当前展示示例配置，适合先确认页面结构和展示逻辑。",
     },
   ];
 
@@ -120,7 +120,7 @@ export function AdminStatsPage() {
       </section>
 
       <article className="feedback-box">
-        <strong>{source === "api" ? "统计数据已接入服务数据" : "统计数据当前使用预置数据"}</strong>
+        <strong>{source === "api" ? "统计数据已同步更新" : "统计数据当前展示示例内容"}</strong>
         <p>
           {isLoading
             ? "正在同步统计数据..."

@@ -79,7 +79,7 @@ export function StudentWrongQuestionsPage() {
           setError(
             requestError instanceof Error
               ? requestError.message
-              : "错题回看暂时无法连接后端，当前展示本地数据。",
+              : "错题回看暂时无法更新，当前展示已保存的复习内容。",
           );
         }
       })
@@ -202,7 +202,7 @@ export function StudentWrongQuestionsPage() {
           <h2>完成回看也会继续点亮成长值</h2>
           <ul className="plain-list">
             <li>每完成 1 道错题重学：+{WRONG_QUESTION_REVIEW_REWARD} 成长值</li>
-            <li>后端已结算积分：{state.progress.points}</li>
+            <li>当前积分累计：{state.progress.points}</li>
             <li>已登记回看题目：{state.progress.rewardProgress.reviewedWrongQuestionIds.length} 题</li>
           </ul>
         </article>

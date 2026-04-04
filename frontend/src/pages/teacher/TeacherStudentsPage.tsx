@@ -63,7 +63,7 @@ export function TeacherStudentsPage() {
           setError(
             requestError instanceof Error
               ? requestError.message
-              : "学生列表暂时无法连接后端，当前展示本地数据。",
+              : "学生列表暂时无法更新，当前展示示例内容。",
           );
         }
       } finally {
@@ -128,8 +128,8 @@ export function TeacherStudentsPage() {
       </section>
 
       <article className="feedback-box">
-        <strong>{source === "api" ? "学生列表已接入服务数据" : "学生列表当前使用本地数据"}</strong>
-        <p>{isLoading ? "正在同步学生列表..." : error || "班级、完成状态和考试状态筛选现在会优先走后端查询参数。"}</p>
+        <strong>{source === "api" ? "学生列表已同步更新" : "学生列表当前展示示例内容"}</strong>
+        <p>{isLoading ? "正在同步学生列表..." : error || "班级、完成状态和考试状态筛选会自动更新当前查看结果。"}</p>
       </article>
 
       <section className="card-grid card-grid--three">

@@ -67,7 +67,7 @@ export function StudentRecordPage() {
     fallbackData: fallbackRecords,
     fetcher: () => fetchStudentRecords(state.authToken!),
     dependencies: [state.authToken, state.progress.lastVisitedRoute, state.progress.points],
-    fallbackMessage: "学习记录页暂时无法连接后端，当前展示本地数据。",
+    fallbackMessage: "学习记录页暂时无法更新，当前展示已保存的学习内容。",
   });
 
   const { data: growthData } = useApiResource({
@@ -75,7 +75,7 @@ export function StudentRecordPage() {
     fallbackData: fallbackGrowthData,
     fetcher: () => fetchStudentGrowth(state.authToken!),
     dependencies: [state.authToken, state.progress.points, state.progress.rewardProgress.reviewedWrongQuestionIds.join("|")],
-    fallbackMessage: "成长信息暂时无法连接后端，当前展示本地数据。",
+    fallbackMessage: "成长信息暂时无法更新，当前展示已保存的成长信息。",
   });
 
   const continueRoute = recordsData.overview.continueRoute || state.progress.lastVisitedRoute;
@@ -226,7 +226,7 @@ export function StudentRecordPage() {
             <span className="section-block__eyebrow">最近学习轨迹</span>
             <h2>{recordsLoading ? "正在同步学习记录..." : "从资料设置到结果反馈的完整轨迹"}</h2>
           </div>
-          <span className="surface-tag">{recordsSource === "api" ? "后端记录" : "本地兜底"}</span>
+          <span className="surface-tag">{recordsSource === "api" ? "最新记录" : "示例记录"}</span>
         </div>
 
         {recordsData.records.length > 0 ? (
@@ -251,7 +251,7 @@ export function StudentRecordPage() {
           </div>
         ) : (
           <article className="feedback-box">
-            <strong>当前还没有后端学习记录</strong>
+            <strong>当前还没有学习记录</strong>
             <p>继续完成关卡、考试和错题重学后，这里会按时间顺序累计展示。</p>
           </article>
         )}

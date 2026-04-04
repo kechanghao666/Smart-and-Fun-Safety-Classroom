@@ -63,7 +63,7 @@ export async function resolveAiReply(
     } catch {
       return {
         text: getAiReply(input),
-        notice: "后端 AI 暂时不可用，当前已回退为本地提示。",
+        notice: "AI 小助手暂时忙碌，当前先为你提供学习提示。",
       };
     }
   }

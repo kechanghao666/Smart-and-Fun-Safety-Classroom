@@ -187,18 +187,18 @@ export function AdminUsersPage() {
           <span className="hero-banner__eyebrow">用户管理</span>
           <h1>按角色、状态和关键词查看平台账号</h1>
           <p>
-            这一页保持标准后台表格结构，并把账号启停动作直接接入后端。管理员现在可以真正停用或恢复账号，而不是只在浏览器里做本地标记。
+            这一页保持标准后台表格结构，方便管理员按角色、状态和备注快速处理平台账号。
           </p>
         </div>
       </section>
 
       <article className="feedback-box">
-        <strong>{source === "api" ? "用户列表已接入服务数据" : "用户列表当前使用预置数据"}</strong>
+        <strong>{source === "api" ? "用户列表已同步更新" : "用户列表当前展示示例内容"}</strong>
         <p>
           {isLoading
             ? "正在同步用户列表..."
             : error ||
-              "异常账号处理会直接写入后端用户状态；如果当前没有接后端，则会回退到预置演示数据。"}
+              "你可以在这里继续查看账号状态、备注说明和异常处理结果。"}
         </p>
       </article>
 
@@ -393,7 +393,7 @@ export function AdminUsersPage() {
             </p>
             <p>
               {pendingAction.nextStatus === "paused"
-                ? "停用后，后端会更新该账号状态，并在需要时清理已有会话。"
+                ? "停用后，该账号会进入暂停状态，避免继续进入对应页面。"
                 : "恢复后，该账号可以重新进入正常业务流程。"}
             </p>
             <div className="button-row">

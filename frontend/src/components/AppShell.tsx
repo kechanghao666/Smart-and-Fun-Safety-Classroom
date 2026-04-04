@@ -320,7 +320,7 @@ function WorkspaceHeader({
 
       <div className="workspace-header__actions">
         <span className="surface-tag">
-          {state.authSource === "api" ? "服务数据模式" : "预置数据模式"}
+          {state.authSource === "api" ? "在线同步" : "演示体验"}
         </span>
         <button type="button" className="ghost-button" onClick={onSignOut}>
           退出登录
@@ -448,7 +448,7 @@ export function AppShell({
       return `最近同步时间：${lastSyncedAt}`;
     }
 
-    return "进入学生端后会自动向后端拉取最新学习进度。";
+    return "进入学生端后会自动更新最新学习进度。";
   }, [lastSyncedAt, syncMessage]);
 
   const pageMeta = useMemo(
@@ -537,7 +537,7 @@ export function AppShell({
             <div className="student-shell__status">
               <div className="student-shell__status-card">
                 <span className="surface-tag">
-                  {state.authSource === "api" ? "服务数据模式" : "预置数据模式"}
+                  {state.authSource === "api" ? "在线同步" : "演示体验"}
                 </span>
                 <strong>{state.studentProfile?.nickname ?? "待完善学生资料"}</strong>
                 <p>
@@ -599,7 +599,7 @@ export function AppShell({
             </div>
             <div className="student-shell__titlebar-tags">
               <span className="surface-tag">道路安全主题限定</span>
-              <span className="surface-tag">保持后端接口不变</span>
+              <span className="surface-tag">学习闭环进行中</span>
             </div>
           </section>
 
@@ -609,7 +609,7 @@ export function AppShell({
             <article className="feedback-box">
               <div className="row-between">
                 <div>
-                  <strong>{isSyncing ? "正在更新学习进度..." : "学习进度已接入服务数据"}</strong>
+                  <strong>{isSyncing ? "正在更新学习进度..." : "学习进度已同步更新"}</strong>
                   <p>{syncSummary}</p>
                 </div>
                 <span className="surface-tag">
@@ -666,7 +666,7 @@ export function AppShell({
         <div className="brand-card">
           <span className="brand-card__eyebrow">Smart & Fun</span>
           <h1>智趣安全学堂</h1>
-          <p>以功能说明书和界面说明书为准的多角色协作原型。</p>
+          <p>面向学生、教师与管理员的安全教育学习平台。</p>
         </div>
 
         <nav className="sidebar-nav">
@@ -687,7 +687,7 @@ export function AppShell({
           <div className="sidebar-role-card">
             <span>当前身份</span>
             <strong>{roleNameMap[role]}</strong>
-            <p>{state.authSource === "api" ? "当前使用服务数据" : "当前使用预置数据"}</p>
+            <p>{state.authSource === "api" ? "当前为在线同步" : "当前为演示体验"}</p>
           </div>
 
           <button type="button" className="ghost-button" onClick={handleSignOut}>

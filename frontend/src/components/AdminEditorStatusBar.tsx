@@ -38,7 +38,7 @@ export function AdminEditorStatusBar({
     : syncError
       ? syncError
       : hasUnsavedChanges
-        ? "当前配置稿存在未保存修改，点击“保存当前修改”后会写入当前数据源。"
+        ? "当前配置稿存在未保存修改，点击“保存当前修改”后会更新当前配置。"
         : lastSavedAt
           ? `最近一次保存时间：${lastSavedAt}`
           : "当前配置已经就绪，可以开始编辑。";
@@ -52,7 +52,7 @@ export function AdminEditorStatusBar({
         </div>
         <div className="chip-row">
           <span className="surface-tag">
-            {source === "api" ? "服务数据已接入" : "当前使用预置数据"}
+            {source === "api" ? "已同步当前配置" : "当前展示示例配置"}
           </span>
           <span className={`editor-status-pill editor-status-pill--${status}`}>
             {statusLabelMap[status]}

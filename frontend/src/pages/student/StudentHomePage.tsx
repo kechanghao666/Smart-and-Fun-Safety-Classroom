@@ -77,7 +77,7 @@ export function StudentHomePage() {
     fallbackData: fallbackGrowthData,
     fetcher: () => fetchStudentGrowth(state.authToken!),
     dependencies: [state.authToken, state.progress.points, state.progress.rewardProgress.reviewedWrongQuestionIds.join("|")],
-    fallbackMessage: "首页成长数据暂时无法连接后端，当前展示本地结果。",
+    fallbackMessage: "首页成长数据暂时无法更新，当前展示已保存的成长结果。",
   });
 
   const homeAiPrompt = useMemo(
@@ -216,7 +216,7 @@ export function StudentHomePage() {
           </ul>
           <div className="button-row">
             {apiEnabled ? (
-              <span className="surface-tag">连续学习奖励由后端自动结算</span>
+              <span className="surface-tag">连续学习奖励会自动发放</span>
             ) : fallbackGrowth.availableStreakRewards.length > 0 ? (
               fallbackGrowth.availableStreakRewards.map((day) => (
                 <button key={day} type="button" className="primary-button" onClick={() => claimStreakReward(day)}>

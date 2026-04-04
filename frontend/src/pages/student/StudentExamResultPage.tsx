@@ -68,7 +68,7 @@ export function StudentExamResultPage() {
     fallbackData: fallbackReview,
     fetcher: () => fetchStudentExamReview(state.authToken!),
     dependencies: [state.authToken, state.progress.exam.score, state.progress.exam.wrongQuestionIds.join("|")],
-    fallbackMessage: "考试结果页暂时无法连接后端，当前展示本地回看数据。",
+    fallbackMessage: "考试结果页暂时无法更新，当前展示已保存的结果信息。",
   });
 
   const score = state.progress.exam.score ?? 0;
@@ -92,7 +92,7 @@ export function StudentExamResultPage() {
 
         <div className="result-medal result-medal--report">
           <strong>{score} 分</strong>
-          <span>{apiEnabled && source === "api" ? "后端实时结果" : performanceLabel}</span>
+          <span>{apiEnabled && source === "api" ? "最新成绩" : performanceLabel}</span>
         </div>
       </section>
 
@@ -112,7 +112,7 @@ export function StudentExamResultPage() {
         <article className="surface-card stat-card">
           <span>当前积分</span>
           <strong>{state.progress.points}</strong>
-          <p>本轮考试带来的积分、徽章和成长奖励均以后端结算结果为准。</p>
+          <p>本轮考试带来的积分、徽章和成长奖励已经计入当前学习结果。</p>
         </article>
       </section>
 

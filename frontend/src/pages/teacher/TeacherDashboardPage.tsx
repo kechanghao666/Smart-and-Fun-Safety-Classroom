@@ -137,7 +137,7 @@ export function TeacherDashboardPage() {
       </section>
 
       <article className="feedback-box">
-        <strong>{source === "api" ? "当前使用服务数据" : "当前使用预置数据"}</strong>
+        <strong>{source === "api" ? "当前数据已同步更新" : "当前展示示例内容"}</strong>
         <p>
           {isLoading
             ? "正在同步教师端数据..."
@@ -255,7 +255,7 @@ export function TeacherDashboardPage() {
             <p>
               {classRiskSummary
                 ? `${classRiskSummary.focusLabel}，建议优先围绕三关未完成和考试未完成学生安排课后复习。`
-                : "等待后端返回班级数据后，这里会自动汇总重点支持对象。"}
+                    : "等待班级数据更新后，这里会自动汇总重点支持对象。"}
             </p>
           </article>
         </article>

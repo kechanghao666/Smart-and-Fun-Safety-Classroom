@@ -68,7 +68,7 @@ export function TeacherClassesPage() {
           setError(
             requestError instanceof Error
               ? requestError.message
-              : "班级数据暂时无法连接后端，当前展示本地数据。",
+              : "班级数据暂时无法更新，当前展示示例内容。",
           );
         }
       } finally {
@@ -221,8 +221,8 @@ export function TeacherClassesPage() {
       </section>
 
       <article className="feedback-box">
-        <strong>{canUseApi ? "班级数据已接入服务数据" : "班级数据当前使用本地数据"}</strong>
-        <p>{isLoading ? "正在同步班级概览..." : error || "班级创建与编辑现在会优先走真实接口，无法连接时再退回本地兜底。"}</p>
+        <strong>{canUseApi ? "班级数据已同步更新" : "班级数据当前展示示例内容"}</strong>
+        <p>{isLoading ? "正在同步班级概览..." : error || "你可以在这里继续查看班级表现、重点关注项和班级说明。"}</p>
       </article>
 
       <section className="card-grid card-grid--four">

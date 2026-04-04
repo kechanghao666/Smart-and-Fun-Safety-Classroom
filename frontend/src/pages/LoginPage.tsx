@@ -163,8 +163,8 @@ export function LoginPage() {
               <p className="support-copy">
                 当前模式：{authModeLabel}
                 {apiEnabled
-                  ? `，会优先请求 ${apiBaseUrl}/api/auth/login。`
-                  : "，未配置数据服务地址时继续使用预置账号与当前学习状态。"}
+                  ? `，当前会连接 ${apiBaseUrl}/api/auth/login。`
+                  : "，未配置在线地址时会继续使用示例账号进入体验。"}
               </p>
 
               {error ? <p className="form-error">{error}</p> : null}
@@ -182,11 +182,11 @@ export function LoginPage() {
           <article className="surface-card auth-card">
             <div>
               <span className="section-block__eyebrow">账号说明</span>
-              <h2>{apiEnabled ? "当前使用服务数据登录" : "三类角色登录账号"}</h2>
+              <h2>{apiEnabled ? "当前使用在线账号登录" : "三类角色登录账号"}</h2>
               <p>
                 {apiEnabled
-                  ? "如果服务端已准备好账号数据，可直接使用以下账号进入对应角色。"
-                  : "当前页面使用预置账号完成登录，后续会由统一鉴权服务接管。"}
+                  ? "可直接使用以下账号进入对应角色页面。"
+                  : "当前页面使用示例账号完成登录，便于快速体验完整流程。"}
               </p>
             </div>
 

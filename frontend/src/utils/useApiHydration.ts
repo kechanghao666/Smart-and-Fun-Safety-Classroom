@@ -14,7 +14,7 @@ export function useApiHydration<T>({
   fetcher,
   applyData,
   dependencies = [],
-  fallbackMessage = "暂时无法获取服务数据，当前继续使用预置数据。",
+  fallbackMessage = "暂时无法更新最新内容，当前继续使用示例内容。",
 }: UseApiHydrationOptions<T>) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");

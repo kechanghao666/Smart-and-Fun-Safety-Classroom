@@ -58,7 +58,7 @@ export function StudentThemePage() {
     fallbackData: fallbackGrowthData,
     fetcher: () => fetchStudentGrowth(state.authToken!),
     dependencies: [state.authToken, state.progress.points, state.progress.rewardProgress.reviewedWrongQuestionIds.join("|")],
-    fallbackMessage: "主题页成长数据暂时无法连接后端，当前展示本地结果。",
+    fallbackMessage: "主题页成长信息暂时无法同步，当前展示学习中的成长概览。",
   });
 
   const sceneVisualClass = getGrowthSceneVisualClass(growthData.currentScene);

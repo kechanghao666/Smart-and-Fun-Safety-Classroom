@@ -73,7 +73,7 @@ export function StudentAiReportPage() {
     fallbackData: fallbackReportData,
     fetcher: () => fetchStudentAiReport(state.authToken!),
     dependencies: [state.authToken, state.progress.exam.score, state.progress.points],
-    fallbackMessage: "AI 结果页暂时无法连接后端，当前展示本地结果卡。",
+    fallbackMessage: "AI 结果页暂时无法同步，当前展示学习总结卡。",
   });
 
   const { data: growthData } = useApiResource({
@@ -81,7 +81,7 @@ export function StudentAiReportPage() {
     fallbackData: fallbackGrowthData,
     fetcher: () => fetchStudentGrowth(state.authToken!),
     dependencies: [state.authToken, state.progress.points, state.progress.rewardProgress.reviewedWrongQuestionIds.join("|")],
-    fallbackMessage: "成长结果暂时无法连接后端，当前展示本地数据。",
+    fallbackMessage: "成长结果暂时无法同步，当前展示当前成长概览。",
   });
 
   const sceneVisualClass = getGrowthSceneVisualClass(growthData.currentScene);

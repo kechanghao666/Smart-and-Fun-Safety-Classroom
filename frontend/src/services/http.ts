@@ -19,7 +19,7 @@ interface RequestJsonOptions extends Omit<RequestInit, "body"> {
 
 function resolveUrl(path: string) {
   if (!apiEnabled) {
-    throw new ApiError("当前未配置后端地址，请先设置 VITE_API_BASE_URL。");
+    throw new ApiError("当前未配置服务地址，请先设置 VITE_API_BASE_URL。");
   }
 
   if (/^https?:\/\//.test(path)) {
@@ -72,10 +72,10 @@ export async function requestJson<T>(path: string, options: RequestJsonOptions =
     }
 
     if (error instanceof DOMException && error.name === "AbortError") {
-      throw new ApiError("请求超时，请检查后端服务是否已启动。");
+      throw new ApiError("请求超时，请检查服务是否已启动。");
     }
 
-    throw new ApiError("无法连接后端服务，请确认接口已启动并允许跨域访问。");
+    throw new ApiError("暂时无法连接服务，请确认应用服务已启动。");
   } finally {
     window.clearTimeout(timeoutId);
   }

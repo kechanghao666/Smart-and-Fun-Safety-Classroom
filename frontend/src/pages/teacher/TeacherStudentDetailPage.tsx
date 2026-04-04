@@ -21,7 +21,7 @@ export function TeacherStudentDetailPage() {
     fallbackData: fallbackStudent,
     fetcher: () => fetchTeacherStudentDetail(state.authToken ?? "", studentId ?? ""),
     dependencies: [state.authToken, studentId],
-    fallbackMessage: "暂时无法获取学生详情，当前已切换为预置数据。",
+    fallbackMessage: "暂时无法获取学生详情，当前展示示例内容。",
   });
 
   if (!student) {
@@ -70,8 +70,8 @@ export function TeacherStudentDetailPage() {
       </section>
 
       <article className="feedback-box">
-        <strong>{source === "api" ? "学生详情已接入服务数据" : "学生详情当前使用预置数据"}</strong>
-        <p>{isLoading ? "正在同步学生详情..." : error || "学生详情页现在以后端学习与成长数据为准。"}</p>
+        <strong>{source === "api" ? "学生详情已同步更新" : "学生详情当前展示示例内容"}</strong>
+        <p>{isLoading ? "正在同步学生详情..." : error || "学生详情页会持续汇总学习进展、考试表现和成长状态。"}</p>
       </article>
 
       <section className="card-grid card-grid--four">

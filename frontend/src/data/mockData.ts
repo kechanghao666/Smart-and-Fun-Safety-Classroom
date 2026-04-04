@@ -310,8 +310,8 @@ export const adminModules: AdminModuleCard[] = [
     id: "levels",
     title: "关卡内容管理",
     description: "维护场景任务、热点配置、反馈文案和奖励规则。",
-    ownerSuggestion: "教学设计 / 数据接入",
-    status: "优先搭建",
+    ownerSuggestion: "教学设计 / 内容维护",
+    status: "重点维护",
   },
   {
     id: "question-bank",
@@ -325,21 +325,21 @@ export const adminModules: AdminModuleCard[] = [
     title: "AI 文案管理",
     description: "维护欢迎语、提示语、鼓励语和结果卡片模板。",
     ownerSuggestion: "教研 / 产品",
-    status: "建议尽早锁定",
+    status: "优先维护",
   },
   {
     id: "users",
     title: "用户管理",
     description: "查看用户角色、状态和账号启停信息。",
-    ownerSuggestion: "后台 / 平台管理",
-    status: "待后端接入",
+    ownerSuggestion: "平台管理 / 运营支持",
+    status: "账号管理",
   },
   {
     id: "stats",
     title: "数据统计",
     description: "查看主题访问量、完成率、考试成绩和异常提醒。",
-    ownerSuggestion: "后台 / 数据分析",
-    status: "待接口",
+    ownerSuggestion: "数据分析 / 运营复盘",
+    status: "数据观察",
   },
 ];
 

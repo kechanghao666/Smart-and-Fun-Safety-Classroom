@@ -95,7 +95,7 @@ export function StudentGrowthPage() {
           setError(
             requestError instanceof Error
               ? requestError.message
-              : "成长档案暂时无法连接后端，当前展示本地数据。",
+              : "成长档案暂时无法更新，当前展示已保存的成长信息。",
           );
         }
       })
@@ -218,8 +218,8 @@ export function StudentGrowthPage() {
           <ul className="plain-list">
             <li>已回看错题：{state.progress.rewardProgress.reviewedWrongQuestionIds.length} 题</li>
             <li>已领取连续学习奖励：{state.progress.rewardProgress.claimedStreakDays.join(" / ") || "暂无"}</li>
-            <li>当前后端积分：{state.progress.points}</li>
-            <li>{isLoading ? "正在同步成长状态..." : "成长奖励以后端结算为准。"}</li>
+            <li>当前积分累计：{state.progress.points}</li>
+            <li>{isLoading ? "正在同步成长状态..." : "成长奖励会随学习表现自动更新。"}</li>
           </ul>
         </article>
       </section>
@@ -241,12 +241,12 @@ export function StudentGrowthPage() {
 
         <article className="surface-card growth-showcase-card">
           <span className="section-block__eyebrow">成长说明</span>
-          <h2>后端会统一结算成长规则，前端只负责展示最新结果</h2>
+          <h2>成长结果会根据当前学习进展持续刷新</h2>
           <ul className="plain-list">
             <li>已解锁外观：{growthData.unlockedAppearances.join(" / ") || "暂无"}</li>
             <li>已解锁场景：{growthData.unlockedScenes.join(" / ") || "暂无"}</li>
             <li>已解锁能力标签：{growthData.unlockedAbilityTags.join(" / ") || "暂无"}</li>
-            <li>成长规则如有调整，会通过后端配置即时生效。</li>
+            <li>成长阶段、外观、能力和场景会随着学习推进自然点亮。</li>
           </ul>
         </article>
       </section>
@@ -363,7 +363,7 @@ export function StudentGrowthPage() {
             ))
           ) : (
             <article className="feedback-box">
-              <strong>当前还没有后端成长历史</strong>
+              <strong>当前还没有成长历史记录</strong>
               <p>继续完成关卡、考试和错题重学后，这里会自动累积成长轨迹。</p>
             </article>
           )}
