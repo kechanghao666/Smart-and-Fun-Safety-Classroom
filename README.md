@@ -28,7 +28,7 @@ project/
 
 ### 前端
 
-复制 [frontend/.env.example](/E:/实践部工作/启智科创/易班技术创新大会/project/frontend/.env.example) 为 `frontend/.env.local`：
+复制 [frontend/.env.example](frontend/.env.example) 为 `frontend/.env.local`：
 
 ```bash
 VITE_API_BASE_URL=http://127.0.0.1:3001
@@ -39,7 +39,7 @@ VITE_API_TIMEOUT_MS=8000
 
 ### 后端
 
-复制 [backend/.env.example](/E:/实践部工作/启智科创/易班技术创新大会/project/backend/.env.example) 为 `backend/.env`：
+复制 [backend/.env.example](backend/.env.example) 为 `backend/.env`：
 
 ```bash
 PORT=3001
@@ -141,15 +141,15 @@ npm run build
 
 ## 联调说明
 
-- 前后端交接文档在 [docs/backend-frontend-handoff.md](/E:/实践部工作/启智科创/易班技术创新大会/project/docs/backend-frontend-handoff.md)，不是仓库根目录下的 `backend-fronted-handoff.md`。
-- 前端共享契约在 [docs/v1-contracts.md](/E:/实践部工作/启智科创/易班技术创新大会/project/docs/v1-contracts.md)。
+- 前后端交接文档在 [docs/backend-frontend-handoff.md](docs/backend-frontend-handoff.md)，不是仓库根目录下的 `backend-fronted-handoff.md`。
+- 前端共享契约在 [docs/v1-contracts.md](docs/v1-contracts.md)。
 - 学生端在 API 模式下以 `GET /api/student/progress`、`GET /api/student/growth`、`GET /api/student/records`、`GET /api/student/ai-report` 为准，不再自行计算解锁、成长值和奖励。
 - 教师端使用后端提供的班级 CRUD、学生筛选和学生详情数据。
 - 管理员端的主题、关卡、题库、AI 文案、用户状态和成长规则均已设计为真实保存流；未配置后端时才回退到预置数据模式。
 
 ## 文档索引
 
-- [docs/backend-frontend-handoff.md](/E:/实践部工作/启智科创/易班技术创新大会/project/docs/backend-frontend-handoff.md)
-- [docs/v1-contracts.md](/E:/实践部工作/启智科创/易班技术创新大会/project/docs/v1-contracts.md)
-- [docs/collaboration-guide.md](/E:/实践部工作/启智科创/易班技术创新大会/project/docs/collaboration-guide.md)
-- [backend/README.md](/E:/实践部工作/启智科创/易班技术创新大会/project/backend/README.md)
+- [docs/backend-frontend-handoff.md](docs/backend-frontend-handoff.md)
+- [docs/v1-contracts.md](docs/v1-contracts.md)
+- [docs/collaboration-guide.md](docs/collaboration-guide.md)
+- [backend/README.md](backend/README.md)

@@ -317,12 +317,13 @@ export async function createTeacherClass(
   }
 
   const now = new Date().toISOString();
+  const classId = String(input.id ?? `class-${Date.now()}`);
   await db.run(
     `
       INSERT INTO teacher_classes (id, teacher_user_id, name, description, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?)
     `,
-    String(input.id ?? `class-${Date.now()}`),
+    classId,
     teacherUserId,
     name,
     description,
@@ -330,7 +331,7 @@ export async function createTeacherClass(
     now,
   );
 
-  return getTeacherClasses(teacherUserId);
+  return (await getTeacherClasses(teacherUserId)).find((item) => item.id === classId) ?? null;
 }
 
 export async function updateTeacherClass(
@@ -393,7 +394,7 @@ export async function updateTeacherClass(
     );
   }
 
-  return getTeacherClasses(teacherUserId);
+  return (await getTeacherClasses(teacherUserId)).find((item) => item.id === classId) ?? null;
 }
 
 export async function getTeacherStudents(

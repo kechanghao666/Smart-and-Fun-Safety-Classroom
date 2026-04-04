@@ -17,6 +17,7 @@ import {
   getLatestLearningRecordTime,
   getLearningRecords,
   getReviewedQuestionMap,
+  updateStudentGrowthPreferences,
 } from "./growthService";
 import { buildStudentProgress } from "./studentService";
 
@@ -280,6 +281,15 @@ export async function getStudentGrowth(userId: string): Promise<StudentGrowthRes
     history: growth.history,
   };
 }
+
+export async function saveStudentGrowthDisplayPreferences(
+  userId: string,
+  input: { appearance?: string | null; scene?: string | null },
+): Promise<StudentGrowthResponse> {
+  await updateStudentGrowthPreferences(userId, input);
+  return getStudentGrowth(userId);
+}
+
 export async function getStudentAiReport(
   userId: string,
 ): Promise<StudentAiReportResponse> {

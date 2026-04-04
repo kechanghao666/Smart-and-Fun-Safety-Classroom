@@ -17,6 +17,7 @@ import type {
   LevelProgressRow,
   StudentGrowthProfileRow,
 } from "../types/contracts";
+import { HttpError } from "../utils/httpError";
 
 interface UnlockTier {
   threshold: number;
@@ -422,6 +423,52 @@ export async function syncStudentGrowthProfile(userId: string) {
     `,
     userId,
   );
+}
+
+export async function updateStudentGrowthPreferences(
+  userId: string,
+  input: { appearance?: string | null; scene?: string | null },
+) {
+  const currentGrowth = await getGrowthProfile(userId);
+
+  if (!currentGrowth) {
+    throw new HttpError(404, "未找到学生成长档案。");
+  }
+
+  const nextAppearance =
+    typeof input.appearance === "string" && input.appearance.trim().length > 0
+      ? input.appearance.trim()
+      : currentGrowth.profile.selected_appearance;
+  const nextScene =
+    typeof input.scene === "string" && input.scene.trim().length > 0
+      ? input.scene.trim()
+      : currentGrowth.profile.selected_scene;
+
+  if (
+    input.appearance !== undefined &&
+    !currentGrowth.unlockedAppearances.includes(nextAppearance)
+  ) {
+    throw new HttpError(400, "当前外观尚未解锁，无法保存展示偏好。");
+  }
+
+  if (input.scene !== undefined && !currentGrowth.unlockedScenes.includes(nextScene)) {
+    throw new HttpError(400, "当前场景尚未解锁，无法保存展示偏好。");
+  }
+
+  const db = await getDb();
+  await db.run(
+    `
+      UPDATE student_growth_profiles
+      SET selected_appearance = ?, selected_scene = ?, updated_at = ?
+      WHERE user_id = ?
+    `,
+    nextAppearance,
+    nextScene,
+    new Date().toISOString(),
+    userId,
+  );
+
+  return getGrowthProfile(userId);
 }
 
 export async function syncProgressBasedGrowthEvents(userId: string) {

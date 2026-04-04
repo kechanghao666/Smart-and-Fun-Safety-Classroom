@@ -14,6 +14,7 @@ import {
   getStudentExamReview,
   getStudentGrowth,
   getStudentRecords,
+  saveStudentGrowthDisplayPreferences,
 } from "../services/studentInsightsService";
 import { HttpError } from "../utils/httpError";
 
@@ -62,6 +63,32 @@ studentRouter.post("/exam/review/:questionId/complete", async (request, response
 studentRouter.get("/growth", async (request, response, next) => {
   try {
     response.json(await getStudentGrowth(request.authUser!.id));
+  } catch (error) {
+    next(error);
+  }
+});
+
+studentRouter.put("/growth/preferences", async (request, response, next) => {
+  try {
+    const appearance =
+      request.body?.appearance === null || typeof request.body?.appearance === "string"
+        ? request.body.appearance
+        : undefined;
+    const scene =
+      request.body?.scene === null || typeof request.body?.scene === "string"
+        ? request.body.scene
+        : undefined;
+
+    if (appearance === undefined && scene === undefined) {
+      throw new HttpError(400, "成长展示设置字段不完整。");
+    }
+
+    response.json(
+      await saveStudentGrowthDisplayPreferences(request.authUser!.id, {
+        appearance,
+        scene,
+      }),
+    );
   } catch (error) {
     next(error);
   }

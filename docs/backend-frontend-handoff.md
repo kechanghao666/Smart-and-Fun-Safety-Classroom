@@ -1,6 +1,6 @@
 ﻿# 后端交接给前端同事
 
-这份文档说明当前仓库中后端接口的联调方式、种子账号、主要返回结构和关键业务规则。当前交接文档实际位置为 [docs/backend-frontend-handoff.md](/E:/实践部工作/启智科创/易班技术创新大会/project/docs/backend-frontend-handoff.md)。
+这份文档说明当前仓库中后端接口的联调方式、种子账号、主要返回结构和关键业务规则。当前交接文档实际位置为 [docs/backend-frontend-handoff.md](backend-frontend-handoff.md)，并与 `main` 主干保持一致。
 
 ## 当前状态
 
@@ -29,7 +29,7 @@ GET http://127.0.0.1:3001/api/health
 
 ## 环境变量
 
-参考 [backend/.env.example](/E:/实践部工作/启智科创/易班技术创新大会/project/backend/.env.example)：
+参考 [backend/.env.example](../backend/.env.example)：
 
 ```bash
 PORT=3001
@@ -159,4 +159,4 @@ AI_FALLBACK_ENABLED=true
 - 学生端 API 模式下，以后端返回的 `StudentProgress`、`StudentGrowthResponse`、`StudentExamReviewResponse` 为准。
 - AI 统一走 `/api/ai/chat`，不要直连 Spark。
 - 管理员页的“保存”现在应视为真实写入，不再只是本地草稿保存提示。
-- 对齐共享字段时，以 [docs/v1-contracts.md](/E:/实践部工作/启智科创/易班技术创新大会/project/docs/v1-contracts.md) 为准。
+- 对齐共享字段时，以 [docs/v1-contracts.md](v1-contracts.md) 为准。

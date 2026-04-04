@@ -86,6 +86,7 @@ npm --prefix backend run start
 - `GET /api/student/exam/review`
 - `GET /api/student/growth`
 - `GET /api/student/ai-report`
+- `PUT /api/student/growth/preferences`
 - `POST /api/student/profile`
 - `POST /api/student/levels/:levelId/start`
 - `POST /api/student/levels/:levelId/complete`

@@ -1,6 +1,6 @@
 ﻿# V1 共享契约基线
 
-本文档用于约束当前一体化版本的前后端交互结构，和 [docs/backend-frontend-handoff.md](/E:/实践部工作/启智科创/易班技术创新大会/project/docs/backend-frontend-handoff.md) 保持一致。
+本文档用于约束当前一体化版本的前后端交互结构，和 [docs/backend-frontend-handoff.md](backend-frontend-handoff.md) 保持一致。
 
 ## 路由分组
 

@@ -2,6 +2,7 @@
 
 ## 分支规则
 
+- 当前正式交付基线为 `main`
 - `main` 只接收评审通过的 PR
 - 日常开发使用 `feature/<模块>-<任务>`
 - 紧急修复使用 `fix/<问题>`
@@ -73,4 +74,4 @@
 - UI 评审关注流程完整性、角色越权、空状态和提示文案
 - 状态评审关注枚举、解锁条件、数据持久化和回退路径
 - 文档评审关注说明书与实现是否一致
-- 当前正式实施基线同时参考 `docs/project-1.0-implementation-plan.md`
+- `docs/project-1.0-implementation-plan.md` 仅保留为历史协作归档，当前启动、联调和验收以 `README.md`、`docs/backend-frontend-handoff.md`、`docs/v1-contracts.md` 为准
