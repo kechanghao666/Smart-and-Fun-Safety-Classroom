@@ -1,4 +1,4 @@
-﻿import { randomUUID } from "crypto";
+import { randomUUID } from "crypto";
 import { getDb } from "../db/connection";
 import {
   BASE_BADGES,
@@ -16,7 +16,9 @@ import {
   getThemeTitle,
 } from "./courseContentService";
 import {
-  getStudentRewardProgress,
+  getGrowthProfile,
+  getLearningRecords,
+  getReviewedQuestionIds,
   logLearningRecord,
   syncProgressBasedGrowthEvents,
 } from "./growthService";
@@ -42,42 +44,13 @@ function parseBadges(value: string) {
   }
 }
 
-function parseStringArray(value: string) {
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed)
-      ? parsed.filter((item): item is string => typeof item === "string")
-      : [];
-  } catch {
-    return [];
-  }
-}
-
-function parseStudentAnswers(value: string) {
-  try {
-    const parsed = JSON.parse(value) as Array<{
-      questionId: string;
-      selectedIndex: number;
-    }>;
-
-    return parsed.reduce<Partial<Record<string, number>>>((result, item) => {
-      if (item && typeof item.questionId === "string" && typeof item.selectedIndex === "number") {
-        result[item.questionId] = item.selectedIndex;
-      }
-      return result;
-    }, {});
-  } catch {
-    return {};
-  }
-}
-
 function isLevelId(value: string): value is LevelId {
   return value === "level-1" || value === "level-2" || value === "level-3";
 }
 
 export function parseLevelId(value: string) {
   if (!isLevelId(value)) {
-    throw new HttpError(400, "鍏冲崱缂栧彿鏃犳晥銆?);
+    throw new HttpError(400, "关卡编号无效。");
   }
 
   return value;
@@ -99,7 +72,7 @@ async function ensureStudentState(userId: string) {
           user_id, nickname, avatar_id, avatar_label, stage, class_name,
           base_points, starter_badges_json, last_visited_route, created_at, updated_at
         )
-        VALUES (?, NULL, NULL, NULL, NULL, '涓夊勾绾э紙2锛夌彮', 120, '["瑙傚療鍛樻柊鏄?]', '/student/home', ?, ?)
+        VALUES (?, NULL, NULL, NULL, NULL, '三年级（2）班', 120, '["观察员新星"]', '/student/home', ?, ?)
       `,
       userId,
       now,
@@ -238,14 +211,14 @@ export async function saveStudentProfile(
   const profile = await getStudentProfile(userId);
 
   if (!profile) {
-    throw new HttpError(500, "瀛︾敓璧勬枡淇濆瓨澶辫触銆?);
+    throw new HttpError(500, "学生资料保存失败。");
   }
 
   await logLearningRecord({
     userId,
     type: "profile_updated",
-    title: "瀹屾垚棣栨鍩虹淇℃伅琛ュ厖",
-    description: "鏄电О銆佸ご鍍忓拰瀛︽淇℃伅宸蹭繚瀛橈紝鍙户缁繘鍏ラ亾璺畨鍏ㄤ富棰樺涔犮€?,
+    title: "完成首次基础信息补充",
+    description: "昵称、头像和学段信息已保存，可继续进入道路安全主题学习。",
     route: "/student/profile-setup",
     dedupeKey: `record:profile:${userId}`,
   });
@@ -254,19 +227,30 @@ export async function saveStudentProfile(
 }
 
 export async function buildStudentProgress(userId: string): Promise<StudentProgress> {
-  const [profileRow, levelRows, submission, levelCatalog, themeTitle, examQuestions, rewardProgress] =
-    await Promise.all([
-      getStudentProfileRow(userId),
-      getLevelRows(userId),
-      getLatestExamSubmission(userId),
-      getLevelBlueprintsFromDb(),
-      getThemeTitle(),
-      getExamQuestionsFromDb(),
-      getStudentRewardProgress(userId),
-    ]);
+  const [
+    profileRow,
+    levelRows,
+    submission,
+    levelCatalog,
+    themeTitle,
+    examQuestions,
+    growthProfile,
+    learningRecords,
+    reviewedWrongQuestionIds,
+  ] = await Promise.all([
+    getStudentProfileRow(userId),
+    getLevelRows(userId),
+    getLatestExamSubmission(userId),
+    getLevelBlueprintsFromDb(),
+    getThemeTitle(),
+    getExamQuestionsFromDb(),
+    getGrowthProfile(userId),
+    getLearningRecords(userId, 200),
+    getReviewedQuestionIds(userId),
+  ]);
 
   if (!profileRow) {
-    throw new HttpError(404, "鏈壘鍒板鐢熸。妗堛€?);
+    throw new HttpError(404, "未找到学生档案。");
   }
 
   const completedLevels = levelRows.filter((row) => row.status === "completed");
@@ -276,7 +260,7 @@ export async function buildStudentProgress(userId: string): Promise<StudentProgr
     new Set([
       ...baseBadges,
       ...completedLevels.map((row) => levelBadgeMap[row.level_id]),
-      ...(submission && submission.score >= 80 ? ["閬撹矾瀹夊叏灏忓崼澹?] : []),
+      ...(submission && submission.score >= 80 ? ["道路安全小卫士"] : []),
     ]),
   );
   const points =
@@ -287,6 +271,20 @@ export async function buildStudentProgress(userId: string): Promise<StudentProgr
         ? EXAM_HIGH_SCORE_POINTS
         : EXAM_COMPLETION_POINTS
       : 0);
+  const studyDates = Array.from(
+    new Set(learningRecords.map((record) => record.createdAt.slice(0, 10))),
+  ).sort();
+  const claimedStreakDays = Array.from(
+    new Set(
+      (growthProfile?.history ?? [])
+        .filter((item) => item.sourceType === "streak_bonus")
+        .map((item) => {
+          const matched = item.title.match(/(\d+)/);
+          return matched ? Number(matched[1]) : null;
+        })
+        .filter((item): item is number => item !== null),
+    ),
+  ).sort((left, right) => left - right);
 
   const levelResults = completedLevels.reduce<Partial<Record<LevelId, LevelResult>>>(
     (resultMap, row) => {
@@ -334,13 +332,17 @@ export async function buildStudentProgress(userId: string): Promise<StudentProgr
       status: submission ? "completed" : allCompleted ? "available" : "locked",
       totalQuestions: examQuestions.length,
       score: submission?.score ?? null,
-      wrongQuestionIds: submission ? parseStringArray(submission.wrong_question_ids_json) : [],
-      studentAnswers: submission ? parseStudentAnswers(submission.answers_json) : {},
+      wrongQuestionIds: submission
+        ? (JSON.parse(submission.wrong_question_ids_json) as string[])
+        : [],
     },
-    rewardProgress,
+    rewardProgress: {
+      studyDates,
+      claimedStreakDays,
+      reviewedWrongQuestionIds,
+    },
   };
 }
-
 export async function startLevel(
   userId: string,
   levelId: LevelId,
@@ -360,11 +362,11 @@ export async function startLevel(
   );
 
   if (!row) {
-    throw new HttpError(404, "鏈壘鍒板叧鍗¤繘搴︺€?);
+    throw new HttpError(404, "未找到关卡进度。");
   }
 
   if (row.status === "locked") {
-    throw new HttpError(409, "褰撳墠鍏冲崱灏氭湭瑙ｉ攣銆?);
+    throw new HttpError(409, "当前关卡尚未解锁。");
   }
 
   if (row.status === "available") {
@@ -384,8 +386,8 @@ export async function startLevel(
     await logLearningRecord({
       userId,
       type: "level_started",
-      title: `寮€濮?{levelBlueprints.find((item) => item.id === levelId)?.title ?? levelId}`,
-      description: "绯荤粺宸茶褰曞綋鍓嶅叧鍗′綅缃紝绋嶅悗鍙€氳繃鈥滅户缁涔犫€濈洿鎺ヨ繑鍥炪€?,
+      title: `开始${levelBlueprints.find((item) => item.id === levelId)?.title ?? levelId}`,
+      description: "系统已记录当前关卡位置，稍后可通过“继续学习”直接返回。",
       route: `/student/theme/${THEME_ID}/level/${levelId}`,
       createdAt: startedAt,
       dedupeKey: `record:start:${userId}:${levelId}`,
@@ -415,11 +417,11 @@ export async function completeLevel(
   );
 
   if (!row) {
-    throw new HttpError(404, "鏈壘鍒板叧鍗¤繘搴︺€?);
+    throw new HttpError(404, "未找到关卡进度。");
   }
 
   if (row.status === "locked") {
-    throw new HttpError(409, "璇峰厛瀹屾垚鍓嶄竴鍏冲悗鍐嶈繘鍏ュ綋鍓嶅叧鍗°€?);
+    throw new HttpError(409, "请先完成前一关后再进入当前关卡。");
   }
 
   const now = new Date().toISOString();
@@ -492,11 +494,11 @@ export async function submitExam(
   const examQuestions = await getExamQuestionsFromDb();
 
   if (progress.exam.status === "locked") {
-    throw new HttpError(409, "璇峰厛瀹屾垚涓夊叧闂叧瀛︿範鍚庡啀鍙傚姞涓婚鑰冭瘯銆?);
+    throw new HttpError(409, "请先完成三关闯关学习后再参加主题考试。");
   }
 
   if (progress.exam.status === "completed") {
-    throw new HttpError(409, "涓婚鑰冭瘯宸插畬鎴愶紝鏈疆涓嶆敮鎸侀噸澶嶆彁浜ゃ€?);
+    throw new HttpError(409, "主题考试已完成，本轮不支持重复提交。");
   }
 
   const db = await getDb();
@@ -533,7 +535,3 @@ export async function submitExam(
   await syncProgressBasedGrowthEvents(userId);
   return buildStudentProgress(userId);
 }
-
-
-
-

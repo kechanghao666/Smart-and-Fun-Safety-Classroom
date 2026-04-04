@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AdminEditorStatusBar } from "../../components/AdminEditorStatusBar";
 import { questionBankManagementItems } from "../../data/mockData";
 import { fetchAdminQuestionBank, saveAdminQuestionBank } from "../../services/admin";
@@ -14,9 +14,10 @@ export function AdminQuestionBankPage() {
     fallbackData: questionBankManagementItems,
     enabled: canUseApi,
     fetcher: () => fetchAdminQuestionBank(state.authToken ?? ""),
-    saveHandler: (draftData, savedData) => saveAdminQuestionBank(state.authToken ?? "", draftData, savedData),
+    saveHandler: (draftData, savedData) =>
+      saveAdminQuestionBank(state.authToken ?? "", draftData, savedData),
     dependencies: [state.authToken],
-    fallbackMessage: "鏆傛椂鏃犳硶鑾峰彇棰樺簱鏁版嵁锛屽綋鍓嶇户缁娇鐢ㄩ缃唴瀹广€?,
+    fallbackMessage: "暂时无法获取题库数据，当前继续使用预置内容。",
   });
   const questions = editor.draftData;
   const themeOptions = useMemo(
@@ -109,11 +110,11 @@ export function AdminQuestionBankPage() {
     <div className="page-stack">
       <section className="hero-banner hero-banner--admin">
         <div>
-          <span className="hero-banner__eyebrow">棰樺簱绠＄悊</span>
-          <h1>鎸変富棰樼瓫閫夐鐩紝骞跺湪鍙充晶缁存姢閫夐」涓庤В鏋?/h1>
+          <span className="hero-banner__eyebrow">题库管理</span>
+          <h1>按主题筛选题目，并在右侧维护选项与解析</h1>
           <p>
-            杩欎竴椤典弗鏍煎搴旇鏄庝功涓殑鈥滈鐩垪琛?+ 缂栬緫闈㈡澘鈥濈粨鏋勶紝琛ラ綈涓婚绛涢€夈€?
-            閫夐」缂栬緫銆佹纭瓟妗堛€佽В鏋愬拰鍚敤鐘舵€併€?
+            这一页严格对应说明书中的“题目列表 + 编辑面板”结构，补齐主题筛选、
+            选项编辑、正确答案、解析和启用状态。
           </p>
         </div>
       </section>
@@ -133,39 +134,39 @@ export function AdminQuestionBankPage() {
 
       <section className="card-grid card-grid--three">
         <article className="surface-card stat-card admin-summary-card">
-          <span>棰樼洰鎬绘暟</span>
+          <span>题目总数</span>
           <strong>{questions.length}</strong>
-          <p>褰撳墠棰樺簱鍥寸粫閬撹矾瀹夊叏涓婚瀹㈣棰橈紝鍚屾椂棰勭暀鍚庣画涓婚鐨勮崏绋块鐩€?/p>
+          <p>当前题库围绕道路安全主题客观题，同时预留后续主题的草稿题目。</p>
         </article>
         <article className="surface-card stat-card admin-summary-card">
-          <span>鍚敤涓?/span>
+          <span>启用中</span>
           <strong>{enabledCount}</strong>
-          <p>鍚敤鐘舵€佸喅瀹氶鐩槸鍚﹁繘鍏ュ鐢熺姝ｅ紡鑰冭瘯娴佺▼銆?/p>
+          <p>启用状态决定题目是否进入学生端正式考试流程。</p>
         </article>
         <article className="surface-card stat-card admin-summary-card">
-          <span>鑽夌 / 鍥炵湅鑱斿姩</span>
+          <span>草稿 / 回看联动</span>
           <strong>
             {draftCount} / {linkedReviewCount}
           </strong>
-          <p>姣忛亾棰橀兘搴旀寚鍚戜竴涓槑纭殑澶嶄範鍏冲崱锛岄伩鍏嶉敊棰樻病鏈夊洖鐪嬪叆鍙ｃ€?/p>
+          <p>每道题都应指向一个明确的复习关卡，避免错题没有回看入口。</p>
         </article>
       </section>
 
       <section className="surface-card">
         <div className="section-block__header">
           <div>
-            <span className="section-block__eyebrow">绛涢€夊尯</span>
-            <h2>鍏堟寜涓婚鍒囨崲棰樼洰鑼冨洿</h2>
+            <span className="section-block__eyebrow">筛选区</span>
+            <h2>先按主题切换题目范围</h2>
           </div>
         </div>
         <div className="filter-bar filter-bar--admin">
           <label className="form-field">
-            <span>涓婚绛涢€?/span>
+            <span>主题筛选</span>
             <select
               value={selectedThemeId}
               onChange={(event) => setSelectedThemeId(event.target.value)}
             >
-              <option value="all">鍏ㄩ儴涓婚</option>
+              <option value="all">全部主题</option>
               {themeOptions.map((theme) => (
                 <option key={theme.id} value={theme.id}>
                   {theme.title}
@@ -174,8 +175,8 @@ export function AdminQuestionBankPage() {
             </select>
           </label>
           <article className="surface-card inline-summary-card">
-            <strong>{selectedThemeId === "all" ? "鍏ㄩ儴涓婚" : selectedQuestion?.themeTitle ?? "褰撳墠涓婚"}</strong>
-            <p>褰撳墠绛涢€夊悗鍏辨湁 {filteredQuestions.length} 閬撻銆?/p>
+            <strong>{selectedThemeId === "all" ? "全部主题" : selectedQuestion?.themeTitle ?? "当前主题"}</strong>
+            <p>当前筛选后共有 {filteredQuestions.length} 道题。</p>
           </article>
         </div>
       </section>
@@ -197,19 +198,19 @@ export function AdminQuestionBankPage() {
                 <div className="row-between">
                   <strong>{question.id}</strong>
                   <span className="surface-tag">
-                    {question.status === "enabled" ? "鍚敤涓? : "鑽夌"}
+                    {question.status === "enabled" ? "启用中" : "草稿"}
                   </span>
                 </div>
                 <p>{question.prompt}</p>
                 <span className="inline-note">
-                  {question.themeTitle} 路 鍥炵湅鍏冲崱锛歿question.reviewLevelId}
+                  {question.themeTitle} · 回看关卡：{question.reviewLevelId}
                 </span>
               </button>
             ))
           ) : (
             <article className="surface-card empty-state-card">
-              <strong>褰撳墠绛涢€変笅娌℃湁棰樼洰</strong>
-              <p>璇峰垏鎹㈠埌鍏朵粬涓婚锛屾垨绛夊緟鍚庣杩斿洖瀵瑰簲棰樺簱鍐呭銆?/p>
+              <strong>当前筛选下没有题目</strong>
+              <p>请切换到其他主题，或等待后端返回对应题库内容。</p>
             </article>
           )}
         </div>
@@ -217,19 +218,19 @@ export function AdminQuestionBankPage() {
         {selectedQuestion ? (
           <div className="page-stack">
             <article className="surface-card editor-panel">
-              <span className="section-block__eyebrow">缂栬緫闈㈡澘</span>
+              <span className="section-block__eyebrow">编辑面板</span>
               <h2>{selectedQuestion.id}</h2>
               <div className="chip-row">
                 <span className="surface-tag">{selectedQuestion.themeTitle}</span>
                 <span className="surface-tag">
-                  {selectedQuestion.status === "enabled" ? "鍚敤涓? : "鑽夌"}
+                  {selectedQuestion.status === "enabled" ? "启用中" : "草稿"}
                 </span>
                 <span className="surface-tag">{selectedQuestion.reviewLevelId}</span>
               </div>
 
               <div className="editor-grid">
                 <label className="form-field">
-                  <span>鎵€灞炰富棰?/span>
+                  <span>所属主题</span>
                   <select
                     value={selectedQuestion.themeId}
                     onChange={(event) => {
@@ -252,7 +253,7 @@ export function AdminQuestionBankPage() {
                 </label>
 
                 <label className="form-field">
-                  <span>鐘舵€?/span>
+                  <span>状态</span>
                   <select
                     value={selectedQuestion.status}
                     onChange={(event) =>
@@ -263,13 +264,13 @@ export function AdminQuestionBankPage() {
                       )
                     }
                   >
-                    <option value="enabled">鍚敤</option>
-                    <option value="draft">鑽夌</option>
+                    <option value="enabled">启用</option>
+                    <option value="draft">草稿</option>
                   </select>
                 </label>
 
                 <label className="form-field form-field--wide">
-                  <span>棰樺共</span>
+                  <span>题干</span>
                   <textarea
                     rows={3}
                     value={selectedQuestion.prompt}
@@ -280,11 +281,11 @@ export function AdminQuestionBankPage() {
                 </label>
 
                 <label className="form-field form-field--wide">
-                  <span>閫夐」璁剧疆</span>
+                  <span>选项设置</span>
                   <div className="option-editor-grid">
                     {selectedQuestion.options.map((option, optionIndex) => (
                       <label key={`${selectedQuestion.id}-${optionIndex}`} className="form-field">
-                        <span>閫夐」 {String.fromCharCode(65 + optionIndex)}</span>
+                        <span>选项 {String.fromCharCode(65 + optionIndex)}</span>
                         <input
                           value={option}
                           onChange={(event) =>
@@ -301,7 +302,7 @@ export function AdminQuestionBankPage() {
                 </label>
 
                 <label className="form-field">
-                  <span>姝ｇ‘绛旀</span>
+                  <span>正确答案</span>
                   <select
                     value={selectedQuestion.correctOptionIndex}
                     onChange={(event) =>
@@ -321,7 +322,7 @@ export function AdminQuestionBankPage() {
                 </label>
 
                 <label className="form-field">
-                  <span>鍥炵湅鍏冲崱</span>
+                  <span>回看关卡</span>
                   <select
                     value={selectedQuestion.reviewLevelId}
                     onChange={(event) =>
@@ -332,14 +333,14 @@ export function AdminQuestionBankPage() {
                       )
                     }
                   >
-                    <option value="level-1">绗竴鍏?/option>
-                    <option value="level-2">绗簩鍏?/option>
-                    <option value="level-3">绗笁鍏?/option>
+                    <option value="level-1">第一关</option>
+                    <option value="level-2">第二关</option>
+                    <option value="level-3">第三关</option>
                   </select>
                 </label>
 
                 <label className="form-field form-field--wide">
-                  <span>瑙ｆ瀽璇存槑</span>
+                  <span>解析说明</span>
                   <textarea
                     rows={4}
                     value={selectedQuestion.explanation}
@@ -353,7 +354,7 @@ export function AdminQuestionBankPage() {
 
             <section className="card-grid card-grid--two">
               <article className="surface-card admin-preview-card admin-preview-card--question">
-                <span className="section-block__eyebrow">瀛︾敓绔闈㈤瑙?/span>
+                <span className="section-block__eyebrow">学生端题面预览</span>
                 <h3>{selectedQuestion.prompt}</h3>
                 <div className="page-stack page-stack--compact">
                   {selectedQuestion.options.map((option, optionIndex) => (
@@ -374,17 +375,17 @@ export function AdminQuestionBankPage() {
 
               <div className="page-stack">
                 <article className="surface-card admin-preview-card">
-                  <span className="section-block__eyebrow">閿欓鍥炵湅棰勮</span>
+                  <span className="section-block__eyebrow">错题回看预览</span>
                   <p>{selectedQuestion.explanation}</p>
-                  <span className="surface-tag">寤鸿鍥炵湅锛歿selectedQuestion.reviewLevelId}</span>
+                  <span className="surface-tag">建议回看：{selectedQuestion.reviewLevelId}</span>
                 </article>
 
                 <article className="surface-card admin-preview-card">
-                  <span className="section-block__eyebrow">鍑洪鎻愰啋</span>
+                  <span className="section-block__eyebrow">出题提醒</span>
                   <ul className="plain-list">
-                    <li>纭繚瑙ｆ瀽鍜屽洖鐪嬪叧鍗′繚鎸佷竴鑷淬€?/li>
-                    <li>濡傛灉棰樼洰鏀规垚鑽夌锛屽缓璁悓姝ュ噯澶囨浛浠ｉ銆?/li>
-                    <li>鑰冭瘯缁撴灉椤靛拰閿欓椤典細鐩存帴娑堣垂杩欓噷鐨勯€夐」涓庤В鏋愬唴瀹广€?/li>
+                    <li>确保解析和回看关卡保持一致。</li>
+                    <li>如果题目改成草稿，建议同步准备替代题。</li>
+                    <li>考试结果页和错题页会直接消费这里的选项与解析内容。</li>
                   </ul>
                 </article>
               </div>
@@ -392,13 +393,11 @@ export function AdminQuestionBankPage() {
           </div>
         ) : (
           <article className="surface-card empty-state-card">
-            <strong>璇烽€夋嫨涓€閬撻</strong>
-            <p>宸︿晶閫変腑棰樼洰鍚庯紝灏卞彲浠ョ淮鎶ゆ墍灞炰富棰樸€侀€夐」銆佺瓟妗堛€佽В鏋愬拰鍥炵湅鍏冲崱銆?/p>
+            <strong>请选择一道题</strong>
+            <p>左侧选中题目后，就可以维护所属主题、选项、答案、解析和回看关卡。</p>
           </article>
         )}
       </section>
     </div>
   );
 }
-
-

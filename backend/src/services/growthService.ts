@@ -1,4 +1,4 @@
-﻿import { randomUUID } from "crypto";
+import { randomUUID } from "crypto";
 import { levelBlueprints } from "../constants/content";
 import { defaultGrowthConfig } from "../constants/growth";
 import { getDb } from "../db/connection";
@@ -16,9 +16,7 @@ import type {
   LevelId,
   LevelProgressRow,
   StudentGrowthProfileRow,
-  StudentRewardProgress,
 } from "../types/contracts";
-import { HttpError } from "../utils/httpError";
 
 interface UnlockTier {
   threshold: number;
@@ -446,8 +444,8 @@ export async function syncProgressBasedGrowthEvents(userId: string) {
       userId,
       sourceType: "level_completed",
       sourceRef: row.level_id,
-      title: `瀹屾垚${levelBlueprints.find((item) => item.id === row.level_id)?.title ?? row.level_id}`,
-      description: "瀹屾垚鍏冲崱鍚庯紝铏氭嫙浜虹墿鑾峰緱浜嗘柊鐨勬垚闀垮€煎鍔便€?,
+      title: `完成${levelBlueprints.find((item) => item.id === row.level_id)?.title ?? row.level_id}`,
+      description: "完成关卡后，虚拟人物获得了新的成长值奖励。",
       award: buildLevelAward(config, row.level_id, row.stars),
       createdAt: row.completed_at ?? row.updated_at,
       dedupeKey: `growth:level:${userId}:${row.level_id}`,
@@ -456,8 +454,8 @@ export async function syncProgressBasedGrowthEvents(userId: string) {
     await logLearningRecord({
       userId,
       type: "level_completed",
-      title: `瀹屾垚${levelBlueprints.find((item) => item.id === row.level_id)?.title ?? row.level_id}`,
-      description: "宸茶褰曟湰鍏冲緱鍒嗐€佹槦绾у拰鎴愰暱濂栧姳銆?,
+      title: `完成${levelBlueprints.find((item) => item.id === row.level_id)?.title ?? row.level_id}`,
+      description: "已记录本关得分、星级和成长奖励。",
       route: `/student/theme/road-safety/level/${row.level_id}/result`,
       createdAt: row.completed_at ?? row.updated_at,
       dedupeKey: `record:level:${userId}:${row.level_id}`,
@@ -480,8 +478,8 @@ export async function syncProgressBasedGrowthEvents(userId: string) {
       userId,
       sourceType: "exam_completed",
       sourceRef: latestExam.id,
-      title: "瀹屾垚閬撹矾瀹夊叏涓婚鑰冭瘯",
-      description: `鑰冭瘯鎴愮哗 ${latestExam.score} 鍒嗭紝宸茶鍏ヤ汉鐗╂垚闀垮€笺€俙,
+      title: "完成道路安全主题考试",
+      description: `考试成绩 ${latestExam.score} 分，已计入人物成长值。`,
       award: buildExamAward(config, latestExam.score),
       createdAt: latestExam.submitted_at,
       dedupeKey: `growth:exam:${userId}:${latestExam.id}`,
@@ -490,8 +488,8 @@ export async function syncProgressBasedGrowthEvents(userId: string) {
     await logLearningRecord({
       userId,
       type: "exam_completed",
-      title: "瀹屾垚閬撹矾瀹夊叏涓婚鑰冭瘯",
-      description: `鏈鑰冭瘯寰楀垎 ${latestExam.score} 鍒嗐€俙,
+      title: "完成道路安全主题考试",
+      description: `本次考试得分 ${latestExam.score} 分。`,
       route: "/student/theme/road-safety/exam",
       createdAt: latestExam.submitted_at,
       dedupeKey: `record:exam:${userId}:${latestExam.id}`,
@@ -507,8 +505,8 @@ export async function syncProgressBasedGrowthEvents(userId: string) {
     await logLearningRecord({
       userId,
       type: "exam_unlocked",
-      title: "宸茶В閿侀亾璺畨鍏ㄤ富棰樿€冭瘯",
-      description: "涓夊叧闂叧瀛︿範宸插叏閮ㄥ畬鎴愶紝鍙互杩涘叆涓婚鑰冭瘯銆?,
+      title: "已解锁道路安全主题考试",
+      description: "三关闯关学习已全部完成，可以进入主题考试。",
       route: "/student/theme/road-safety",
       createdAt,
       dedupeKey: `record:exam-unlock:${userId}`,
@@ -562,8 +560,8 @@ export async function recordStudentLogin(userId: string) {
   await logLearningRecord({
     userId,
     type: "login",
-    title: "杩涘叆瀛︿範绯荤粺",
-    description: `浠婂ぉ鏄繛缁涔犵 ${nextStreak} 澶┿€俙,
+    title: "进入学习系统",
+    description: `今天是连续学习第 ${nextStreak} 天。`,
     route: "/student/home",
     dedupeKey: `record:login:${userId}:${today}`,
   });
@@ -574,8 +572,8 @@ export async function recordStudentLogin(userId: string) {
       userId,
       sourceType: "streak_bonus",
       sourceRef: `${nextStreak}-day:${today}`,
-      title: `杩炵画 ${nextStreak} 澶╁涔犲鍔盽,
-      description: `宸查鍙栬繛缁?${nextStreak} 澶╃櫥褰曞涔犵殑鎴愰暱鍊肩ぜ鍖呫€俙,
+      title: `连续 ${nextStreak} 天学习奖励`,
+      description: `已领取连续 ${nextStreak} 天登录学习的成长值礼包。`,
       award,
       dedupeKey: `growth:streak:${userId}:${nextStreak}:${today}`,
     });
@@ -584,8 +582,8 @@ export async function recordStudentLogin(userId: string) {
       await logLearningRecord({
         userId,
         type: "growth_reward",
-        title: `鑾峰緱杩炵画 ${nextStreak} 澶╁涔犲鍔盽,
-        description: `宸茶拷鍔?${award.points} 鐐规垚闀垮€笺€俙,
+        title: `获得连续 ${nextStreak} 天学习奖励`,
+        description: `已追加 ${award.points} 点成长值。`,
         route: "/student/growth",
         dedupeKey: `record:streak:${userId}:${nextStreak}:${today}`,
       });
@@ -626,8 +624,8 @@ export async function completeWrongQuestionReview(userId: string, questionId: st
       userId,
       sourceType: "wrong_question_review",
       sourceRef: questionId,
-      title: "瀹屾垚閿欓閲嶅",
-      description: "宸插畬鎴愪竴閬撻敊棰樺搴旂煡璇嗙偣鐨勫洖椤句换鍔°€?,
+      title: "完成错题重学",
+      description: "已完成一道错题对应知识点的回顾任务。",
       award,
       createdAt: now,
       dedupeKey: `growth:review:${userId}:${questionId}`,
@@ -636,8 +634,8 @@ export async function completeWrongQuestionReview(userId: string, questionId: st
     await logLearningRecord({
       userId,
       type: "wrong_question_reviewed",
-      title: "瀹屾垚閿欓瀵瑰簲鐭ヨ瘑鐐归噸瀛?,
-      description: `宸茶拷鍔?${award.points} 鐐规垚闀垮€硷紝骞跺缓璁户缁珐鍥哄悓绫荤煡璇嗙偣銆俙,
+      title: "完成错题对应知识点重学",
+      description: `已追加 ${award.points} 点成长值，并建议继续巩固同类知识点。`,
       route: "/student/records",
       createdAt: now,
       dedupeKey: `record:review:${userId}:${questionId}`,
@@ -731,19 +729,19 @@ export async function getGrowthProfile(userId: string) {
 
   const appearanceDimension = buildDimension(
     "appearance",
-    "褰㈣薄澶栬",
+    "形象外观",
     profile.appearance_points,
     config.appearanceThresholds,
   );
   const safetyDimension = buildDimension(
     "safety",
-    "瀹夊叏鑳藉姏",
+    "安全能力",
     profile.safety_points,
     config.safetyThresholds,
   );
   const sceneDimension = buildDimension(
     "scene",
-    "涓撳睘鍦烘櫙",
+    "专属场景",
     profile.scene_points,
     config.sceneThresholds,
   );
@@ -764,6 +762,7 @@ export async function getGrowthProfile(userId: string) {
     ),
     nextLevelTarget: nextStage?.threshold ?? null,
     nextLevelRemaining: nextStage ? nextStage.threshold - profile.total_points : null,
+    nextLevelLabel: nextStage?.label ?? null,
     stage,
     history: events.map<GrowthHistoryItem>((event) => ({
       id: event.id,
@@ -804,91 +803,6 @@ export async function getReviewedQuestionMap(userId: string) {
   return new Map(rows.map((row) => [row.question_id, row.reviewed_at]));
 }
 
-export async function getStudentRewardProgress(
-  userId: string,
-): Promise<StudentRewardProgress> {
-  const db = await getDb();
-  const [reviewedWrongQuestionIds, studyDateRows, streakRows] = await Promise.all([
-    getReviewedQuestionIds(userId),
-    db.all<Array<{ study_date: string }>>(
-      `
-        SELECT SUBSTR(created_at, 1, 10) AS study_date
-        FROM learning_records
-        WHERE user_id = ? AND record_type = 'login'
-        GROUP BY SUBSTR(created_at, 1, 10)
-        ORDER BY study_date ASC
-      `,
-      userId,
-    ),
-    db.all<Array<{ source_ref: string | null }>>(
-      `
-        SELECT source_ref
-        FROM growth_events
-        WHERE user_id = ? AND source_type = 'streak_bonus'
-      `,
-      userId,
-    ),
-  ]);
-
-  const claimedStreakDays = Array.from(
-    new Set(
-      streakRows
-        .map((row) => Number(String(row.source_ref ?? '').split('-')[0]))
-        .filter((value) => value === 3 || value === 7),
-    ),
-  ).sort((left, right) => left - right);
-
-  return {
-    studyDates: studyDateRows.map((row) => row.study_date),
-    claimedStreakDays,
-    reviewedWrongQuestionIds,
-  };
-}
-
-export async function updateStudentGrowthSelections(
-  userId: string,
-  input: { appearance?: string | null; scene?: string | null },
-) {
-  await ensureStudentGrowthProfile(userId);
-  const growth = await getGrowthProfile(userId);
-
-  if (!growth) {
-    throw new HttpError(404, "未找到学生成长档案。");
-  }
-
-  const nextAppearance =
-    typeof input.appearance === 'string' && input.appearance.trim()
-      ? input.appearance.trim()
-      : growth.profile.selected_appearance;
-  const nextScene =
-    typeof input.scene === 'string' && input.scene.trim()
-      ? input.scene.trim()
-      : growth.profile.selected_scene;
-
-  if (!growth.unlockedAppearances.includes(nextAppearance)) {
-    throw new HttpError(400, '当前外观尚未解锁，无法保存。');
-  }
-
-  if (!growth.unlockedScenes.includes(nextScene)) {
-    throw new HttpError(400, '当前场景尚未解锁，无法保存。');
-  }
-
-  const db = await getDb();
-  await db.run(
-    `
-      UPDATE student_growth_profiles
-      SET selected_appearance = ?, selected_scene = ?, updated_at = ?
-      WHERE user_id = ?
-    `,
-    nextAppearance,
-    nextScene,
-    new Date().toISOString(),
-    userId,
-  );
-
-  await syncStudentGrowthProfile(userId);
-}
-
 export async function getUserLearningRecordMeta(userId: string) {
   const db = await getDb();
   const rows = await db.all<LearningRecordRow[]>(
@@ -907,4 +821,3 @@ export async function getUserLearningRecordMeta(userId: string) {
     meta: parseMetaJson(row.meta_json),
   }));
 }
-

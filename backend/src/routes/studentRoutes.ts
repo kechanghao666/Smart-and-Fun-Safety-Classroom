@@ -15,11 +15,10 @@ import {
   getStudentGrowth,
   getStudentRecords,
 } from "../services/studentInsightsService";
-import { updateStudentGrowthSelections } from "../services/growthService";
 import { HttpError } from "../utils/httpError";
 
 export const studentRouter = Router();
-const studentStages = new Set(["灏忓浣庢", "灏忓涓", "灏忓楂樻"]);
+const studentStages = new Set(["小学低段", "小学中段", "小学高段"]);
 
 studentRouter.use(requireRole("student"));
 
@@ -68,18 +67,6 @@ studentRouter.get("/growth", async (request, response, next) => {
   }
 });
 
-studentRouter.put("/growth/preferences", async (request, response, next) => {
-  try {
-    await updateStudentGrowthSelections(request.authUser!.id, {
-      appearance:
-        typeof request.body?.appearance === "string" ? request.body.appearance : null,
-      scene: typeof request.body?.scene === "string" ? request.body.scene : null,
-    });
-    response.json(await getStudentGrowth(request.authUser!.id));
-  } catch (error) {
-    next(error);
-  }
-});
 studentRouter.get("/ai-report", async (request, response, next) => {
   try {
     response.json(await getStudentAiReport(request.authUser!.id));
@@ -102,7 +89,7 @@ studentRouter.post("/profile", async (request, response, next) => {
       typeof stage !== "string" ||
       !studentStages.has(stage)
     ) {
-      throw new HttpError(400, "瀛︾敓璧勬枡瀛楁涓嶅畬鏁淬€?);
+      throw new HttpError(400, "学生资料字段不完整。");
     }
 
     response.json(
@@ -110,7 +97,7 @@ studentRouter.post("/profile", async (request, response, next) => {
         nickname,
         avatarId,
         avatarLabel,
-        stage: stage as "灏忓浣庢" | "灏忓涓" | "灏忓楂樻",
+        stage: stage as "小学低段" | "小学中段" | "小学高段",
       }),
     );
   } catch (error) {
@@ -147,4 +134,3 @@ studentRouter.post("/exam/submit", async (request, response, next) => {
     next(error);
   }
 });
-

@@ -1,4 +1,4 @@
-﻿export type UserRole = "student" | "teacher" | "admin";
+export type UserRole = "student" | "teacher" | "admin";
 export type AdminUserStatus = "active" | "paused";
 export type LearningStatus =
   | "locked"
@@ -6,7 +6,7 @@ export type LearningStatus =
   | "in_progress"
   | "completed";
 export type LevelId = "level-1" | "level-2" | "level-3";
-export type StudentStage = "灏忓浣庢" | "灏忓涓" | "灏忓楂樻";
+export type StudentStage = "小学低段" | "小学中段" | "小学高段";
 export type ThemeAccent = "sky" | "mint" | "orange";
 export type GrowthDimensionId = "appearance" | "safety" | "scene";
 export type LearningRecordType =

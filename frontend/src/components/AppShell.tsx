@@ -1,4 +1,4 @@
-﻿import {
+import {
   useCallback,
   useEffect,
   useMemo,
@@ -12,10 +12,7 @@ import { ApiError } from "../services/http";
 import { fetchStudentProgress } from "../services/student";
 import { useAppState } from "../state/AppState";
 import type { UserRole } from "../types";
-import {
-  buildGrowthSnapshot,
-  buildGrowthUpgradeEncouragement,
-} from "../utils/studentGrowth";
+import { buildGrowthSnapshot } from "../utils/studentGrowth";
 import { usePersistedState } from "../utils/usePersistedState";
 
 interface NavItem {
@@ -35,110 +32,110 @@ interface BreadcrumbItem {
 
 const navByRole: Record<UserRole, NavItem[]> = {
   student: [
-    { to: "/student/home", label: "棣栭〉" },
-    { to: "/student/theme/road-safety", label: "涓婚瀛︿範" },
-    { to: "/student/records", label: "瀛︿範璁板綍" },
-    { to: "/student/growth", label: "鎴愰暱妗ｆ" },
-    { to: "/student/ai", label: "AI 鍔╂墜" },
+    { to: "/student/home", label: "首页" },
+    { to: "/student/theme/road-safety", label: "主题学习" },
+    { to: "/student/records", label: "学习记录" },
+    { to: "/student/growth", label: "成长档案" },
+    { to: "/student/ai", label: "AI 助手" },
   ],
   teacher: [
-    { to: "/teacher/dashboard", label: "鏁欏鎬昏" },
-    { to: "/teacher/classes", label: "鐝骇姒傝" },
-    { to: "/teacher/students", label: "瀛︾敓鍒楄〃" },
+    { to: "/teacher/dashboard", label: "教学总览" },
+    { to: "/teacher/classes", label: "班级概览" },
+    { to: "/teacher/students", label: "学生列表" },
   ],
   admin: [
-    { to: "/admin/dashboard", label: "鍚庡彴棣栭〉" },
-    { to: "/admin/themes", label: "涓婚绠＄悊" },
-    { to: "/admin/levels", label: "鍏冲崱鍐呭" },
-    { to: "/admin/question-bank", label: "棰樺簱绠＄悊" },
-    { to: "/admin/ai-copy", label: "AI 鏂囨" },
-    { to: "/admin/users", label: "鐢ㄦ埛绠＄悊" },
-    { to: "/admin/stats", label: "鏁版嵁缁熻" },
+    { to: "/admin/dashboard", label: "后台首页" },
+    { to: "/admin/themes", label: "主题管理" },
+    { to: "/admin/levels", label: "关卡内容" },
+    { to: "/admin/question-bank", label: "题库管理" },
+    { to: "/admin/ai-copy", label: "AI 文案" },
+    { to: "/admin/users", label: "用户管理" },
+    { to: "/admin/stats", label: "数据统计" },
   ],
 };
 
 const roleNameMap: Record<UserRole, string> = {
-  student: "瀛︾敓瀛︿範绔?,
-  teacher: "鏁欏笀鏌ョ湅绔?,
-  admin: "绠＄悊鍛樺悗鍙?,
+  student: "学生学习端",
+  teacher: "教师查看端",
+  admin: "管理员后台",
 };
 
 function resolvePageMeta(role: UserRole, pathname: string): PageMeta {
   if (role === "student") {
     if (pathname === "/student/home") {
       return {
-        title: "瀛︿範棣栭〉",
-        description: "娆㈣繋鍖恒€佷富棰樺涔犲尯銆佸涔犳瑙堝尯鍜?AI 娴獥缁熶竴鍦ㄨ繖閲屼覆璧蜂粖澶╃殑瀛︿範鍏ュ彛銆?,
+        title: "学习首页",
+        description: "欢迎区、主题学习区、学习概览区和 AI 浮窗统一在这里串起今天的学习入口。",
       };
     }
 
     if (pathname === "/student/theme/road-safety") {
       return {
-        title: "閬撹矾瀹夊叏鏁欒偛",
-        description: "鎸夆€滀笁鍏冲涔?- 涓婚鑰冭瘯 - 缁撴灉鍙嶉鈥濈殑姝ｅ紡娴佺▼鎺ㄨ繘鏁磋妭涓婚璇俱€?,
+        title: "道路安全教育",
+        description: "按“三关学习 - 主题考试 - 结果反馈”的正式流程推进整节主题课。",
       };
     }
 
     if (pathname.startsWith("/student/theme/road-safety/level/") && pathname.endsWith("/result")) {
       return {
-        title: "鍏冲崱缁撶畻椤?,
-        description: "闆嗕腑鏌ョ湅鏈叧寰楀垎銆佷寒鐐广€佹敞鎰忕偣銆佸鍔卞拰涓嬩竴姝ュ姩浣溿€?,
+        title: "关卡结算页",
+        description: "集中查看本关得分、亮点、注意点、奖励和下一步动作。",
       };
     }
 
     if (pathname.startsWith("/student/theme/road-safety/level/")) {
       return {
-        title: "鍏冲崱瀛︿範椤?,
-        description: "鎸夎鏄庝功瑕佹眰瀹屾垚鍦烘櫙浠诲姟銆佸湴鍥惧垽鏂垨鍑鸿瀹堟姢浠诲姟锛屽啀杩涘叆鐙珛缁撶畻椤点€?,
+        title: "关卡学习页",
+        description: "按说明书要求完成场景任务、地图判断或出行守护任务，再进入独立结算页。",
       };
     }
 
     if (pathname === "/student/theme/road-safety/exam") {
       return {
-        title: "涓婚鑰冭瘯",
-        description: "浣跨敤棰樺彿瀵艰埅銆佷笂涓€棰樸€佷笅涓€棰樺拰缁熶竴鎻愪氦瀹屾垚鏈疆鐭ヨ瘑妫€娴嬨€?,
+        title: "主题考试",
+        description: "使用题号导航、上一题、下一题和统一提交完成本轮知识检测。",
       };
     }
 
     if (pathname === "/student/theme/road-safety/exam/result") {
       return {
-        title: "鑰冭瘯缁撴灉椤?,
-        description: "闆嗕腑鏌ョ湅鑰冭瘯鍒嗘暟銆侀敊棰樻暟閲忋€佺粨鏋滃垎娴佸拰涓嬩竴姝ュ涔犲缓璁€?,
+        title: "考试结果页",
+        description: "集中查看考试分数、错题数量、结果分流和下一步复习建议。",
       };
     }
 
     if (pathname === "/student/theme/road-safety/wrong-questions") {
       return {
-        title: "閿欓鍥炵湅椤?,
-        description: "閫愰鍥炵湅閿欓銆佹纭瓟妗堛€佽В鏋愪笌寤鸿鍥炵湅鐨勫叧鍗″叆鍙ｃ€?,
+        title: "错题回看页",
+        description: "逐题回看错题、正确答案、解析与建议回看的关卡入口。",
       };
     }
 
     if (pathname === "/student/records") {
       return {
-        title: "瀛︿範璁板綍",
-        description: "鎶婂叧鍗＄粨绠椼€佽€冭瘯缁撴灉銆侀敊棰樺洖鐪嬪拰鎴愰暱蹇収鏀惧埌鍚屼竴鏉″涔犺建杩归噷銆?,
+        title: "学习记录",
+        description: "把关卡结算、考试结果、错题回看和成长快照放到同一条学习轨迹里。",
       };
     }
 
     if (pathname === "/student/growth") {
       return {
-        title: "鎴愰暱妗ｆ",
-        description: "灞曠ず鎴愰暱鍊笺€佷笁绫昏兘鍔涖€佸凡瑙ｉ攣鍐呭鍜屾垚闀胯建杩广€?,
+        title: "成长档案",
+        description: "展示成长值、三类能力、已解锁内容和成长轨迹。",
       };
     }
 
     if (pathname === "/student/ai") {
       return {
-        title: "AI 闂瓟椤?,
-        description: "鍥寸粫閬撹矾瀹夊叏涓婚杩涜杞婚噺闂瓟銆佹彁绀哄拰澶嶄範锛屼笉鎵╁睍寮€鏀捐亰澶╄兘鍔涖€?,
+        title: "AI 问答页",
+        description: "围绕道路安全主题进行轻量问答、提示和复习，不扩展开放聊天能力。",
       };
     }
 
     if (pathname === "/student/ai-report") {
       return {
-        title: "AI 缁撴灉鍗￠〉",
-        description: "鐢ㄦ暟鎹姞妯℃澘鐢熸垚鏈疆瀛︿範鎬荤粨銆侀噷绋嬬鍜屽悗缁姩浣溿€?,
+        title: "AI 结果卡页",
+        description: "用数据加模板生成本轮学习总结、里程碑和后续动作。",
       };
     }
   }
@@ -146,76 +143,76 @@ function resolvePageMeta(role: UserRole, pathname: string): PageMeta {
   if (role === "teacher") {
     if (pathname === "/teacher/dashboard") {
       return {
-        title: "鏁欏笀鏁欏鎬昏",
-        description: "鑱氬悎鐝骇瀛︿範鎬昏銆佷笁鍏冲畬鎴愮巼銆佽€冭瘯瀹屾垚鐜囧拰杩戞湡寮傚父鎻愰啋銆?,
+        title: "教师教学总览",
+        description: "聚合班级学习总览、三关完成率、考试完成率和近期异常提醒。",
       };
     }
 
     if (pathname === "/teacher/classes") {
       return {
-        title: "鐝骇姒傝",
-        description: "浠庣彮绾х矑搴︽煡鐪嬪畬鎴愮巼銆佽€冭瘯杩涘害鍜屾暀瀛﹀叧娉ㄧ偣銆?,
+        title: "班级概览",
+        description: "从班级粒度查看完成率、考试进度和教学关注点。",
       };
     }
 
     if (pathname.startsWith("/teacher/students/")) {
       return {
-        title: "瀛︾敓璇︽儏",
-        description: "鏌ョ湅鍏冲崱瀹屾垚鎯呭喌銆佽€冭瘯缁撴灉銆侀敊棰橀闄┿€佹垚闀跨姸鎬佸拰鏁欏寤鸿銆?,
+        title: "学生详情",
+        description: "查看关卡完成情况、考试结果、错题风险、成长状态和教学建议。",
       };
     }
 
     return {
-      title: "瀛︾敓鍒楄〃",
-      description: "缁熶竴绛涢€夊鐢熺姸鎬侊紝杩涘叆璇︽儏鏌ョ湅瀹屾暣瀛︿範闂幆鍜屽悗缁缓璁€?,
+      title: "学生列表",
+      description: "统一筛选学生状态，进入详情查看完整学习闭环和后续建议。",
     };
   }
 
   if (pathname === "/admin/dashboard") {
     return {
-      title: "鍚庡彴棣栭〉",
-      description: "缁熶竴杩涘叆涓婚绠＄悊銆佸叧鍗＄鐞嗐€侀搴撱€丄I 鏂囨銆佺敤鎴峰拰缁熻妯″潡銆?,
+      title: "后台首页",
+      description: "统一进入主题管理、关卡管理、题库、AI 文案、用户和统计模块。",
     };
   }
 
   if (pathname === "/admin/themes") {
     return {
-      title: "涓婚绠＄悊",
-      description: "缁存姢涓婚鍒楄〃銆佸睍绀虹姸鎬併€佸皝闈俊鎭拰棰勮鏁堟灉銆?,
+      title: "主题管理",
+      description: "维护主题列表、展示状态、封面信息和预览效果。",
     };
   }
 
   if (pathname === "/admin/levels") {
     return {
-      title: "鍏冲崱鍐呭绠＄悊",
-      description: "浠ュ弻鏍忓伐浣滃彴缁存姢鍏冲崱鍒楄〃銆佸満鏅厤缃拰濂栧姳鍙嶉銆?,
+      title: "关卡内容管理",
+      description: "以双栏工作台维护关卡列表、场景配置和奖励反馈。",
     };
   }
 
   if (pathname === "/admin/question-bank") {
     return {
-      title: "棰樺簱绠＄悊",
-      description: "缁熶竴缁存姢棰樼洰鍒楄〃銆佺瓟妗堛€佽В鏋愬拰澶嶄範鎸囧悜銆?,
+      title: "题库管理",
+      description: "统一维护题目列表、答案、解析和复习指向。",
     };
   }
 
   if (pathname === "/admin/ai-copy") {
     return {
-      title: "AI 鏂囨绠＄悊",
-      description: "鎸夊満鏅淮鎶ゆ杩庤銆佹彁绀鸿銆侀紦鍔辫鍜岀粨鏋滃崱妯℃澘銆?,
+      title: "AI 文案管理",
+      description: "按场景维护欢迎语、提示语、鼓励语和结果卡模板。",
     };
   }
 
   if (pathname === "/admin/users") {
     return {
-      title: "鐢ㄦ埛绠＄悊",
-      description: "鏌ョ湅璐﹀彿瑙掕壊銆佺姸鎬併€佹渶杩戞椿璺冩椂闂村拰澶囨敞璇存槑銆?,
+      title: "用户管理",
+      description: "查看账号角色、状态、最近活跃时间和备注说明。",
     };
   }
 
   return {
-    title: "鏁版嵁缁熻",
-    description: "鏌ョ湅璁块棶閲忋€佸畬鎴愮巼銆佽€冭瘯鎴愮哗鍜屽叧閿秼鍔挎寚鏍囥€?,
+    title: "数据统计",
+    description: "查看访问量、完成率、考试成绩和关键趋势指标。",
   };
 }
 
@@ -226,62 +223,62 @@ function resolveBreadcrumbs(role: UserRole, pathname: string): BreadcrumbItem[] 
 
   if (role === "teacher") {
     const breadcrumbs: BreadcrumbItem[] = [
-      { label: "鏁欏笀宸ヤ綔鍙?, to: "/teacher/dashboard" },
+      { label: "教师工作台", to: "/teacher/dashboard" },
     ];
 
     if (pathname === "/teacher/classes") {
-      breadcrumbs.push({ label: "鐝骇姒傝" });
+      breadcrumbs.push({ label: "班级概览" });
       return breadcrumbs;
     }
 
     if (pathname === "/teacher/students") {
-      breadcrumbs.push({ label: "瀛︾敓鍒楄〃" });
+      breadcrumbs.push({ label: "学生列表" });
       return breadcrumbs;
     }
 
     if (pathname.startsWith("/teacher/students/")) {
-      breadcrumbs.push({ label: "瀛︾敓鍒楄〃", to: "/teacher/students" });
-      breadcrumbs.push({ label: "瀛︾敓璇︽儏" });
+      breadcrumbs.push({ label: "学生列表", to: "/teacher/students" });
+      breadcrumbs.push({ label: "学生详情" });
       return breadcrumbs;
     }
 
-    breadcrumbs.push({ label: "鏁欏鎬昏" });
+    breadcrumbs.push({ label: "教学总览" });
     return breadcrumbs;
   }
 
-  const breadcrumbs: BreadcrumbItem[] = [{ label: "绠＄悊鍛樺悗鍙?, to: "/admin/dashboard" }];
+  const breadcrumbs: BreadcrumbItem[] = [{ label: "管理员后台", to: "/admin/dashboard" }];
 
   if (pathname === "/admin/themes") {
-    breadcrumbs.push({ label: "涓婚绠＄悊" });
+    breadcrumbs.push({ label: "主题管理" });
     return breadcrumbs;
   }
 
   if (pathname === "/admin/levels") {
-    breadcrumbs.push({ label: "鍏冲崱鍐呭绠＄悊" });
+    breadcrumbs.push({ label: "关卡内容管理" });
     return breadcrumbs;
   }
 
   if (pathname === "/admin/question-bank") {
-    breadcrumbs.push({ label: "棰樺簱绠＄悊" });
+    breadcrumbs.push({ label: "题库管理" });
     return breadcrumbs;
   }
 
   if (pathname === "/admin/ai-copy") {
-    breadcrumbs.push({ label: "AI 鏂囨绠＄悊" });
+    breadcrumbs.push({ label: "AI 文案管理" });
     return breadcrumbs;
   }
 
   if (pathname === "/admin/users") {
-    breadcrumbs.push({ label: "鐢ㄦ埛绠＄悊" });
+    breadcrumbs.push({ label: "用户管理" });
     return breadcrumbs;
   }
 
   if (pathname === "/admin/stats") {
-    breadcrumbs.push({ label: "鏁版嵁缁熻" });
+    breadcrumbs.push({ label: "数据统计" });
     return breadcrumbs;
   }
 
-  breadcrumbs.push({ label: "鍚庡彴棣栭〉" });
+  breadcrumbs.push({ label: "后台首页" });
   return breadcrumbs;
 }
 
@@ -302,7 +299,7 @@ function WorkspaceHeader({
     <header className="workspace-header">
       <div className="workspace-header__copy">
         {breadcrumbs.length > 0 ? (
-          <nav className="workspace-breadcrumbs" aria-label="闈㈠寘灞戝鑸?>
+          <nav className="workspace-breadcrumbs" aria-label="面包屑导航">
             {breadcrumbs.map((item, index) => (
               <span key={`${item.label}-${index}`} className="workspace-breadcrumbs__item">
                 {item.to && index < breadcrumbs.length - 1 ? (
@@ -323,10 +320,10 @@ function WorkspaceHeader({
 
       <div className="workspace-header__actions">
         <span className="surface-tag">
-          {state.authSource === "api" ? "鏈嶅姟鏁版嵁妯″紡" : "棰勭疆鏁版嵁妯″紡"}
+          {state.authSource === "api" ? "服务数据模式" : "预置数据模式"}
         </span>
         <button type="button" className="ghost-button" onClick={onSignOut}>
-          閫€鍑虹櫥褰?
+          退出登录
         </button>
       </div>
     </header>
@@ -342,7 +339,7 @@ export function AppShell({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { recordStudyVisit, replaceProgress, resetDemo, signOut, state } = useAppState();
+  const { replaceProgress, resetDemo, signOut, state } = useAppState();
   const navItems = navByRole[role];
   const canSyncStudentProgress =
     role === "student" && state.authSource === "api" && Boolean(state.authToken);
@@ -352,7 +349,7 @@ export function AppShell({
   const [syncMessage, setSyncMessage] = useState("");
   const [lastSyncedAt, setLastSyncedAt] = useState("");
   const growthSnapshot = useMemo(
-    () => (role === "student" && state.authSource !== "api" ? buildGrowthSnapshot(state) : null),
+    () => (role === "student" ? buildGrowthSnapshot(state) : null),
     [role, state],
   );
   const [growthTierSeenMap, setGrowthTierSeenMap] = usePersistedState<
@@ -363,12 +360,6 @@ export function AppShell({
   useEffect(() => {
     lastVisitedRouteRef.current = state.progress.lastVisitedRoute;
   }, [state.progress.lastVisitedRoute]);
-
-  useEffect(() => {
-    if (role === "student") {
-      recordStudyVisit();
-    }
-  }, [recordStudyVisit, role]);
 
   const syncStudentProgress = useCallback(
     async (silent = false) => {
@@ -411,7 +402,7 @@ export function AppShell({
         setSyncMessage(
           error instanceof ApiError
             ? error.message
-            : "鏆傛椂鏃犳硶鏇存柊鏈€鏂板涔犺繘搴︼紝褰撳墠缁х画浣跨敤宸蹭繚瀛樼殑瀛︿範鐘舵€併€?,
+            : "暂时无法更新最新学习进度，当前继续使用已保存的学习状态。",
         );
       } finally {
         if (!silent && syncRequestRef.current === requestId) {
@@ -454,10 +445,10 @@ export function AppShell({
     }
 
     if (lastSyncedAt) {
-      return `鏈€杩戝悓姝ユ椂闂达細${lastSyncedAt}`;
+      return `最近同步时间：${lastSyncedAt}`;
     }
 
-    return "杩涘叆瀛︾敓绔悗浼氳嚜鍔ㄥ悜鍚庣鎷夊彇鏈€鏂板涔犺繘搴︺€?;
+    return "进入学生端后会自动向后端拉取最新学习进度。";
   }, [lastSyncedAt, syncMessage]);
 
   const pageMeta = useMemo(
@@ -495,6 +486,7 @@ export function AppShell({
     growthTierSeenMap,
     role,
     setGrowthTierSeenMap,
+    state.authSource,
     studentAccountKey,
   ]);
 
@@ -535,22 +527,22 @@ export function AppShell({
         <header className="student-shell__header">
           <div className="student-shell__topline">
             <div className="student-shell__brand">
-              <span className="student-shell__eyebrow">瀛︾敓瀛︿範绔?/span>
+              <span className="student-shell__eyebrow">学生学习端</span>
               <div>
-                <h1>鏅鸿叮瀹夊叏瀛﹀爞</h1>
-                <p>閬撹矾瀹夊叏鏁欒偛涓婚 路 杞婚噺 AI 鍔╁ 路 涓夊叧瀛︿範闂幆</p>
+                <h1>智趣安全学堂</h1>
+                <p>道路安全教育主题 · 轻量 AI 助学 · 三关学习闭环</p>
               </div>
             </div>
 
             <div className="student-shell__status">
               <div className="student-shell__status-card">
                 <span className="surface-tag">
-                  {state.authSource === "api" ? "鏈嶅姟鏁版嵁妯″紡" : "棰勭疆鏁版嵁妯″紡"}
+                  {state.authSource === "api" ? "服务数据模式" : "预置数据模式"}
                 </span>
-                <strong>{state.studentProfile?.nickname ?? "寰呭畬鍠勫鐢熻祫鏂?}</strong>
+                <strong>{state.studentProfile?.nickname ?? "待完善学生资料"}</strong>
                 <p>
-                  褰撳墠绉垎 {state.progress.points}
-                  {state.studentProfile ? ` 路 ${state.studentProfile.stage}` : ""}
+                  当前积分 {state.progress.points}
+                  {state.studentProfile ? ` · ${state.studentProfile.stage}` : ""}
                 </p>
               </div>
 
@@ -564,18 +556,18 @@ export function AppShell({
                     }}
                     disabled={isSyncing}
                   >
-                    {isSyncing ? "鍚屾涓?.." : "鍒锋柊杩涘害"}
+                    {isSyncing ? "同步中..." : "刷新进度"}
                   </button>
                 ) : null}
 
                 {state.authSource === "mock" ? (
                   <button type="button" className="ghost-button" onClick={resetDemo}>
-                    閲嶆柊寮€濮嬪涔?
+                    重新开始学习
                   </button>
                 ) : null}
 
                 <button type="button" className="ghost-button" onClick={handleSignOut}>
-                  閫€鍑虹櫥褰?
+                  退出登录
                 </button>
               </div>
             </div>
@@ -601,13 +593,13 @@ export function AppShell({
         <div className="student-shell__main">
           <section className="student-shell__titlebar">
             <div>
-              <span className="topbar__eyebrow">褰撳墠椤甸潰</span>
+              <span className="topbar__eyebrow">当前页面</span>
               <h2>{pageMeta.title}</h2>
               <p>{pageMeta.description}</p>
             </div>
             <div className="student-shell__titlebar-tags">
-              <span className="surface-tag">閬撹矾瀹夊叏涓婚闄愬畾</span>
-              <span className="surface-tag">淇濇寔鍚庣鎺ュ彛涓嶅彉</span>
+              <span className="surface-tag">道路安全主题限定</span>
+              <span className="surface-tag">保持后端接口不变</span>
             </div>
           </section>
 
@@ -617,11 +609,11 @@ export function AppShell({
             <article className="feedback-box">
               <div className="row-between">
                 <div>
-                  <strong>{isSyncing ? "姝ｅ湪鏇存柊瀛︿範杩涘害..." : "瀛︿範杩涘害宸叉帴鍏ユ湇鍔℃暟鎹?}</strong>
+                  <strong>{isSyncing ? "正在更新学习进度..." : "学习进度已接入服务数据"}</strong>
                   <p>{syncSummary}</p>
                 </div>
                 <span className="surface-tag">
-                  {isSyncing ? "鏇存柊涓? : lastSyncedAt ? "宸叉洿鏂? : "绛夊緟鏇存柊"}
+                  {isSyncing ? "更新中" : lastSyncedAt ? "已更新" : "等待更新"}
                 </span>
               </div>
             </article>
@@ -635,32 +627,28 @@ export function AppShell({
         {showGrowthUpgradeModal && growthSnapshot ? (
           <section className="overlay-modal-backdrop">
             <article className="surface-card overlay-modal">
-              <span className="section-block__eyebrow">鎴愰暱鍗囩骇鎻愰啋</span>
-              <h2>宸茶В閿佹柊鐨勬垚闀块樁娈碉細{growthSnapshot.currentTier.title}</h2>
+              <span className="section-block__eyebrow">成长升级提醒</span>
+              <h2>已解锁新的成长阶段：{growthSnapshot.currentTier.title}</h2>
               <p>{growthSnapshot.currentTier.description}</p>
               <ul className="plain-list">
-                <li>鏂板瑙傦細{growthSnapshot.currentTier.appearance}</li>
-                <li>鏂拌兘鍔涙爣绛撅細{growthSnapshot.currentTier.ability}</li>
-                <li>鏂板満鏅細{growthSnapshot.currentTier.scene}</li>
+                <li>新外观：{growthSnapshot.currentTier.appearance}</li>
+                <li>新能力标签：{growthSnapshot.currentTier.ability}</li>
+                <li>新场景：{growthSnapshot.currentTier.scene}</li>
               </ul>
-              <article className="feedback-box growth-upgrade-ai-box">
-                <strong>AI 榧撳姳璇?/strong>
-                <p>{buildGrowthUpgradeEncouragement(growthSnapshot)}</p>
-              </article>
               <div className="button-row">
                 <button
                   type="button"
                   className="ghost-button"
                   onClick={() => acknowledgeGrowthUpgrade(false)}
                 >
-                  绋嶅悗鏌ョ湅
+                  稍后查看
                 </button>
                 <button
                   type="button"
                   className="primary-button"
                   onClick={() => acknowledgeGrowthUpgrade(true)}
                 >
-                  鍘绘垚闀挎。妗堥〉
+                  去成长档案页
                 </button>
               </div>
             </article>
@@ -677,8 +665,8 @@ export function AppShell({
       <aside className="sidebar">
         <div className="brand-card">
           <span className="brand-card__eyebrow">Smart & Fun</span>
-          <h1>鏅鸿叮瀹夊叏瀛﹀爞</h1>
-          <p>浠ュ姛鑳借鏄庝功鍜岀晫闈㈣鏄庝功涓哄噯鐨勫瑙掕壊鍗忎綔鍘熷瀷銆?/p>
+          <h1>智趣安全学堂</h1>
+          <p>以功能说明书和界面说明书为准的多角色协作原型。</p>
         </div>
 
         <nav className="sidebar-nav">
@@ -697,13 +685,13 @@ export function AppShell({
 
         <div className="sidebar-footer">
           <div className="sidebar-role-card">
-            <span>褰撳墠韬唤</span>
+            <span>当前身份</span>
             <strong>{roleNameMap[role]}</strong>
-            <p>{state.authSource === "api" ? "褰撳墠浣跨敤鏈嶅姟鏁版嵁" : "褰撳墠浣跨敤棰勭疆鏁版嵁"}</p>
+            <p>{state.authSource === "api" ? "当前使用服务数据" : "当前使用预置数据"}</p>
           </div>
 
           <button type="button" className="ghost-button" onClick={handleSignOut}>
-            閫€鍑虹櫥褰?
+            退出登录
           </button>
         </div>
       </aside>
@@ -723,4 +711,3 @@ export function AppShell({
     </div>
   );
 }
-
