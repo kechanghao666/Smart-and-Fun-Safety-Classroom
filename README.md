@@ -35,7 +35,7 @@ VITE_API_BASE_URL=http://127.0.0.1:3001
 VITE_API_TIMEOUT_MS=8000
 ```
 
-不配置 `VITE_API_BASE_URL` 时，前端会回退到预置演示数据模式。
+不配置 `VITE_API_BASE_URL` 时，前端默认连接本地后端 `http://127.0.0.1:3001`。
 
 ### 后端
 
@@ -145,11 +145,12 @@ npm run build
 - 前端共享契约在 [docs/v1-contracts.md](docs/v1-contracts.md)。
 - 学生端在 API 模式下以 `GET /api/student/progress`、`GET /api/student/growth`、`GET /api/student/records`、`GET /api/student/ai-report` 为准，不再自行计算解锁、成长值和奖励。
 - 教师端使用后端提供的班级 CRUD、学生筛选和学生详情数据。
-- 管理员端的主题、关卡、题库、AI 文案、用户状态和成长规则均已设计为真实保存流；未配置后端时才回退到预置数据模式。
+- 管理员端的主题、关卡、题库、AI 文案、用户状态和成长规则均已设计为真实保存流；当前主线不再把失败静默回退为业务 mock 数据。
 
 ## 文档索引
 
 - [docs/backend-frontend-handoff.md](docs/backend-frontend-handoff.md)
 - [docs/v1-contracts.md](docs/v1-contracts.md)
 - [docs/collaboration-guide.md](docs/collaboration-guide.md)
+- [docs/main-quality-alignment-log.md](docs/main-quality-alignment-log.md)
 - [backend/README.md](backend/README.md)
