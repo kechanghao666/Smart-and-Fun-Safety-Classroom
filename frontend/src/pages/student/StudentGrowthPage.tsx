@@ -1,18 +1,29 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { GrowthCharacterShowcase } from "../../components/GrowthCharacterShowcase";
 import {
   fetchStudentGrowth,
   saveStudentGrowthPreferences,
 } from "../../services/student";
 import { useAppState } from "../../state/AppState";
 import type { StudentGrowthResponse } from "../../types";
-import { buildGrowthSnapshot, getGrowthSceneVisualClass } from "../../utils/studentGrowth";
+import { buildGrowthSnapshot } from "../../utils/studentGrowth";
 
 const avatarAccentMap = {
   "sunny-guard": "sky",
   "smart-scout": "mint",
   "brave-captain": "orange",
 } as const;
+
+function buildProgressWidth(growthData: StudentGrowthResponse) {
+  if (!growthData.nextLevelTarget || growthData.nextLevelRemaining === null) {
+    return "100%";
+  }
+
+  const completed = growthData.nextLevelTarget - growthData.nextLevelRemaining;
+  const percent = Math.round((completed / growthData.nextLevelTarget) * 100);
+  return `${Math.max(0, Math.min(100, percent))}%`;
+}
 
 export function StudentGrowthPage() {
   const navigate = useNavigate();
@@ -47,9 +58,13 @@ export function StudentGrowthPage() {
         currentUnlockLabel: item.label,
         nextUnlockLabel: null,
       })),
-      unlockedAppearances: fallbackGrowth.appearanceOptions.filter((item) => item.unlocked).map((item) => item.label),
+      unlockedAppearances: fallbackGrowth.appearanceOptions
+        .filter((item) => item.unlocked)
+        .map((item) => item.label),
       unlockedAbilityTags: [fallbackGrowth.currentTier.ability],
-      unlockedScenes: fallbackGrowth.sceneOptions.filter((item) => item.unlocked).map((item) => item.label),
+      unlockedScenes: fallbackGrowth.sceneOptions
+        .filter((item) => item.unlocked)
+        .map((item) => item.label),
       history: fallbackGrowth.journal.map((item) => ({
         id: item.id,
         sourceType: "level_completed",
@@ -108,7 +123,12 @@ export function StudentGrowthPage() {
     return () => {
       cancelled = true;
     };
-  }, [apiEnabled, state.authToken, state.progress.points, state.progress.rewardProgress.reviewedWrongQuestionIds.join("|")]);
+  }, [
+    apiEnabled,
+    state.authToken,
+    state.progress.points,
+    state.progress.rewardProgress.reviewedWrongQuestionIds.join("|"),
+  ]);
 
   async function handleSelection(type: "appearance" | "scene", value: string) {
     if (isSavingSelection) {
@@ -140,9 +160,16 @@ export function StudentGrowthPage() {
     }
   }
 
-  const sceneVisualClass = getGrowthSceneVisualClass(growthData.currentScene);
-  const appearanceOptions = Array.from(new Set([growthData.currentAppearance, ...growthData.unlockedAppearances]));
-  const sceneOptions = Array.from(new Set([growthData.currentScene, ...growthData.unlockedScenes]));
+  const appearanceOptions = Array.from(
+    new Set([growthData.currentAppearance, ...growthData.unlockedAppearances]),
+  );
+  const sceneOptions = Array.from(
+    new Set([growthData.currentScene, ...growthData.unlockedScenes]),
+  );
+  const completedLevels = state.progress.levels.filter(
+    (level) => level.status === "completed",
+  ).length;
+  const progressWidth = buildProgressWidth(growthData);
 
   return (
     <div className="page-stack">
@@ -158,7 +185,9 @@ export function StudentGrowthPage() {
             <div>
               <h1>{profile?.nickname ?? "安全学员"} 的成长档案</h1>
               <p className="student-summary__meta">
-                {profile ? `${profile.avatarLabel} · ${profile.stage}` : "完善资料后会获得更完整的成长档案展示"}
+                {profile
+                  ? `${profile.avatarLabel} · ${profile.stage}`
+                  : "完善资料后会获得更完整的成长档案展示"}
               </p>
             </div>
           </div>
@@ -177,15 +206,7 @@ export function StudentGrowthPage() {
               : "当前阶段内容已经全部点亮"}
           </p>
           <div className="growth-track">
-            <span
-              className="growth-track__fill"
-              style={{
-                width:
-                  growthData.nextLevelTarget && growthData.nextLevelRemaining !== null
-                    ? `${Math.max(0, Math.min(100, Math.round(((growthData.nextLevelTarget - growthData.nextLevelRemaining) / growthData.nextLevelTarget) * 100)))}%`
-                    : "100%",
-              }}
-            />
+            <span className="growth-track__fill" style={{ width: progressWidth }} />
           </div>
         </article>
       </section>
@@ -205,7 +226,9 @@ export function StudentGrowthPage() {
           <span className="section-block__eyebrow">成长概览</span>
           <h2>学习闭环带来的变化</h2>
           <ul className="plain-list">
-            <li>累计通关：{state.progress.levels.filter((level) => level.status === "completed").length} / {state.progress.levels.length} 关</li>
+            <li>
+              累计通关：{completedLevels} / {state.progress.levels.length} 关
+            </li>
             <li>考试成绩：{state.progress.exam.score ?? "尚未完成主题考试"}</li>
             <li>连续学习：{growthData.streakDays} 天</li>
             <li>下一个阶段：{growthData.nextLevelLabel ?? "当前已达到最高阶段"}</li>
@@ -216,8 +239,13 @@ export function StudentGrowthPage() {
           <span className="section-block__eyebrow">成长奖励</span>
           <h2>错题重学与连续学习</h2>
           <ul className="plain-list">
-            <li>已回看错题：{state.progress.rewardProgress.reviewedWrongQuestionIds.length} 题</li>
-            <li>已领取连续学习奖励：{state.progress.rewardProgress.claimedStreakDays.join(" / ") || "暂无"}</li>
+            <li>
+              已回看错题：{state.progress.rewardProgress.reviewedWrongQuestionIds.length} 题
+            </li>
+            <li>
+              已领取连续学习奖励：
+              {state.progress.rewardProgress.claimedStreakDays.join(" / ") || "暂无"}
+            </li>
             <li>当前积分累计：{state.progress.points}</li>
             <li>{isLoading ? "正在同步成长状态..." : "成长奖励会随学习表现自动更新。"}</li>
           </ul>
@@ -225,18 +253,17 @@ export function StudentGrowthPage() {
       </section>
 
       <section className="card-grid card-grid--two">
-        <article className="surface-card growth-showcase-card">
+        <article className="surface-card growth-showcase-card growth-showcase-card--hero">
           <span className="section-block__eyebrow">当前展示形态</span>
-          <h2>外观、能力与场景正在这样组合展示</h2>
-          <div className={`growth-showcase-card__preview ${sceneVisualClass}`}>
-            <strong>{growthData.currentAppearance}</strong>
-            <p>{growthData.currentScene}</p>
-          </div>
-          <div className="chip-row">
-            <span className="surface-tag">{growthData.stageLabel}</span>
-            <span className="surface-tag">{growthData.currentAbilityTag}</span>
-            <span className="surface-tag">{growthData.currentScene}</span>
-          </div>
+          <h2>人物外观、能力标签和场景同步展示</h2>
+          <GrowthCharacterShowcase
+            profile={profile}
+            nickname={growthData.characterName}
+            appearance={growthData.currentAppearance}
+            scene={growthData.currentScene}
+            abilityTag={growthData.currentAbilityTag}
+            stageLabel={growthData.stageLabel}
+          />
         </article>
 
         <article className="surface-card growth-showcase-card">
@@ -248,6 +275,11 @@ export function StudentGrowthPage() {
             <li>已解锁能力标签：{growthData.unlockedAbilityTags.join(" / ") || "暂无"}</li>
             <li>成长阶段、外观、能力和场景会随着学习推进自然点亮。</li>
           </ul>
+          <div className="chip-row">
+            <span className="surface-tag">{growthData.stageLabel}</span>
+            <span className="surface-tag">{growthData.currentAbilityTag}</span>
+            <span className="surface-tag">{growthData.currentScene}</span>
+          </div>
         </article>
       </section>
 
@@ -271,7 +303,11 @@ export function StudentGrowthPage() {
                 />
               </div>
               <p>当前解锁：{dimension.currentUnlockLabel}</p>
-              <p>{dimension.nextUnlockLabel ? `下一档：${dimension.nextUnlockLabel}` : "当前维度已达到最高档。"}</p>
+              <p>
+                {dimension.nextUnlockLabel
+                  ? `下一档：${dimension.nextUnlockLabel}`
+                  : "当前维度已达到最高档。"}
+              </p>
             </article>
           ))}
         </div>
@@ -291,18 +327,33 @@ export function StudentGrowthPage() {
             <div className="growth-choice-grid">
               {appearanceOptions.map((option) => {
                 const isSelected = option === growthData.currentAppearance;
+
                 return (
                   <button
                     key={option}
                     type="button"
-                    className={isSelected ? "growth-choice-card growth-choice-card--selected" : "growth-choice-card"}
+                    className={
+                      isSelected
+                        ? "growth-choice-card growth-choice-card--selected"
+                        : "growth-choice-card"
+                    }
                     disabled={isSelected || isSavingSelection}
                     onClick={() => {
                       void handleSelection("appearance", option);
                     }}
                   >
-                    <span className="growth-choice-card__status">{isSelected ? "当前使用" : "点击切换"}</span>
-                    <strong>{option}</strong>
+                    <span className="growth-choice-card__status">
+                      {isSelected ? "当前使用" : "点击切换"}
+                    </span>
+                    <GrowthCharacterShowcase
+                      profile={profile}
+                      nickname={growthData.characterName}
+                      appearance={option}
+                      scene={growthData.currentScene}
+                      abilityTag={growthData.currentAbilityTag}
+                      stageLabel={growthData.stageLabel}
+                      compact
+                    />
                     <span>已解锁外观展示</span>
                   </button>
                 );
@@ -315,18 +366,33 @@ export function StudentGrowthPage() {
             <div className="growth-choice-grid">
               {sceneOptions.map((option) => {
                 const isSelected = option === growthData.currentScene;
+
                 return (
                   <button
                     key={option}
                     type="button"
-                    className={isSelected ? "growth-choice-card growth-choice-card--selected" : "growth-choice-card"}
+                    className={
+                      isSelected
+                        ? "growth-choice-card growth-choice-card--selected"
+                        : "growth-choice-card"
+                    }
                     disabled={isSelected || isSavingSelection}
                     onClick={() => {
                       void handleSelection("scene", option);
                     }}
                   >
-                    <span className="growth-choice-card__status">{isSelected ? "当前使用" : "点击切换"}</span>
-                    <strong>{option}</strong>
+                    <span className="growth-choice-card__status">
+                      {isSelected ? "当前使用" : "点击切换"}
+                    </span>
+                    <GrowthCharacterShowcase
+                      profile={profile}
+                      nickname={growthData.characterName}
+                      appearance={growthData.currentAppearance}
+                      scene={option}
+                      abilityTag={growthData.currentAbilityTag}
+                      stageLabel={growthData.stageLabel}
+                      compact
+                    />
                     <span>已解锁场景展示</span>
                   </button>
                 );
@@ -347,7 +413,10 @@ export function StudentGrowthPage() {
         <div className="timeline-list">
           {growthData.history.length > 0 ? (
             growthData.history.map((item, index) => (
-              <article key={item.id} className={`timeline-item timeline-item--${index === 0 ? "current" : "done"}`}>
+              <article
+                key={item.id}
+                className={`timeline-item timeline-item--${index === 0 ? "current" : "done"}`}
+              >
                 <span className="timeline-item__dot" />
                 <div className="timeline-item__content">
                   <div className="row-between">
@@ -383,7 +452,13 @@ export function StudentGrowthPage() {
             </p>
           </article>
           <div className="button-row">
-            <button type="button" className="primary-button" onClick={() => navigate("/student/theme/road-safety")}>返回主题页</button>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => navigate("/student/theme/road-safety")}
+            >
+              返回主题页
+            </button>
             <Link className="ghost-button link-button" to="/student/records">
               查看学习记录
             </Link>

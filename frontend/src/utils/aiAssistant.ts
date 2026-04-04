@@ -1,6 +1,6 @@
-import { aiKnowledgeBase } from "../data/mockData";
+import { aiQuickPrompts } from "../data/aiQuickPrompts";
 import { chatWithStudentAi } from "../services/student";
-import type { AuthSource, LevelId } from "../types";
+import type { AiQuickPrompt, AuthSource, LevelId } from "../types";
 
 export interface AiChatMessage {
   id: string;
@@ -8,8 +8,8 @@ export interface AiChatMessage {
   text: string;
 }
 
-export function buildAiQuickPrompts(limit = 3) {
-  return aiKnowledgeBase.slice(0, limit);
+export function buildAiQuickPrompts(limit = 3): AiQuickPrompt[] {
+  return aiQuickPrompts.slice(0, limit);
 }
 
 interface ResolveAiReplyOptions {

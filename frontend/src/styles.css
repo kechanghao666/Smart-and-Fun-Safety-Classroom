@@ -2317,6 +2317,289 @@ button {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.growth-showcase-card--hero {
+  align-content: start;
+}
+
+.growth-character-card {
+  display: grid;
+  gap: 18px;
+}
+
+.growth-character-card--compact {
+  gap: 12px;
+}
+
+.growth-character-card__scene {
+  position: relative;
+  overflow: hidden;
+  border-radius: 26px;
+  min-height: 300px;
+  padding: 18px;
+  border: 1px solid rgba(38, 139, 210, 0.12);
+}
+
+.growth-character-card--compact .growth-character-card__scene {
+  min-height: 190px;
+  padding: 12px;
+  border-radius: 20px;
+}
+
+.growth-character-card__sky {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.4), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), transparent 44%);
+}
+
+.growth-character-card__road {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 10%;
+  height: 64px;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.9) 0 18%, transparent 18% 30%, rgba(255, 255, 255, 0.9) 30% 48%, transparent 48% 60%, rgba(255, 255, 255, 0.9) 60% 78%, transparent 78% 100%),
+    linear-gradient(180deg, rgba(28, 61, 86, 0.18), rgba(28, 61, 86, 0.1));
+  opacity: 0.85;
+}
+
+.growth-character-card--compact .growth-character-card__road {
+  height: 44px;
+}
+
+.growth-character-card__sign {
+  position: absolute;
+  bottom: 28%;
+  width: 18px;
+  height: 76px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.growth-character-card__sign::after {
+  content: "";
+  position: absolute;
+  left: -18px;
+  top: 0;
+  width: 54px;
+  height: 38px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 10px 20px rgba(20, 50, 74, 0.08);
+}
+
+.growth-character-card__sign--left {
+  left: 10%;
+}
+
+.growth-character-card__sign--right {
+  right: 12%;
+}
+
+.growth-character-card__figure {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 280px);
+  margin: 18px auto 0;
+  display: block;
+  filter: drop-shadow(0 18px 24px rgba(20, 50, 74, 0.16));
+}
+
+.growth-character-card--compact .growth-character-card__figure {
+  width: min(100%, 180px);
+  margin-top: 10px;
+}
+
+.growth-character-card__corner-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 10px 24px rgba(20, 50, 74, 0.1);
+}
+
+.growth-character-card__corner-badge span,
+.growth-character-card__eyebrow {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.growth-character-card__corner-badge strong {
+  font-size: 14px;
+}
+
+.growth-character-card__meta {
+  display: grid;
+  gap: 10px;
+}
+
+.growth-character-card__meta strong {
+  font-size: 24px;
+  color: var(--text);
+}
+
+.growth-character-card--compact .growth-character-card__meta strong {
+  font-size: 17px;
+}
+
+.growth-character-card--compact .growth-character-card__meta p {
+  font-size: 14px;
+}
+
+.teacher-compact-priority-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.teacher-student-list-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.teacher-student-list {
+  display: grid;
+  gap: 12px;
+  min-height: 640px;
+  align-content: start;
+}
+
+.teacher-student-row {
+  display: grid;
+  gap: 12px;
+  min-height: 138px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.teacher-student-row__identity,
+.teacher-student-row__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.teacher-student-row__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.teacher-student-row__weakspot {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.management-list-panel {
+  display: grid;
+  gap: 12px;
+  min-height: 720px;
+  align-content: start;
+}
+
+.management-list-card--compact {
+  min-height: 116px;
+  gap: 8px;
+}
+
+.management-list-card__title {
+  font-size: 16px;
+}
+
+.management-list-card__excerpt {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.management-list-card__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 6px;
+}
+
+.pagination-bar__summary {
+  display: grid;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.pagination-bar__summary strong {
+  color: var(--text);
+  font-size: 15px;
+}
+
+.pagination-bar__actions,
+.pagination-bar__pages {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pagination-button {
+  border-radius: 999px;
+  padding: 9px 14px;
+  border: 1px solid rgba(20, 50, 74, 0.12);
+  background: rgba(255, 255, 255, 0.86);
+  color: #214764;
+  font-size: 13px;
+  font-weight: 700;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.pagination-button:hover:not(:disabled) {
+  border-color: rgba(38, 139, 210, 0.24);
+  background: rgba(38, 139, 210, 0.08);
+}
+
+.pagination-button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.pagination-button--active {
+  border-color: rgba(38, 139, 210, 0.3);
+  background: linear-gradient(120deg, rgba(38, 139, 210, 0.16), rgba(24, 160, 111, 0.1));
+  color: var(--blue);
+}
+
+.empty-state-card--compact {
+  min-height: 180px;
+}
+
 .data-table__actions {
   display: flex;
   flex-wrap: wrap;
@@ -2342,11 +2625,34 @@ button {
   .class-management-layout,
   .route-map,
   .guardian-step-strip,
+  .teacher-compact-priority-grid,
   .guardian-inventory,
   .cover-preset-grid,
   .option-editor-grid,
   .filter-bar--admin,
   .filter-bar--teacher {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .teacher-student-row__identity,
+  .teacher-student-row__actions,
+  .pagination-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .teacher-student-list,
+  .management-list-panel {
+    min-height: auto;
+  }
+
+  .growth-character-card__scene {
+    min-height: 240px;
+  }
+
+  .growth-character-card__figure {
+    width: min(100%, 220px);
   }
 }

@@ -79,6 +79,13 @@ export interface AiKnowledgeItem {
   answer: string;
 }
 
+export interface AiQuickPrompt {
+  id: string;
+  label: string;
+  question: string;
+  topic: string;
+}
+
 export interface DemoAccount {
   account: string;
   password: string;
