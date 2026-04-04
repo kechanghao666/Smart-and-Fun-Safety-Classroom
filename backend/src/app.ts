@@ -8,13 +8,36 @@ import { studentRouter } from "./routes/studentRoutes";
 import { teacherRouter } from "./routes/teacherRoutes";
 import { HttpError } from "./utils/httpError";
 
-const allowedOrigins = env.corsOrigin.split(",").map((item) => item.trim());
+const configuredOrigins = env.corsOrigin
+  .split(",")
+  .map((item) => item.trim())
+  .filter(Boolean);
+const localDevOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
+
+function isAllowedOrigin(origin?: string) {
+  if (!origin) {
+    return true;
+  }
+
+  if (configuredOrigins.includes(origin)) {
+    return true;
+  }
+
+  return localDevOriginPattern.test(origin);
+}
 
 export const app = express();
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin(origin, callback) {
+      if (isAllowedOrigin(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new HttpError(403, "当前访问来源未被允许，请检查前端地址配置。"));
+    },
     credentials: false,
   }),
 );

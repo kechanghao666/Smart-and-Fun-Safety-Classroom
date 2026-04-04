@@ -22,7 +22,9 @@ function toNumber(value: string | undefined, fallback: number) {
 
 export const env = {
   port: toNumber(process.env.PORT, 3001),
-  corsOrigin: process.env.CORS_ORIGIN ?? "http://127.0.0.1:5173",
+  corsOrigin:
+    process.env.CORS_ORIGIN ??
+    "http://127.0.0.1:5173,http://localhost:5173",
   dbPath:
     process.env.DB_PATH ?? path.resolve(backendRoot, "data/smart-and-fun-safety-classroom.sqlite"),
   sessionTtlHours: toNumber(process.env.SESSION_TTL_HOURS, 72),

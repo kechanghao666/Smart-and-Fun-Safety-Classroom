@@ -43,7 +43,7 @@ VITE_API_TIMEOUT_MS=8000
 
 ```bash
 PORT=3001
-CORS_ORIGIN=http://127.0.0.1:5173
+CORS_ORIGIN=http://127.0.0.1:5173,http://localhost:5173
 DB_PATH=./data/smart-and-fun-safety-classroom.sqlite
 SESSION_TTL_HOURS=72
 SPARK_API_URL=https://spark-api-open.xf-yun.com/v1/chat/completions
@@ -89,6 +89,11 @@ npm run build
 
 - 前端：[http://127.0.0.1:5173](http://127.0.0.1:5173)
 - 后端健康检查：[http://127.0.0.1:3001/api/health](http://127.0.0.1:3001/api/health)
+
+本地开发建议：
+
+- 前端优先使用 [http://localhost:5173](http://localhost:5173) 或终端实际显示的 Vite 地址。
+- 如果 5173 被占用，Vite 可能自动切换到 `5174`、`5175` 等端口；后端现在默认允许本机 `localhost` 和 `127.0.0.1` 的开发端口访问。
 
 ## 测试入口
 
