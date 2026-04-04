@@ -1,11 +1,9 @@
 import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
-  demoAccounts,
-  teacherClassSummaries,
-  teacherStudents,
-} from "../../data/mockData";
-import { fetchTeacherDashboard } from "../../services/teacher";
+  fetchTeacherDashboard,
+  type TeacherDashboardResponse,
+} from "../../services/teacher";
 import { useAppState } from "../../state/AppState";
 import { useApiResource } from "../../utils/useApiResource";
 import { usePersistedState } from "../../utils/usePersistedState";
@@ -15,19 +13,20 @@ import {
   getTeacherAttentionLevel,
 } from "../../utils/teacherInsights";
 
-const fallbackDashboard = {
-  classSummaries: teacherClassSummaries,
-  students: teacherStudents,
+const fallbackDashboard: TeacherDashboardResponse = {
+  classSummaries: [],
+  students: [],
 };
 
 export function TeacherDashboardPage() {
   const { state } = useAppState();
-  const canUseApi = state.authSource === "api" && Boolean(state.authToken);
-  const { data, error, isLoading, source } = useApiResource({
+  const canUseApi = Boolean(state.authToken);
+  const { data, error, isLoading } = useApiResource({
     enabled: canUseApi,
     fallbackData: fallbackDashboard,
     fetcher: () => fetchTeacherDashboard(state.authToken ?? ""),
     dependencies: [state.authToken],
+    fallbackMessage: "教师端总览暂时无法同步，请稍后重试。",
   });
   const [selectedClassId, setSelectedClassId] = usePersistedState<string>(
     "teacher-dashboard-current-class",
@@ -73,11 +72,7 @@ export function TeacherDashboardPage() {
     filteredStudents,
     filteredClassSummaries,
   );
-  const teacherDisplayName =
-    demoAccounts.find(
-      (account) =>
-        account.account === state.sessionAccount && account.role === "teacher",
-    )?.displayName ?? "当前授课教师";
+  const teacherDisplayName = state.sessionAccount ?? "当前教师账号";
   const classLabel = selectedClass ? selectedClass.name : "全部班级";
   const completedRate =
     filteredStudents.length > 0
@@ -106,8 +101,8 @@ export function TeacherDashboardPage() {
           <h1>班级学习总览与近期关注提醒</h1>
           <p>优先展示班级学习概览、三关完成率、考试完成率和近期异常提醒。</p>
           <div className="chip-row">
-            <span className="surface-tag">教师姓名：{teacherDisplayName}</span>
-            <span className="surface-tag">当前班级：{classLabel}</span>
+            <span className="surface-tag">教师账号：{teacherDisplayName}</span>
+            <span className="surface-tag">当前范围：{classLabel}</span>
           </div>
         </div>
         <div className="hero-banner__actions hero-banner__actions--stacked">
@@ -137,11 +132,11 @@ export function TeacherDashboardPage() {
       </section>
 
       <article className="feedback-box">
-        <strong>{source === "api" ? "当前数据已同步更新" : "当前展示示例内容"}</strong>
+        <strong>{error ? "教师端数据同步失败" : "教师端数据已从后端加载"}</strong>
         <p>
           {isLoading
             ? "正在同步教师端数据..."
-            : error || "教师首页会根据当前数据来源自动更新班级总览。"}
+            : error || "教师首页会根据真实后端数据更新班级总览和关注提醒。"}
         </p>
       </article>
 
@@ -164,7 +159,7 @@ export function TeacherDashboardPage() {
         <article className="surface-card stat-card">
           <span>需重点跟进</span>
           <strong>{urgentCount}</strong>
-          <p>优先关注未形成完整闭环或薄弱点仍较高的学生。</p>
+          <p>优先关注尚未形成完整闭环或弱项仍较高的学生。</p>
         </article>
       </section>
 
@@ -195,7 +190,7 @@ export function TeacherDashboardPage() {
           ) : (
             <article className="feedback-box empty-state-card">
               <strong>当前没有班级概览数据</strong>
-              <p>等待班级统计更新后再继续查看，当前也可先参考总览结构。</p>
+              <p>等待班级统计同步完成后再继续查看。</p>
             </article>
           )}
         </article>
@@ -240,7 +235,7 @@ export function TeacherDashboardPage() {
           ) : (
             <article className="feedback-box empty-state-card">
               <strong>当前没有异常学生</strong>
-              <p>可以优先查看班级整体趋势，安排下一轮课堂复习重点。</p>
+              <p>可以先查看班级整体趋势，安排下一轮课堂复盘重点。</p>
             </article>
           )}
         </article>
@@ -255,7 +250,7 @@ export function TeacherDashboardPage() {
             <p>
               {classRiskSummary
                 ? `${classRiskSummary.focusLabel}，建议优先围绕三关未完成和考试未完成学生安排课后复习。`
-                    : "等待班级数据更新后，这里会自动汇总重点支持对象。"}
+                : "等待班级数据更新后，这里会自动汇总重点支持对象。"}
             </p>
           </article>
         </article>

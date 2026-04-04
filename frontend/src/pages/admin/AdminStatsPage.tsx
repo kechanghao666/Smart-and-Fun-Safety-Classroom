@@ -1,5 +1,4 @@
 ﻿import { AdminEditorStatusBar } from "../../components/AdminEditorStatusBar";
-import { adminStatMetrics, teacherClassSummaries } from "../../data/mockData";
 import {
   adminGrowthConfigFallback,
   fetchAdminGrowthConfig,
@@ -16,8 +15,8 @@ import { useEditableAdminResource } from "../../utils/useEditableAdminResource";
 import { useApiResource } from "../../utils/useApiResource";
 
 const fallbackStats = {
-  metrics: adminStatMetrics,
-  classSummaries: teacherClassSummaries,
+  metrics: [],
+  classSummaries: [],
 };
 
 function toNumber(value: string, fallback: number) {
@@ -120,7 +119,7 @@ export function AdminStatsPage() {
       </section>
 
       <article className="feedback-box">
-        <strong>{source === "api" ? "统计数据已同步更新" : "统计数据当前展示示例内容"}</strong>
+        <strong>{error ? "统计数据同步失败" : "统计数据已从后端加载"}</strong>
         <p>
           {isLoading
             ? "正在同步统计数据..."

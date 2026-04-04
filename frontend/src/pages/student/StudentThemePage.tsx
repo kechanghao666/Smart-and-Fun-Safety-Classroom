@@ -70,8 +70,8 @@ export function StudentThemePage() {
 
   const themeAiPrompt = useMemo(
     () =>
-      `我正在学习道路安全教育主题，当前已完成 ${completedLevels} / 3 关，考试状态为 ${state.progress.exam.status}。请给我一句学习提醒，并告诉我现在最应该先做哪一步。`,
-    [completedLevels, state.progress.exam.status],
+      `我正在学习${state.progress.themeTitle}主题，当前已完成 ${completedLevels} / 3 关，考试状态为 ${state.progress.exam.status}。请给我一句学习提醒，并告诉我现在最应该先做哪一步。`,
+    [completedLevels, state.progress.exam.status, state.progress.themeTitle],
   );
 
   const {
@@ -125,7 +125,7 @@ export function StudentThemePage() {
       <section className="hero-banner hero-banner--theme">
         <div>
           <span className="hero-banner__eyebrow">主题详情页</span>
-          <h1>道路安全教育</h1>
+          <h1>{state.progress.themeTitle}</h1>
           <p>
             本主题固定采用“三关闯关学习 - 主题考试 - 结果反馈”的闭环结构。先完成关卡学习，再进入考试和结果页完成本轮学习收口。
           </p>
@@ -146,7 +146,7 @@ export function StudentThemePage() {
           <span className="section-block__eyebrow">头图区</span>
           <h2>主题目标与当前状态</h2>
           <ul className="plain-list">
-            <li>当前主题：道路安全教育</li>
+            <li>当前主题：{state.progress.themeTitle}</li>
             <li>已完成关卡：{completedLevels} / 3</li>
             <li>主题考试：{examCompleted ? "已完成" : examUnlocked ? "已解锁" : "未解锁"}</li>
             <li>最近学习位置：{state.progress.lastVisitedRoute}</li>

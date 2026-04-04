@@ -14,11 +14,11 @@ export function useApiHydration<T>({
   fetcher,
   applyData,
   dependencies = [],
-  fallbackMessage = "暂时无法更新最新内容，当前继续使用示例内容。",
+  fallbackMessage = "暂时无法同步最新内容，请稍后重试。",
 }: UseApiHydrationOptions<T>) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [source, setSource] = useState<"mock" | "api">(enabled ? "api" : "mock");
+  const [source, setSource] = useState<"mock" | "api">("api");
   const fetcherRef = useRef(fetcher);
   const applyDataRef = useRef(applyData);
 
@@ -30,8 +30,8 @@ export function useApiHydration<T>({
 
     if (!enabled) {
       setIsLoading(false);
-      setError("");
-      setSource("mock");
+      setError("当前会话未准备好，暂时不能同步后端数据。");
+      setSource("api");
       return () => {
         cancelled = true;
       };
@@ -48,14 +48,12 @@ export function useApiHydration<T>({
         }
 
         applyDataRef.current(result);
-        setSource("api");
       })
       .catch((requestError) => {
         if (cancelled) {
           return;
         }
 
-        setSource("mock");
         setError(
           requestError instanceof ApiError ? requestError.message : fallbackMessage,
         );

@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { demoAccounts } from "../data/mockData";
-import { apiBaseUrl, apiEnabled, authModeLabel } from "../services/apiConfig";
+import { apiBaseUrl, authModeLabel } from "../services/apiConfig";
 import { loginWithPassword } from "../services/auth";
 import { ApiError } from "../services/http";
 import { fetchStudentProgress } from "../services/student";
@@ -44,61 +44,39 @@ export function LoginPage() {
     setError("");
 
     try {
-      if (apiEnabled) {
-        const loginResult = await loginWithPassword(trimmedAccount, password);
-        let progress = loginResult.progress ?? null;
+      const loginResult = await loginWithPassword(trimmedAccount, password);
+      let progress = loginResult.progress ?? null;
 
-        if (!progress && loginResult.role === "student" && loginResult.token) {
-          try {
-            progress = await fetchStudentProgress(loginResult.token);
-          } catch {
-            progress = null;
-          }
+      if (!progress && loginResult.role === "student" && loginResult.token) {
+        try {
+          progress = await fetchStudentProgress(loginResult.token);
+        } catch {
+          progress = null;
         }
-
-        signIn(loginResult.role, loginResult.account ?? trimmedAccount, {
-          token: loginResult.token,
-          source: "api",
-        });
-
-        if (loginResult.studentProfile) {
-          saveStudentProfile(loginResult.studentProfile);
-        }
-
-        if (progress) {
-          replaceProgress(progress);
-        }
-
-        const sameStudentAccount =
-          state.sessionAccount === (loginResult.account ?? trimmedAccount);
-        const nextStudentProfile =
-          loginResult.studentProfile ?? (sameStudentAccount ? state.studentProfile : null);
-
-        navigate(
-          loginResult.role === "student" && !nextStudentProfile
-            ? "/student/profile-setup"
-            : defaultRoleRoute[loginResult.role],
-        );
-        return;
       }
 
-      const matchedAccount = demoAccounts.find(
-        (item) => item.account === trimmedAccount && item.password === password,
-      );
+      signIn(loginResult.role, loginResult.account ?? trimmedAccount, {
+        token: loginResult.token,
+        source: "api",
+      });
 
-      if (!matchedAccount) {
-        setError("账号或密码不正确，请检查后重试。");
-        return;
+      if (loginResult.studentProfile) {
+        saveStudentProfile(loginResult.studentProfile);
       }
 
-      signIn(matchedAccount.role, matchedAccount.account, { source: "mock" });
+      if (progress) {
+        replaceProgress(progress);
+      }
+
+      const sameStudentAccount =
+        state.sessionAccount === (loginResult.account ?? trimmedAccount);
       const nextStudentProfile =
-        state.sessionAccount === matchedAccount.account ? state.studentProfile : null;
+        loginResult.studentProfile ?? (sameStudentAccount ? state.studentProfile : null);
 
       navigate(
-        matchedAccount.role === "student" && !nextStudentProfile
+        loginResult.role === "student" && !nextStudentProfile
           ? "/student/profile-setup"
-          : defaultRoleRoute[matchedAccount.role],
+          : defaultRoleRoute[loginResult.role],
       );
     } catch (loginError) {
       if (loginError instanceof ApiError) {
@@ -162,9 +140,7 @@ export function LoginPage() {
 
               <p className="support-copy">
                 当前模式：{authModeLabel}
-                {apiEnabled
-                  ? `，当前会连接 ${apiBaseUrl}/api/auth/login。`
-                  : "，未配置在线地址时会继续使用示例账号进入体验。"}
+                {`，当前会连接 ${apiBaseUrl}/api/auth/login。`}
               </p>
 
               {error ? <p className="form-error">{error}</p> : null}
@@ -182,12 +158,8 @@ export function LoginPage() {
           <article className="surface-card auth-card">
             <div>
               <span className="section-block__eyebrow">账号说明</span>
-              <h2>{apiEnabled ? "当前使用在线账号登录" : "三类角色登录账号"}</h2>
-              <p>
-                {apiEnabled
-                  ? "可直接使用以下账号进入对应角色页面。"
-                  : "当前页面使用示例账号完成登录，便于快速体验完整流程。"}
-              </p>
+              <h2>后端 seed 账号</h2>
+              <p>当前只保留真实后端登录，前端不再提供本地 demo 登录分支。</p>
             </div>
 
             <ul className="plain-list help-list">

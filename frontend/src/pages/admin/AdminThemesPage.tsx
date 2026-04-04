@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminEditorStatusBar } from "../../components/AdminEditorStatusBar";
-import { themeManagementItems } from "../../data/mockData";
 import { fetchAdminThemes, saveAdminThemes } from "../../services/admin";
 import { useAppState } from "../../state/AppState";
 import type { ThemeAccent, ThemeManagementItem } from "../../types";
@@ -65,7 +64,7 @@ export function AdminThemesPage() {
   const canUseApi = state.authSource === "api" && Boolean(state.authToken);
   const editor = useEditableAdminResource<ThemeManagementItem[]>({
     storageKey: "admin-theme-management",
-    fallbackData: themeManagementItems,
+    fallbackData: [],
     enabled: canUseApi,
     fetcher: () => fetchAdminThemes(state.authToken ?? ""),
     saveHandler: (draftData, savedData) =>

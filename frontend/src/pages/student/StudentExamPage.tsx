@@ -1,20 +1,43 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { examQuestions } from "../../data/mockData";
 import { ApiError } from "../../services/http";
-import { submitStudentExam } from "../../services/student";
+import {
+  fetchStudentExamQuestions,
+  submitStudentExam,
+} from "../../services/student";
 import { useAppState } from "../../state/AppState";
+import { useApiResource } from "../../utils/useApiResource";
 
 export function StudentExamPage() {
   const navigate = useNavigate();
-  const { replaceProgress, state, submitExam } = useAppState();
+  const { replaceProgress, state } = useAppState();
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const canUseApi = state.authSource === "api" && Boolean(state.authToken);
+  const apiEnabled = Boolean(state.authToken);
+  const {
+    data: questions,
+    error: questionError,
+    isLoading: isQuestionLoading,
+  } = useApiResource({
+    enabled: apiEnabled,
+    fallbackData: [],
+    fetcher: () => fetchStudentExamQuestions(state.authToken ?? ""),
+    dependencies: [state.authToken],
+    fallbackMessage: "考试题目暂时无法加载，请稍后重试。",
+  });
   const answeredCount = Object.keys(answers).length;
-  const activeQuestion = examQuestions[activeQuestionIndex];
+  const activeQuestion = questions[activeQuestionIndex] ?? null;
+
+  useEffect(() => {
+    if (!questions.length) {
+      setActiveQuestionIndex(0);
+      return;
+    }
+
+    setActiveQuestionIndex((current) => Math.min(current, questions.length - 1));
+  }, [questions.length]);
 
   if (state.progress.exam.status === "locked") {
     return (
@@ -57,54 +80,78 @@ export function StudentExamPage() {
     );
   }
 
+  if (!apiEnabled) {
+    return (
+      <section className="surface-card empty-state-card">
+        <span className="section-block__eyebrow">主题考试</span>
+        <h2>当前会话不可用</h2>
+        <p>请重新登录后再进入主题考试。</p>
+        <button type="button" className="primary-button" onClick={() => navigate("/login")}>
+          返回登录页
+        </button>
+      </section>
+    );
+  }
+
+  if (isQuestionLoading && questions.length === 0) {
+    return (
+      <section className="surface-card empty-state-card">
+        <span className="section-block__eyebrow">主题考试</span>
+        <h2>正在加载考试题目</h2>
+        <p>请稍候，系统正在同步最新题库。</p>
+      </section>
+    );
+  }
+
+  if (!questions.length || !activeQuestion) {
+    return (
+      <section className="surface-card empty-state-card">
+        <span className="section-block__eyebrow">主题考试</span>
+        <h2>当前没有可用题目</h2>
+        <p>{questionError || "请联系管理员确认题库配置是否已启用。"}</p>
+        <button
+          type="button"
+          className="primary-button"
+          onClick={() => navigate("/student/theme/road-safety")}
+        >
+          返回主题页
+        </button>
+      </section>
+    );
+  }
+
   async function handleSubmit() {
-    if (answeredCount !== examQuestions.length) {
+    if (answeredCount !== questions.length || !state.authToken) {
       return;
     }
 
     setSubmitError("");
-    const wrongQuestionIds = examQuestions
-      .filter((question) => answers[question.id] !== question.correctIndex)
-      .map((question) => question.id);
-    const score = Math.round(
-      ((examQuestions.length - wrongQuestionIds.length) / examQuestions.length) * 100,
-    );
+    setIsSubmitting(true);
 
-    if (canUseApi && state.authToken) {
-      setIsSubmitting(true);
+    try {
+      const progress = await submitStudentExam(
+        state.authToken,
+        questions.map((question) => ({
+          questionId: question.id,
+          selectedIndex: answers[question.id],
+        })),
+      );
 
-      try {
-        const progress = await submitStudentExam(
-          state.authToken,
-          examQuestions.map((question) => ({
-            questionId: question.id,
-            selectedIndex: answers[question.id],
-          })),
-        );
-
-        replaceProgress({
-          ...progress,
-          exam: {
-            ...progress.exam,
-            studentAnswers: answers,
-          },
-        });
-        navigate("/student/theme/road-safety/exam/result");
-      } catch (error) {
-        setSubmitError(
-          error instanceof ApiError
-            ? error.message
-            : "考试提交失败，请稍后重试。",
-        );
-      } finally {
-        setIsSubmitting(false);
-      }
-
-      return;
+      replaceProgress({
+        ...progress,
+        exam: {
+          ...progress.exam,
+          studentAnswers: answers,
+        },
+      });
+      navigate("/student/theme/road-safety/exam/result");
+    } catch (error) {
+      setSubmitError(
+        error instanceof ApiError ? error.message : "考试提交失败，请稍后重试。",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-
-    submitExam(score, wrongQuestionIds, answers);
-    navigate("/student/theme/road-safety/exam/result");
   }
 
   return (
@@ -114,15 +161,22 @@ export function StudentExamPage() {
           <span className="hero-banner__eyebrow">主题考试</span>
           <h1>道路安全主题知识检测</h1>
           <p>
-            考试页严格采用题号导航、题面区域和统一提交结构。请按顺序完成作答，再前往独立结果页查看反馈。
+            考试页采用题号导航、题面区域和统一提交结构。请按顺序完成作答，再前往独立结果页查看反馈。
           </p>
         </div>
 
         <div className="progress-ring">
-          <strong>{answeredCount}/{examQuestions.length}</strong>
+          <strong>{answeredCount}/{questions.length}</strong>
           <span>已作答题数</span>
         </div>
       </section>
+
+      {questionError ? (
+        <article className="feedback-box">
+          <strong>题库同步提醒</strong>
+          <p>{questionError}</p>
+        </article>
+      ) : null}
 
       {submitError ? (
         <article className="feedback-box">
@@ -138,7 +192,7 @@ export function StudentExamPage() {
           <ul className="plain-list">
             <li>当前题号：第 {activeQuestionIndex + 1} 题</li>
             <li>已作答：{answeredCount} 题</li>
-            <li>未作答：{examQuestions.length - answeredCount} 题</li>
+            <li>未作答：{questions.length - answeredCount} 题</li>
           </ul>
         </article>
 
@@ -146,7 +200,7 @@ export function StudentExamPage() {
           <span className="section-block__eyebrow">答题提示</span>
           <h2>回到三关里学过的关键规则</h2>
           <p>
-            优先回想斑马线与信号灯、公交车盲区、乘车安全带与头盔这几个重点，再作答会更稳。
+            优先回想斑马线与信号灯、公交车盲区、安全带和头盔这些重点，再作答会更稳。
           </p>
         </article>
       </section>
@@ -160,7 +214,7 @@ export function StudentExamPage() {
         </div>
 
         <div className="exam-nav">
-          {examQuestions.map((question, index) => (
+          {questions.map((question, index) => (
             <button
               key={question.id}
               type="button"
@@ -173,7 +227,7 @@ export function StudentExamPage() {
               }
               onClick={() => setActiveQuestionIndex(index)}
             >
-              第 {index + 1} 题
+              第{index + 1}题
             </button>
           ))}
         </div>
@@ -182,7 +236,7 @@ export function StudentExamPage() {
       <section className="surface-card exam-question-card">
         <div className="row-between">
           <div>
-            <span className="surface-tag">第 {activeQuestionIndex + 1} 题</span>
+            <span className="surface-tag">第{activeQuestionIndex + 1}题</span>
             <h2>{activeQuestion.prompt}</h2>
           </div>
           <span className="surface-tag">{activeQuestion.reviewLabel}</span>
@@ -229,11 +283,9 @@ export function StudentExamPage() {
         <button
           type="button"
           className="ghost-button"
-          disabled={activeQuestionIndex === examQuestions.length - 1}
+          disabled={activeQuestionIndex === questions.length - 1}
           onClick={() =>
-            setActiveQuestionIndex((current) =>
-              Math.min(examQuestions.length - 1, current + 1),
-            )
+            setActiveQuestionIndex((current) => Math.min(questions.length - 1, current + 1))
           }
         >
           下一题
@@ -241,7 +293,7 @@ export function StudentExamPage() {
         <button
           type="button"
           className="primary-button"
-          disabled={answeredCount !== examQuestions.length || isSubmitting}
+          disabled={answeredCount !== questions.length || isSubmitting}
           onClick={() => {
             void handleSubmit();
           }}

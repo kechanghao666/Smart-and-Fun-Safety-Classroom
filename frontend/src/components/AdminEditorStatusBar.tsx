@@ -52,7 +52,7 @@ export function AdminEditorStatusBar({
         </div>
         <div className="chip-row">
           <span className="surface-tag">
-            {source === "api" ? "已同步当前配置" : "当前展示示例配置"}
+            {source === "api" ? "当前连接后端配置" : "当前使用本地临时模板"}
           </span>
           <span className={`editor-status-pill editor-status-pill--${status}`}>
             {statusLabelMap[status]}

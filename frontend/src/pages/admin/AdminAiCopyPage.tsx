@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminEditorStatusBar } from "../../components/AdminEditorStatusBar";
-import { aiCopyTemplateItems } from "../../data/mockData";
 import { fetchAdminAiCopy, saveAdminAiCopy } from "../../services/admin";
 import { useAppState } from "../../state/AppState";
 import type { AiCopyTemplateItem } from "../../types";
@@ -17,7 +16,7 @@ export function AdminAiCopyPage() {
   const canUseApi = state.authSource === "api" && Boolean(state.authToken);
   const editor = useEditableAdminResource<AiCopyTemplateItem[]>({
     storageKey: "admin-ai-copy",
-    fallbackData: aiCopyTemplateItems,
+    fallbackData: [],
     enabled: canUseApi,
     fetcher: () => fetchAdminAiCopy(state.authToken ?? ""),
     saveHandler: (draftData, savedData) =>

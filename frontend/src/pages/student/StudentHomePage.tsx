@@ -36,6 +36,26 @@ export function StudentHomePage() {
         ? "已解锁"
         : "未解锁";
   const stageGuide = buildStageGuide(profile?.stage);
+  const displayThemeCards = useMemo(
+    () =>
+      themeCards.map((theme) =>
+        theme.id === "road-safety"
+          ? {
+              ...theme,
+              title: state.progress.themeTitle,
+              progressLabel:
+                state.progress.exam.status === "completed"
+                  ? "学习闭环已完成"
+                  : `已完成 ${completedLevels} / 3 关`,
+              cta:
+                state.progress.exam.status === "completed"
+                  ? "查看主题结果"
+                  : "进入主题",
+            }
+          : theme,
+      ),
+    [completedLevels, state.progress.exam.status, state.progress.themeTitle],
+  );
   const continueRoute = nextLevel
     ? `/student/theme/road-safety/level/${nextLevel.id}`
     : state.progress.exam.status === "available"
@@ -268,7 +288,7 @@ export function StudentHomePage() {
         </div>
 
         <div className="card-grid card-grid--three">
-          {themeCards.map((theme) => {
+          {displayThemeCards.map((theme) => {
             const isCurrentTheme = theme.id === "road-safety";
 
             return (

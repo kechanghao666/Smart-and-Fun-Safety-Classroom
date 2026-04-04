@@ -8,19 +8,6 @@ export interface AiChatMessage {
   text: string;
 }
 
-export function getAiReply(input: string) {
-  const normalized = input.trim().toLowerCase();
-  const hit = aiKnowledgeBase.find((item) =>
-    item.keywords.some((keyword) => normalized.includes(keyword.toLowerCase())),
-  );
-
-  if (hit) {
-    return hit.answer;
-  }
-
-  return "我当前只回答道路安全主题相关的问题。你可以试试问我“为什么要走斑马线”或“公交车盲区是什么”。";
-}
-
 export function buildAiQuickPrompts(limit = 3) {
   return aiKnowledgeBase.slice(0, limit);
 }
@@ -62,13 +49,14 @@ export async function resolveAiReply(
       };
     } catch {
       return {
-        text: getAiReply(input),
-        notice: "AI 小助手暂时忙碌，当前先为你提供学习提示。",
+        text: "当前 AI 服务暂时不可用，请稍后重试，或先返回主题页继续学习。",
+        notice: "AI 请求失败，本次没有切回本地示例回答。",
       };
     }
   }
 
   return {
-    text: getAiReply(input),
+    text: "当前会话不可用，请重新登录后再使用 AI。",
+    notice: "未检测到有效登录会话。",
   };
 }

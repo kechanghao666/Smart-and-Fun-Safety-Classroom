@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { examQuestions } from "../../data/mockData";
+import { fetchStudentExamReview } from "../../services/student";
 import { useAppState } from "../../state/AppState";
+import type { StudentExamReviewResponse } from "../../types";
+import { useApiResource } from "../../utils/useApiResource";
 import {
   buildAiQuickPrompts,
   resolveAiReply,
@@ -18,27 +20,35 @@ export function StudentAiPage() {
     {
       id: "welcome",
       role: "assistant",
-      text: `你好，${profileName}。我是安全小助手，可以围绕道路安全教育主题帮助你回顾重点、解释规则和整理复习方向。`,
+      text: `你好，${profileName}。我是安全小助手，可以围绕道路安全主题帮助你回顾重点、解释规则和整理复习方向。`,
     },
   ]);
+  const reviewFallback: StudentExamReviewResponse = {
+    totalWrongQuestions: state.progress.exam.wrongQuestionIds.length,
+    suggestion:
+      state.progress.exam.wrongQuestionIds.length > 0
+        ? "建议先从错题回看页同步最新解析。"
+        : "当前还没有错题，可以直接围绕主题重点提问。",
+    items: [],
+  };
+  const { data: reviewData, error: reviewError } = useApiResource({
+    enabled: Boolean(state.authToken),
+    fallbackData: reviewFallback,
+    fetcher: () => fetchStudentExamReview(state.authToken ?? ""),
+    dependencies: [state.authToken, state.progress.exam.wrongQuestionIds.join("|")],
+    fallbackMessage: "错题回看数据暂时无法同步。",
+  });
 
   const quickPrompts = useMemo(() => buildAiQuickPrompts(4), []);
-  const wrongQuestionDetails = useMemo(
-    () =>
-      examQuestions.filter((question) =>
-        state.progress.exam.wrongQuestionIds.includes(question.id),
-      ),
-    [state.progress.exam.wrongQuestionIds],
-  );
   const reviewPrompts = useMemo(() => {
-    const prompts = wrongQuestionDetails.map((question) => ({
-      id: `${question.id}-review`,
-      label: question.reviewLabel,
-      question: `帮我复习${question.reviewLabel}`,
+    const prompts = reviewData.items.map((item) => ({
+      id: `${item.questionId}-review`,
+      label: item.reviewLabel,
+      question: `帮我复习${item.reviewLabel}`,
     }));
 
     return Array.from(new Map(prompts.map((item) => [item.id, item])).values()).slice(0, 3);
-  }, [wrongQuestionDetails]);
+  }, [reviewData.items]);
 
   async function ask(question: string, scene: "hint" | "qa" = "qa") {
     const trimmed = question.trim();
@@ -77,6 +87,7 @@ export function StudentAiPage() {
           <p>
             本页固定服务于道路安全教育主题，适合在卡关、回看错题或整理学习重点时进行轻量问答。
           </p>
+          {reviewError ? <p className="inline-note">{reviewError}</p> : null}
         </div>
         <div className="hero-banner__actions">
           <Link className="ghost-button link-button" to="/student/theme/road-safety">
@@ -158,7 +169,7 @@ export function StudentAiPage() {
                 ))}
               </div>
             ) : (
-              <p>当前还没有错题推荐，可以先问斑马线、公交车盲区或乘车防护这几个主题。</p>
+              <p>当前还没有可同步的错题建议，可以先问斑马线、公交车盲区或乘车防护这些主题。</p>
             )}
           </article>
 
@@ -201,7 +212,7 @@ export function StudentAiPage() {
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="例如：为什么过马路要看信号灯和车？"
+              placeholder="例如：为什么过马路要看信号灯和来车？"
               disabled={isAsking}
             />
             <button type="submit" className="primary-button" disabled={isAsking}>

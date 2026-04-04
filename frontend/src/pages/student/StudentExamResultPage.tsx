@@ -1,5 +1,4 @@
-﻿import { Link, useNavigate } from "react-router-dom";
-import { examQuestions } from "../../data/mockData";
+import { Link, useNavigate } from "react-router-dom";
 import { fetchStudentExamReview } from "../../services/student";
 import { useAppState } from "../../state/AppState";
 import type { StudentExamReviewResponse } from "../../types";
@@ -8,7 +7,7 @@ import { useApiResource } from "../../utils/useApiResource";
 export function StudentExamResultPage() {
   const navigate = useNavigate();
   const { state } = useAppState();
-  const apiEnabled = state.authSource === "api" && Boolean(state.authToken);
+  const apiEnabled = Boolean(state.authToken);
 
   if (state.progress.exam.status !== "completed") {
     return (
@@ -44,36 +43,20 @@ export function StudentExamResultPage() {
       state.progress.exam.wrongQuestionIds.length > 0
         ? "建议优先进入错题回看页，逐题查看解析并回到对应关卡复习。"
         : "本轮没有错题，可以直接进入 AI 学习结果页查看本轮总结。",
-    items: examQuestions
-      .filter((question) => state.progress.exam.wrongQuestionIds.includes(question.id))
-      .map((question) => ({
-        questionId: question.id,
-        prompt: question.prompt,
-        studentAnswer:
-          typeof state.progress.exam.studentAnswers?.[question.id] === "number"
-            ? question.options[state.progress.exam.studentAnswers[question.id] ?? 0] ?? null
-            : null,
-        correctAnswer: question.options[question.correctIndex] ?? "",
-        explanation: question.explanation,
-        reviewLevelId: question.reviewLevelId,
-        reviewLabel: question.reviewLabel,
-        reviewSuggestion: question.reviewSuggestion,
-        reviewed: state.progress.rewardProgress.reviewedWrongQuestionIds.includes(question.id),
-        reviewedAt: null,
-      })),
+    items: [],
   };
 
-  const { data: reviewData, error, source } = useApiResource({
+  const { data: reviewData, error } = useApiResource({
     enabled: apiEnabled,
     fallbackData: fallbackReview,
-    fetcher: () => fetchStudentExamReview(state.authToken!),
+    fetcher: () => fetchStudentExamReview(state.authToken ?? ""),
     dependencies: [state.authToken, state.progress.exam.score, state.progress.exam.wrongQuestionIds.join("|")],
-    fallbackMessage: "考试结果页暂时无法更新，当前展示已保存的结果信息。",
+    fallbackMessage: "考试结果页暂时无法更新，请稍后重试。",
   });
 
   const score = state.progress.exam.score ?? 0;
   const wrongCount = reviewData.totalWrongQuestions;
-  const correctCount = state.progress.exam.totalQuestions - wrongCount;
+  const correctCount = Math.max(state.progress.exam.totalQuestions - wrongCount, 0);
   const highlightLabels = Array.from(new Set(reviewData.items.map((item) => item.reviewLabel))).slice(0, 3);
   const performanceLabel =
     wrongCount === 0 ? "表现稳定" : score >= 80 ? "基础扎实" : "需要继续巩固";
@@ -92,7 +75,7 @@ export function StudentExamResultPage() {
 
         <div className="result-medal result-medal--report">
           <strong>{score} 分</strong>
-          <span>{apiEnabled && source === "api" ? "最新成绩" : performanceLabel}</span>
+          <span>{error ? performanceLabel : "最新成绩"}</span>
         </div>
       </section>
 

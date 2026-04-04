@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminEditorStatusBar } from "../../components/AdminEditorStatusBar";
-import { questionBankManagementItems } from "../../data/mockData";
 import { fetchAdminQuestionBank, saveAdminQuestionBank } from "../../services/admin";
 import { useAppState } from "../../state/AppState";
 import type { LevelId, QuestionBankManagementItem } from "../../types";
@@ -11,7 +10,7 @@ export function AdminQuestionBankPage() {
   const canUseApi = state.authSource === "api" && Boolean(state.authToken);
   const editor = useEditableAdminResource<QuestionBankManagementItem[]>({
     storageKey: "admin-question-bank",
-    fallbackData: questionBankManagementItems,
+    fallbackData: [],
     enabled: canUseApi,
     fetcher: () => fetchAdminQuestionBank(state.authToken ?? ""),
     saveHandler: (draftData, savedData) =>

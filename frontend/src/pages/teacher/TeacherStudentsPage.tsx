@@ -1,6 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { teacherStudents } from "../../data/mockData";
 import { fetchTeacherStudents } from "../../services/teacher";
 import { useAppState } from "../../state/AppState";
 import type { TeacherStudentSummary } from "../../types";
@@ -21,10 +20,9 @@ const attentionRank = {
 export function TeacherStudentsPage() {
   const { state } = useAppState();
   const canUseApi = state.authSource === "api" && Boolean(state.authToken);
-  const [students, setStudents] = useState<TeacherStudentSummary[]>(teacherStudents);
+  const [students, setStudents] = useState<TeacherStudentSummary[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(canUseApi);
-  const [source, setSource] = useState<"api" | "mock">(canUseApi ? "api" : "mock");
   const [query, setQuery] = useState("");
   const [classFilter, setClassFilter] = useState("all");
   const [examFilter, setExamFilter] = useState<ExamFilter>("all");
@@ -35,15 +33,13 @@ export function TeacherStudentsPage() {
 
     async function loadStudents() {
       if (!canUseApi || !state.authToken) {
-        setStudents(teacherStudents);
-        setSource("mock");
+        setStudents([]);
         setIsLoading(false);
         return;
       }
 
       setIsLoading(true);
       setError("");
-      setSource("api");
 
       try {
         const result = await fetchTeacherStudents(state.authToken, {
@@ -54,16 +50,13 @@ export function TeacherStudentsPage() {
 
         if (!cancelled) {
           setStudents(result);
-          setSource("api");
         }
       } catch (requestError) {
         if (!cancelled) {
-          setStudents(teacherStudents);
-          setSource("mock");
           setError(
             requestError instanceof Error
               ? requestError.message
-              : "学生列表暂时无法更新，当前展示示例内容。",
+              : "学生列表暂时无法更新。",
           );
         }
       } finally {
@@ -80,7 +73,7 @@ export function TeacherStudentsPage() {
     };
   }, [canUseApi, classFilter, completionFilter, examFilter, state.authToken]);
 
-  const classOptions = Array.from(new Set(teacherStudents.map((student) => student.className)));
+  const classOptions = Array.from(new Set(students.map((student) => student.className)));
   const filteredStudents = useMemo(
     () =>
       students.filter((student) => {
@@ -128,7 +121,7 @@ export function TeacherStudentsPage() {
       </section>
 
       <article className="feedback-box">
-        <strong>{source === "api" ? "学生列表已同步更新" : "学生列表当前展示示例内容"}</strong>
+        <strong>{error ? "学生列表同步失败" : "学生列表已从后端加载"}</strong>
         <p>{isLoading ? "正在同步学生列表..." : error || "班级、完成状态和考试状态筛选会自动更新当前查看结果。"}</p>
       </article>
 
@@ -240,7 +233,7 @@ export function TeacherStudentsPage() {
       </section>
 
       <section className="page-stack">
-        {filteredStudents.map((student) => {
+        {filteredStudents.length > 0 ? filteredStudents.map((student) => {
           const attentionLevel = getTeacherAttentionLevel(student);
           return (
             <article key={student.id} className="surface-card result-card">
@@ -274,7 +267,12 @@ export function TeacherStudentsPage() {
               </div>
             </article>
           );
-        })}
+        }) : (
+          <article className="surface-card empty-state-card">
+            <strong>当前没有符合条件的学生</strong>
+            <p>可以调整筛选条件，或等待教师端数据同步后再查看。</p>
+          </article>
+        )}
       </section>
     </div>
   );

@@ -1,5 +1,4 @@
 ﻿import { Link } from "react-router-dom";
-import { adminModules } from "../../data/mockData";
 import { fetchAdminModules } from "../../services/admin";
 import { useAppState } from "../../state/AppState";
 import { useApiResource } from "../../utils/useApiResource";
@@ -18,7 +17,7 @@ export function AdminDashboardPage() {
   const canUseApi = state.authSource === "api" && Boolean(state.authToken);
   const { data, error, isLoading, source } = useApiResource({
     enabled: canUseApi,
-    fallbackData: adminModules,
+    fallbackData: [],
     fetcher: () => fetchAdminModules(state.authToken ?? ""),
     dependencies: [state.authToken],
   });
@@ -40,7 +39,7 @@ export function AdminDashboardPage() {
       </section>
 
       <article className="feedback-box">
-        <strong>{source === "api" ? "后台模块概览已同步更新" : "后台模块概览当前展示示例内容"}</strong>
+        <strong>{error ? "后台模块同步失败" : "后台模块已从后端加载"}</strong>
         <p>
           {isLoading
             ? "正在同步后台模块..."

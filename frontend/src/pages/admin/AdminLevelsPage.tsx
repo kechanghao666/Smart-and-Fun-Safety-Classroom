@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminEditorStatusBar } from "../../components/AdminEditorStatusBar";
-import { levelManagementItems } from "../../data/mockData";
 import { fetchAdminLevels, saveAdminLevels } from "../../services/admin";
 import { useAppState } from "../../state/AppState";
 import type { LevelId, LevelManagementItem } from "../../types";
@@ -43,7 +42,7 @@ export function AdminLevelsPage() {
   const canUseApi = state.authSource === "api" && Boolean(state.authToken);
   const editor = useEditableAdminResource<LevelManagementItem[]>({
     storageKey: "admin-level-management",
-    fallbackData: levelManagementItems,
+    fallbackData: [],
     enabled: canUseApi,
     fetcher: () => fetchAdminLevels(state.authToken ?? ""),
     saveHandler: (draftData, savedData) =>

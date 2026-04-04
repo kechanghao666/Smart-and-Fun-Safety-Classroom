@@ -1,6 +1,5 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  adminUsersFallback,
   fetchAdminUsers,
   updateAdminUser as updateAdminUserToApi,
 } from "../../services/admin";
@@ -43,8 +42,7 @@ function buildNextNote(nextStatus: AdminUserSummary["status"]) {
 export function AdminUsersPage() {
   const { state } = useAppState();
   const canUseApi = state.authSource === "api" && Boolean(state.authToken);
-  const [users, setUsers] = useState<AdminUserSummary[]>(adminUsersFallback);
-  const [source, setSource] = useState<"api" | "mock">(canUseApi ? "api" : "mock");
+  const [users, setUsers] = useState<AdminUserSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,8 +58,7 @@ export function AdminUsersPage() {
     let cancelled = false;
 
     if (!canUseApi || !state.authToken) {
-      setUsers(adminUsersFallback);
-      setSource("mock");
+      setUsers([]);
       setError("");
       setIsLoading(false);
       return () => {
@@ -79,16 +76,13 @@ export function AdminUsersPage() {
         }
 
         setUsers(result);
-        setSource("api");
       })
       .catch((requestError) => {
         if (cancelled) {
           return;
         }
 
-        setUsers(adminUsersFallback);
-        setSource("mock");
-        setError(requestError instanceof Error ? requestError.message : "用户列表加载失败。")
+        setError(requestError instanceof Error ? requestError.message : "用户列表加载失败。");
       })
       .finally(() => {
         if (!cancelled) {
@@ -149,32 +143,25 @@ export function AdminUsersPage() {
     setError("");
 
     try {
-      if (canUseApi && state.authToken) {
-        const updatedUser = await updateAdminUserToApi(state.authToken, user.id, {
-          status: nextStatus,
-          note: nextNote,
-        });
-
-        setUsers((current) =>
-          current.map((item) =>
-            item.id === user.id
-              ? updatedUser ?? { ...item, status: nextStatus, note: nextNote }
-              : item,
-          ),
-        );
-        setSource("api");
-      } else {
-        setUsers((current) =>
-          current.map((item) =>
-            item.id === user.id ? { ...item, status: nextStatus, note: nextNote } : item,
-          ),
-        );
-        setSource("mock");
+      if (!canUseApi || !state.authToken) {
+        throw new Error("当前无法连接后端，不能更新账号状态。");
       }
 
+      const updatedUser = await updateAdminUserToApi(state.authToken, user.id, {
+        status: nextStatus,
+        note: nextNote,
+      });
+
+      setUsers((current) =>
+        current.map((item) =>
+          item.id === user.id
+            ? updatedUser ?? { ...item, status: nextStatus, note: nextNote }
+            : item,
+        ),
+      );
       setPendingAction(null);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "账号状态更新失败。")
+      setError(requestError instanceof Error ? requestError.message : "账号状态更新失败。");
     } finally {
       setIsSubmitting(false);
     }
@@ -193,7 +180,7 @@ export function AdminUsersPage() {
       </section>
 
       <article className="feedback-box">
-        <strong>{source === "api" ? "用户列表已同步更新" : "用户列表当前展示示例内容"}</strong>
+        <strong>{error ? "用户列表同步失败" : "用户列表已从后端加载"}</strong>
         <p>
           {isLoading
             ? "正在同步用户列表..."

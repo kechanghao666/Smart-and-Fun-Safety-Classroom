@@ -1,6 +1,5 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { examQuestions } from "../../data/mockData";
 import {
   completeStudentWrongQuestionReview as completeStudentWrongQuestionReviewToApi,
   fetchStudentExamReview,
@@ -12,12 +11,8 @@ import { WRONG_QUESTION_REVIEW_REWARD } from "../../utils/studentRewards";
 
 export function StudentWrongQuestionsPage() {
   const navigate = useNavigate();
-  const {
-    completeWrongQuestionReview,
-    replaceProgress,
-    state,
-  } = useAppState();
-  const apiEnabled = state.authSource === "api" && Boolean(state.authToken);
+  const { replaceProgress, state } = useAppState();
+  const apiEnabled = Boolean(state.authToken);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(apiEnabled && state.progress.exam.status === "completed");
   const [submittingQuestionId, setSubmittingQuestionId] = useState<string | null>(null);
@@ -29,25 +24,9 @@ export function StudentWrongQuestionsPage() {
         state.progress.exam.wrongQuestionIds.length > 0
           ? "建议先查看错题解析，再回到对应关卡完成重学。"
           : "本轮没有错题，可以直接查看 AI 结果卡和成长档案。",
-      items: examQuestions
-        .filter((question) => state.progress.exam.wrongQuestionIds.includes(question.id))
-        .map((question) => ({
-          questionId: question.id,
-          prompt: question.prompt,
-          studentAnswer:
-            typeof state.progress.exam.studentAnswers?.[question.id] === "number"
-              ? question.options[state.progress.exam.studentAnswers[question.id] ?? 0] ?? null
-              : null,
-          correctAnswer: question.options[question.correctIndex] ?? "",
-          explanation: question.explanation,
-          reviewLevelId: question.reviewLevelId,
-          reviewLabel: question.reviewLabel,
-          reviewSuggestion: question.reviewSuggestion,
-          reviewed: state.progress.rewardProgress.reviewedWrongQuestionIds.includes(question.id),
-          reviewedAt: null,
-        })),
+      items: [],
     }),
-    [state.progress.exam.studentAnswers, state.progress.exam.wrongQuestionIds, state.progress.rewardProgress.reviewedWrongQuestionIds],
+    [state.progress.exam.wrongQuestionIds.length],
   );
   const [reviewData, setReviewData] = useState<StudentExamReviewResponse>(fallbackReview);
 
@@ -79,7 +58,7 @@ export function StudentWrongQuestionsPage() {
           setError(
             requestError instanceof Error
               ? requestError.message
-              : "错题回看暂时无法更新，当前展示已保存的复习内容。",
+              : "错题回看暂时无法更新，请稍后重试。",
           );
         }
       })
@@ -130,33 +109,22 @@ export function StudentWrongQuestionsPage() {
       return;
     }
 
+    if (!apiEnabled || !state.authToken) {
+      setError("当前会话不可用，请重新登录后再提交错题重学。");
+      return;
+    }
+
     setError("");
     setSubmittingQuestionId(questionId);
 
     try {
-      if (apiEnabled && state.authToken) {
-        await completeStudentWrongQuestionReviewToApi(state.authToken, questionId);
-        const [nextReview, nextProgress] = await Promise.all([
-          fetchStudentExamReview(state.authToken),
-          fetchStudentProgress(state.authToken),
-        ]);
-        setReviewData(nextReview);
-        replaceProgress(nextProgress);
-      } else {
-        completeWrongQuestionReview(questionId);
-        setReviewData((current) => ({
-          ...current,
-          items: current.items.map((item) =>
-            item.questionId === questionId
-              ? {
-                  ...item,
-                  reviewed: true,
-                  reviewedAt: new Date().toISOString(),
-                }
-              : item,
-          ),
-        }));
-      }
+      await completeStudentWrongQuestionReviewToApi(state.authToken, questionId);
+      const [nextReview, nextProgress] = await Promise.all([
+        fetchStudentExamReview(state.authToken),
+        fetchStudentProgress(state.authToken),
+      ]);
+      setReviewData(nextReview);
+      replaceProgress(nextProgress);
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -237,7 +205,7 @@ export function StudentWrongQuestionsPage() {
                 <div className="card-grid card-grid--three">
                   <article className="feedback-box">
                     <strong>你的作答</strong>
-                    <p>{item.studentAnswer ?? "当前没有记录到本地作答结果"}</p>
+                    <p>{item.studentAnswer ?? "当前没有记录到作答结果"}</p>
                   </article>
                   <article className="feedback-box">
                     <strong>正确答案</strong>
@@ -294,6 +262,24 @@ export function StudentWrongQuestionsPage() {
               </article>
             );
           })}
+        </section>
+      ) : reviewData.totalWrongQuestions > 0 ? (
+        <section className="surface-card empty-state-card">
+          <span className="section-block__eyebrow">错题详情暂不可用</span>
+          <h2>已识别到错题，但明细还没有同步完成</h2>
+          <p>{error || "请稍后刷新本页，系统会重新同步错题解析与回看入口。"}</p>
+          <div className="button-row">
+            <Link className="primary-button link-button" to="/student/theme/road-safety/exam/result">
+              返回考试结果页
+            </Link>
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => navigate("/student/theme/road-safety")}
+            >
+              返回主题页
+            </button>
+          </div>
         </section>
       ) : (
         <section className="surface-card empty-state-card">

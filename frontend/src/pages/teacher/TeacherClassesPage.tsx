@@ -1,6 +1,5 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { teacherClassSummaries, teacherStudents } from "../../data/mockData";
 import {
   createTeacherClass,
   fetchTeacherClasses,
@@ -11,17 +10,11 @@ import { useAppState } from "../../state/AppState";
 import type { TeacherClassManagementItem, TeacherStudentSummary } from "../../types";
 import { getTeacherAttentionLabel } from "../../utils/teacherInsights";
 
-const fallbackClasses: TeacherClassManagementItem[] = teacherClassSummaries.map((item) => ({
-  ...item,
-  description: `${item.name} 当前重点：${item.focusLabel}`,
-  createdAt: new Date().toISOString(),
-}));
-
 export function TeacherClassesPage() {
   const { state } = useAppState();
-  const canUseApi = state.authSource === "api" && Boolean(state.authToken);
-  const [classes, setClasses] = useState<TeacherClassManagementItem[]>(fallbackClasses);
-  const [students, setStudents] = useState<TeacherStudentSummary[]>(teacherStudents);
+  const canUseApi = Boolean(state.authToken);
+  const [classes, setClasses] = useState<TeacherClassManagementItem[]>([]);
+  const [students, setStudents] = useState<TeacherStudentSummary[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(canUseApi);
   const [isSaving, setIsSaving] = useState(false);
@@ -47,6 +40,8 @@ export function TeacherClassesPage() {
     async function loadTeacherClasses() {
       if (!canUseApi || !state.authToken) {
         setIsLoading(false);
+        setClasses([]);
+        setStudents([]);
         return;
       }
 
@@ -68,7 +63,7 @@ export function TeacherClassesPage() {
           setError(
             requestError instanceof Error
               ? requestError.message
-              : "班级数据暂时无法更新，当前展示示例内容。",
+              : "班级数据暂时无法更新。",
           );
         }
       } finally {
@@ -125,33 +120,21 @@ export function TeacherClassesPage() {
     setIsSaving(true);
 
     try {
-      if (canUseApi && state.authToken) {
-        const created = await createTeacherClass(state.authToken, {
-          name: trimmedName,
-          description: trimmedDescription,
-        });
-        const [nextClasses, dashboard] = await Promise.all([
-          fetchTeacherClasses(state.authToken),
-          fetchTeacherDashboard(state.authToken),
-        ]);
-        setClasses(nextClasses);
-        setStudents(dashboard.students);
-        setSelectedClassId(created.id);
-      } else {
-        const nextClass: TeacherClassManagementItem = {
-          id: `custom-class-${Date.now()}`,
-          name: trimmedName,
-          description: trimmedDescription,
-          createdAt: new Date().toISOString(),
-          studentCount: 0,
-          completedRate: 0,
-          examCompletionRate: 0,
-          focusLabel: "新建班级待同步真实学生数据",
-        };
-        setClasses((current) => [...current, nextClass]);
-        setSelectedClassId(nextClass.id);
+      if (!canUseApi || !state.authToken) {
+        throw new Error("当前无法连接后端，不能创建班级。");
       }
 
+      const created = await createTeacherClass(state.authToken, {
+        name: trimmedName,
+        description: trimmedDescription,
+      });
+      const [nextClasses, dashboard] = await Promise.all([
+        fetchTeacherClasses(state.authToken),
+        fetchTeacherDashboard(state.authToken),
+      ]);
+      setClasses(nextClasses);
+      setStudents(dashboard.students);
+      setSelectedClassId(created.id);
       setDraftName("");
       setDraftDescription("");
       setShowCreateDialog(false);
@@ -173,20 +156,20 @@ export function TeacherClassesPage() {
     setIsSaving(true);
 
     try {
-      if (canUseApi && state.authToken) {
-        await updateTeacherClass(state.authToken, selectedClass.id, {
-          name: selectedClass.name,
-          description: selectedClass.description,
-        });
-        const [nextClasses, dashboard] = await Promise.all([
-          fetchTeacherClasses(state.authToken),
-          fetchTeacherDashboard(state.authToken),
-        ]);
-        setClasses(nextClasses);
-        setStudents(dashboard.students);
-      } else {
-        setClasses((current) => [...current]);
+      if (!canUseApi || !state.authToken) {
+        throw new Error("当前无法连接后端，不能保存班级。");
       }
+
+      await updateTeacherClass(state.authToken, selectedClass.id, {
+        name: selectedClass.name,
+        description: selectedClass.description,
+      });
+      const [nextClasses, dashboard] = await Promise.all([
+        fetchTeacherClasses(state.authToken),
+        fetchTeacherDashboard(state.authToken),
+      ]);
+      setClasses(nextClasses);
+      setStudents(dashboard.students);
     } catch (requestError) {
       setError(
         requestError instanceof Error ? requestError.message : "班级保存失败，请稍后重试。",
@@ -221,7 +204,7 @@ export function TeacherClassesPage() {
       </section>
 
       <article className="feedback-box">
-        <strong>{canUseApi ? "班级数据已同步更新" : "班级数据当前展示示例内容"}</strong>
+        <strong>{error ? "班级数据同步失败" : "班级数据已从后端加载"}</strong>
         <p>{isLoading ? "正在同步班级概览..." : error || "你可以在这里继续查看班级表现、重点关注项和班级说明。"}</p>
       </article>
 
@@ -349,7 +332,7 @@ export function TeacherClassesPage() {
                   ) : (
                     <article className="feedback-box">
                       <strong>当前没有班级学生预览</strong>
-                      <p>接入真实班级后，这里会自动展示本班学生的当前学习状态。</p>
+                      <p>班级与学生同步完成后，这里会自动展示本班学生的学习状态。</p>
                     </article>
                   )}
                 </div>

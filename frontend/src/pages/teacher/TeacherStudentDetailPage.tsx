@@ -1,6 +1,5 @@
 ﻿import { Link, useParams } from "react-router-dom";
 import { StatusBadge } from "../../components/StatusBadge";
-import { teacherStudentDetails } from "../../data/mockData";
 import { fetchTeacherStudentDetail } from "../../services/teacher";
 import { useAppState } from "../../state/AppState";
 import { useApiResource } from "../../utils/useApiResource";
@@ -15,13 +14,12 @@ export function TeacherStudentDetailPage() {
   const { studentId } = useParams();
   const { state } = useAppState();
   const canUseApi = state.authSource === "api" && Boolean(state.authToken) && Boolean(studentId);
-  const fallbackStudent = teacherStudentDetails.find((item) => item.id === studentId) ?? null;
   const { data: student, error, isLoading, source } = useApiResource({
     enabled: canUseApi,
-    fallbackData: fallbackStudent,
+    fallbackData: null,
     fetcher: () => fetchTeacherStudentDetail(state.authToken ?? "", studentId ?? ""),
     dependencies: [state.authToken, studentId],
-    fallbackMessage: "暂时无法获取学生详情，当前展示示例内容。",
+    fallbackMessage: "暂时无法获取学生详情。",
   });
 
   if (!student) {
@@ -70,7 +68,7 @@ export function TeacherStudentDetailPage() {
       </section>
 
       <article className="feedback-box">
-        <strong>{source === "api" ? "学生详情已同步更新" : "学生详情当前展示示例内容"}</strong>
+        <strong>{error ? "学生详情同步失败" : "学生详情已从后端加载"}</strong>
         <p>{isLoading ? "正在同步学生详情..." : error || "学生详情页会持续汇总学习进展、考试表现和成长状态。"}</p>
       </article>
 
