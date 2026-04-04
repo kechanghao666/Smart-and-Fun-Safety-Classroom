@@ -1,5 +1,6 @@
 ﻿import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { StudentAdventureHero } from "../../components/student/StudentAdventureHero";
 import { studentAvatarOptions, studentStageOptions } from "../../data/mockData";
 import {
   fetchStudentProgress,
@@ -87,156 +88,163 @@ export function StudentProfileSetupPage() {
   }
 
   return (
-    <div className="page-shell">
-      <div className="page-shell__inner">
-        <section className="hero-panel">
-          <div className="hero-panel__content">
-            <span className="hero-panel__eyebrow">首次登录信息补充</span>
-            <h1>先完善你的学习档案</h1>
-            <p>
-              请先填写昵称、选择头像和学段。完成后系统会把资料和学习记录、考试结果、成长激励关联起来。
-            </p>
-            <div className="hero-panel__tags">
-              <span>昵称</span>
-              <span>预设头像</span>
-              <span>学段选择</span>
-            </div>
-          </div>
-        </section>
+    <div className="page-stack student-page student-page--setup">
+      <StudentAdventureHero
+        eyebrow="角色准备"
+        title="先选一个小伙伴，再出发"
+        description="填好名字、头像和学段，就能拿到你的安全冒险身份卡。"
+        bubbleTitle="出发提示"
+        bubbleText={selectedAvatar ? `${selectedAvatar.label} 已经准备好了` : "先挑一个你喜欢的小伙伴"}
+        mascotLabel={selectedAvatar?.shortLabel ?? "GO"}
+        mascotHint={selectedAvatar ? avatarGuide.motto : "选好角色后，首页会出现你的专属冒险形象。"}
+        accent={profileAccent}
+        variant="profile"
+        stats={[
+          { label: "昵称", value: nickname.trim() || "待设置", accent: "sky" },
+          { label: "形象", value: selectedAvatar?.label ?? "待选择", accent: profileAccent },
+          { label: "学段", value: stage || "待选择", accent: "orange" },
+        ]}
+      />
 
-        <section className="profile-card-grid">
-          <article className="surface-card form-card">
-            <div>
-              <span className="section-block__eyebrow">基础信息</span>
-              <h2>保存并进入首页</h2>
-              <p>这一页只保留最基础的档案信息，确保首页、记录页和成长页都能正确展示。</p>
-            </div>
-
-            <form className="profile-form" onSubmit={handleSubmit}>
-              <label className="field-group">
-                <span className="field-label">昵称</span>
-                <input
-                  className="text-input"
-                  value={nickname}
-                  onChange={(event) => setNickname(event.target.value)}
-                  placeholder="请输入昵称"
-                />
-              </label>
-
-              <div className="field-group">
-                <span className="field-label">推荐昵称</span>
-                <div className="chip-row">
-                  {nicknameSuggestions.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      className="quick-chip"
-                      onClick={() => setNickname(item)}
-                    >
-                      {item}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="field-group">
-                <span className="field-label">头像</span>
-                <div className="avatar-grid">
-                  {studentAvatarOptions.map((option) => {
-                    const selected = avatarId === option.id;
-
-                    return (
-                      <button
-                        key={option.id}
-                        type="button"
-                        className={selected ? "avatar-option avatar-option--selected" : "avatar-option"}
-                        onClick={() => setAvatarId(option.id)}
-                      >
-                        <span className={`avatar-option__swatch avatar-option__swatch--${option.accent}`}>
-                          {option.shortLabel}
-                        </span>
-                        <strong>{option.label}</strong>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="field-group">
-                <span className="field-label">学段</span>
-                <div className="stage-grid">
-                  {studentStageOptions.map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      className={stage === option ? "stage-option stage-option--selected" : "stage-option"}
-                      onClick={() => setStage(option)}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {error ? <p className="form-error">{error}</p> : null}
-
-              <button type="submit" className="primary-button primary-button--wide" disabled={!canSubmit}>
-                {isSubmitting ? "保存中..." : "保存并进入首页"}
-              </button>
-            </form>
-          </article>
-
-          <article className="surface-card form-card">
-            <div>
-              <span className="section-block__eyebrow">档案预览</span>
-              <h2>{preview.heading}</h2>
-              <p>{preview.summary}</p>
+      <section className="student-setup-grid">
+        <article className="surface-card student-choice-panel">
+          <form className="profile-form" onSubmit={handleSubmit}>
+            <div className="student-section-heading">
+              <span className="section-block__eyebrow">第一步</span>
+              <h2>给自己取个冒险名字</h2>
             </div>
 
-            <article className="profile-preview-card">
-              <div className="student-summary">
-                <span className={`avatar-badge avatar-badge--${profileAccent}`}>
-                  {selectedAvatar?.shortLabel ?? "档"}
-                </span>
-                <div>
-                  <strong>{avatarGuide.title}</strong>
-                  <p>{avatarGuide.motto}</p>
-                </div>
-              </div>
+            <label className="field-group">
+              <span className="field-label">我的昵称</span>
+              <input
+                className="text-input text-input--playful"
+                value={nickname}
+                onChange={(event) => setNickname(event.target.value)}
+                placeholder="输入你的名字"
+              />
+            </label>
 
+            <div className="field-group">
+              <span className="field-label">一键选择</span>
               <div className="chip-row">
-                {previewTags.map((item) => (
-                  <span key={item} className="surface-tag">
+                {nicknameSuggestions.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    className="quick-chip quick-chip--playful"
+                    onClick={() => setNickname(item)}
+                  >
                     {item}
-                  </span>
+                  </button>
                 ))}
               </div>
-            </article>
+            </div>
 
-            <article className="surface-card onboarding-card onboarding-card--soft">
-              <span className="section-block__eyebrow">首次学习路线</span>
-              <h3>{stageGuide.title}</h3>
-              <p>{stageGuide.description}</p>
-              <ul className="plain-list">
-                {stageGuide.checklist.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-              <p className="inline-note">{stageGuide.starterRoute}</p>
-            </article>
+            <div className="student-section-heading">
+              <span className="section-block__eyebrow">第二步</span>
+              <h2>挑一个角色形象</h2>
+            </div>
 
-            <article className="surface-card onboarding-card onboarding-card--soft">
-              <span className="section-block__eyebrow">填写说明</span>
-              <h3>为什么要先补充资料？</h3>
-              <ul className="plain-list">
-                <li>昵称和头像会用于首页欢迎区、学习记录和成长档案展示。</li>
-                <li>学段信息会为后续内容适配和教师查看提供基础参考。</li>
-                <li>当前步骤完成后，你将直接进入学生首页并开始主题学习。</li>
-              </ul>
-            </article>
+            <div className="student-choice-grid">
+              {studentAvatarOptions.map((option) => {
+                const selected = avatarId === option.id;
+
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={selected ? "student-choice-card student-choice-card--selected" : "student-choice-card"}
+                    onClick={() => setAvatarId(option.id)}
+                  >
+                    <span className={`student-choice-card__avatar student-choice-card__avatar--${option.accent}`}>
+                      {option.shortLabel}
+                    </span>
+                    <strong>{option.label}</strong>
+                    <span>{selected ? "已选中" : "点击选择"}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="student-section-heading">
+              <span className="section-block__eyebrow">第三步</span>
+              <h2>选择你的学习学段</h2>
+            </div>
+
+            <div className="student-choice-grid student-choice-grid--stage">
+              {studentStageOptions.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className={stage === option ? "student-choice-card student-choice-card--selected" : "student-choice-card"}
+                  onClick={() => setStage(option)}
+                >
+                  <strong>{option}</strong>
+                  <span>{stage === option ? "已准备" : "点击选择"}</span>
+                </button>
+              ))}
+            </div>
+
+            {error ? <p className="form-error">{error}</p> : null}
+
+            <button type="submit" className="primary-button primary-button--wide primary-button--playful" disabled={!canSubmit}>
+              {isSubmitting ? "正在保存..." : "完成准备，进入首页"}
+            </button>
+          </form>
+        </article>
+
+        <div className="page-stack">
+          <article className="surface-card student-preview-panel">
+            <span className="section-block__eyebrow">我的冒险身份卡</span>
+            <div className="student-profile-preview">
+              <div className={`student-profile-preview__avatar student-profile-preview__avatar--${profileAccent}`}>
+                {selectedAvatar?.shortLabel ?? "冒"}
+              </div>
+              <div>
+                <h2>{preview.heading}</h2>
+                <p>{preview.summary}</p>
+              </div>
+            </div>
+
+            <div className="student-preview-tags">
+              {previewTags.map((item) => (
+                <span key={item} className="surface-tag">
+                  {item}
+                </span>
+              ))}
+            </div>
+
+            <div className="student-mini-card-grid">
+              <article className="student-mini-card student-mini-card--sky">
+                <span>角色技能</span>
+                <strong>{avatarGuide.title}</strong>
+              </article>
+              <article className="student-mini-card student-mini-card--mint">
+                <span>出发路线</span>
+                <strong>{stageGuide.title}</strong>
+              </article>
+              <article className="student-mini-card student-mini-card--orange">
+                <span>下一站</span>
+                <strong>学生首页</strong>
+              </article>
+            </div>
           </article>
-        </section>
-      </div>
+
+          <article className="surface-card student-preview-panel">
+            <span className="section-block__eyebrow">今天会怎么学</span>
+            <h3>{stageGuide.title}</h3>
+            <div className="student-checklist">
+              {stageGuide.checklist.map((item) => (
+                <div key={item} className="student-checklist__item">
+                  <span className="student-checklist__dot" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+            <p className="inline-note">{stageGuide.starterRoute}</p>
+          </article>
+        </div>
+      </section>
     </div>
   );
 }

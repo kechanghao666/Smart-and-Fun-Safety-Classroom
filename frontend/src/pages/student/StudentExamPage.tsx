@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { StudentAdventureHero } from "../../components/student/StudentAdventureHero";
 import { examQuestions } from "../../data/mockData";
 import { ApiError } from "../../services/http";
 import { submitStudentExam } from "../../services/student";
@@ -20,14 +21,14 @@ export function StudentExamPage() {
     return (
       <section className="surface-card empty-state-card">
         <span className="section-block__eyebrow">主题考试</span>
-        <h2>主题考试还没有解锁</h2>
-        <p>请先完成道路安全主题的三关学习，系统才会点亮考试入口。</p>
+        <h2>考试宝箱还没有打开</h2>
+        <p>先完成三关学习，再回来挑战考试宝箱。</p>
         <button
           type="button"
           className="primary-button"
           onClick={() => navigate("/student/theme/road-safety")}
         >
-          返回主题页
+          返回主题地图
         </button>
       </section>
     );
@@ -37,20 +38,20 @@ export function StudentExamPage() {
     return (
       <section className="surface-card empty-state-card">
         <span className="section-block__eyebrow">主题考试</span>
-        <h2>本轮考试已经提交</h2>
-        <p>请前往独立结果页和错题回看页查看正式反馈，不再在本页重复展示结果。</p>
+        <h2>这轮考试已经完成</h2>
+        <p>去看结果页和错题页，继续把这轮学习收口吧。</p>
         <div className="button-row">
           <Link
             className="primary-button link-button"
             to="/student/theme/road-safety/exam/result"
           >
-            查看考试结果
+            看考试结果
           </Link>
           <Link
             className="ghost-button link-button"
             to="/student/theme/road-safety/wrong-questions"
           >
-            查看错题回看
+            错题回看
           </Link>
         </div>
       </section>
@@ -108,21 +109,31 @@ export function StudentExamPage() {
   }
 
   return (
-    <div className="page-stack">
-      <section className="hero-banner hero-banner--exam">
-        <div>
-          <span className="hero-banner__eyebrow">主题考试</span>
-          <h1>道路安全主题知识检测</h1>
-          <p>
-            考试页严格采用题号导航、题面区域和统一提交结构。请按顺序完成作答，再前往独立结果页查看反馈。
-          </p>
-        </div>
-
-        <div className="progress-ring">
-          <strong>{answeredCount}/{examQuestions.length}</strong>
-          <span>已作答题数</span>
-        </div>
-      </section>
+    <div className="page-stack student-page student-page--exam">
+      <StudentAdventureHero
+        eyebrow="考试宝箱"
+        title="道路安全挑战开始"
+        description="一题一题完成，集满答题进度后再打开结果宝箱。"
+        bubbleTitle="答题规则"
+        bubbleText="先看清题目，再选最安全的做法。"
+        mascotLabel={`${answeredCount}/${examQuestions.length}`}
+        mascotHint="答完全部题目后，提交按钮就会亮起来。"
+        variant="exam"
+        accent="orange"
+        stats={[
+          { label: "已完成", value: `${answeredCount} 题`, accent: "sky" },
+          {
+            label: "当前题目",
+            value: `第 ${activeQuestionIndex + 1} 题`,
+            accent: "orange",
+          },
+          {
+            label: "剩余题目",
+            value: `${examQuestions.length - answeredCount} 题`,
+            accent: "mint",
+          },
+        ]}
+      />
 
       {submitError ? (
         <article className="feedback-box">
@@ -131,56 +142,56 @@ export function StudentExamPage() {
         </article>
       ) : null}
 
-      <section className="card-grid card-grid--two">
-        <article className="surface-card exam-summary-card">
-          <span className="section-block__eyebrow">答题进度</span>
-          <h2>先完成全部题目，再统一提交</h2>
-          <ul className="plain-list">
-            <li>当前题号：第 {activeQuestionIndex + 1} 题</li>
-            <li>已作答：{answeredCount} 题</li>
-            <li>未作答：{examQuestions.length - answeredCount} 题</li>
-          </ul>
-        </article>
-
-        <article className="surface-card exam-summary-card">
-          <span className="section-block__eyebrow">答题提示</span>
-          <h2>回到三关里学过的关键规则</h2>
-          <p>
-            优先回想斑马线与信号灯、公交车盲区、乘车安全带与头盔这几个重点，再作答会更稳。
-          </p>
-        </article>
-      </section>
-
-      <section className="surface-card">
-        <div className="section-block__header">
-          <div>
+      <section className="student-card-grid student-card-grid--two">
+        <article className="surface-card student-exam-panel">
+          <div className="student-section-heading">
             <span className="section-block__eyebrow">题号导航</span>
-            <h2>点击题号切换当前作答位置</h2>
+            <h2>先把进度点亮</h2>
           </div>
-        </div>
+          <div className="student-exam-nav">
+            {examQuestions.map((question, index) => (
+              <button
+                key={question.id}
+                type="button"
+                className={
+                  index === activeQuestionIndex
+                    ? "student-exam-nav__button student-exam-nav__button--active"
+                    : answers[question.id] !== undefined
+                      ? "student-exam-nav__button student-exam-nav__button--done"
+                      : "student-exam-nav__button"
+                }
+                onClick={() => setActiveQuestionIndex(index)}
+              >
+                {index + 1}
+              </button>
+            ))}
+          </div>
+        </article>
 
-        <div className="exam-nav">
-          {examQuestions.map((question, index) => (
-            <button
-              key={question.id}
-              type="button"
-              className={
-                index === activeQuestionIndex
-                  ? "exam-nav__button exam-nav__button--active"
-                  : answers[question.id] !== undefined
-                    ? "exam-nav__button exam-nav__button--done"
-                    : "exam-nav__button"
-              }
-              onClick={() => setActiveQuestionIndex(index)}
-            >
-              第 {index + 1} 题
-            </button>
-          ))}
-        </div>
+        <article className="surface-card student-exam-panel">
+          <div className="student-section-heading">
+            <span className="section-block__eyebrow">答题提示</span>
+            <h2>先想想学过的安全规则</h2>
+          </div>
+          <div className="student-checklist">
+            <div className="student-checklist__item">
+              <span className="student-checklist__dot" />
+              <span>先看斑马线、信号灯和来车。</span>
+            </div>
+            <div className="student-checklist__item">
+              <span className="student-checklist__dot" />
+              <span>遇到大车时要注意盲区。</span>
+            </div>
+            <div className="student-checklist__item">
+              <span className="student-checklist__dot" />
+              <span>上车前要记得安全带和头盔。</span>
+            </div>
+          </div>
+        </article>
       </section>
 
-      <section className="surface-card exam-question-card">
-        <div className="row-between">
+      <section className="surface-card student-question-stage">
+        <div className="student-question-stage__top">
           <div>
             <span className="surface-tag">第 {activeQuestionIndex + 1} 题</span>
             <h2>{activeQuestion.prompt}</h2>
@@ -188,15 +199,15 @@ export function StudentExamPage() {
           <span className="surface-tag">{activeQuestion.reviewLabel}</span>
         </div>
 
-        <div className="exam-option-grid">
+        <div className="student-answer-grid">
           {activeQuestion.options.map((option, optionIndex) => (
             <button
               key={option}
               type="button"
               className={
                 answers[activeQuestion.id] === optionIndex
-                  ? "option-card option-card--selected"
-                  : "option-card"
+                  ? "student-answer-card student-answer-card--selected"
+                  : "student-answer-card"
               }
               onClick={() =>
                 setAnswers((current) => ({
@@ -205,19 +216,21 @@ export function StudentExamPage() {
                 }))
               }
             >
-              <strong>{String.fromCharCode(65 + optionIndex)}.</strong>
-              <span>{option}</span>
+              <span className="student-answer-card__label">
+                {String.fromCharCode(65 + optionIndex)}
+              </span>
+              <strong>{option}</strong>
             </button>
           ))}
         </div>
 
-        <article className="feedback-box">
-          <strong>对应复习模块</strong>
+        <article className="student-inline-tip">
+          <strong>提示</strong>
           <p>{activeQuestion.reviewSuggestion}</p>
         </article>
       </section>
 
-      <div className="button-row">
+      <div className="button-row button-row--wide">
         <button
           type="button"
           className="ghost-button"
@@ -240,13 +253,13 @@ export function StudentExamPage() {
         </button>
         <button
           type="button"
-          className="primary-button"
+          className="primary-button primary-button--playful"
           disabled={answeredCount !== examQuestions.length || isSubmitting}
           onClick={() => {
             void handleSubmit();
           }}
         >
-          {isSubmitting ? "提交中..." : "提交考试"}
+          {isSubmitting ? "提交中..." : "打开结果宝箱"}
         </button>
       </div>
     </div>

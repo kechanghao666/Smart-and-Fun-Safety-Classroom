@@ -1,4 +1,5 @@
-﻿import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { StudentAdventureHero } from "../../components/student/StudentAdventureHero";
 import { examQuestions } from "../../data/mockData";
 import { fetchStudentExamReview } from "../../services/student";
 import { useAppState } from "../../state/AppState";
@@ -14,15 +15,15 @@ export function StudentExamResultPage() {
     return (
       <section className="surface-card empty-state-card">
         <span className="section-block__eyebrow">考试结果页</span>
-        <h2>还没有可展示的考试结果</h2>
-        <p>请先完成三关学习并提交主题考试，系统才会生成正式的结果反馈。</p>
+        <h2>还没有可展示的结果</h2>
+        <p>先完成三关学习并提交考试，再回来打开结果宝箱。</p>
         <div className="button-row">
           <button
             type="button"
             className="primary-button"
             onClick={() => navigate("/student/theme/road-safety")}
           >
-            返回主题页
+            返回主题地图
           </button>
           {state.progress.exam.status === "available" ? (
             <button
@@ -42,8 +43,8 @@ export function StudentExamResultPage() {
     totalWrongQuestions: state.progress.exam.wrongQuestionIds.length,
     suggestion:
       state.progress.exam.wrongQuestionIds.length > 0
-        ? "建议优先进入错题回看页，逐题查看解析并回到对应关卡复习。"
-        : "本轮没有错题，可以直接进入 AI 学习结果页查看本轮总结。",
+        ? "建议先去错题回看页，逐题补强薄弱点。"
+        : "这轮没有错题，可以直接查看 AI 结果卡。",
     items: examQuestions
       .filter((question) => state.progress.exam.wrongQuestionIds.includes(question.id))
       .map((question) => ({
@@ -58,7 +59,9 @@ export function StudentExamResultPage() {
         reviewLevelId: question.reviewLevelId,
         reviewLabel: question.reviewLabel,
         reviewSuggestion: question.reviewSuggestion,
-        reviewed: state.progress.rewardProgress.reviewedWrongQuestionIds.includes(question.id),
+        reviewed: state.progress.rewardProgress.reviewedWrongQuestionIds.includes(
+          question.id,
+        ),
         reviewedAt: null,
       })),
   };
@@ -67,130 +70,115 @@ export function StudentExamResultPage() {
     enabled: apiEnabled,
     fallbackData: fallbackReview,
     fetcher: () => fetchStudentExamReview(state.authToken!),
-    dependencies: [state.authToken, state.progress.exam.score, state.progress.exam.wrongQuestionIds.join("|")],
+    dependencies: [
+      state.authToken,
+      state.progress.exam.score,
+      state.progress.exam.wrongQuestionIds.join("|"),
+    ],
     fallbackMessage: "考试结果页暂时无法更新，当前展示已保存的结果信息。",
   });
 
   const score = state.progress.exam.score ?? 0;
   const wrongCount = reviewData.totalWrongQuestions;
   const correctCount = state.progress.exam.totalQuestions - wrongCount;
-  const highlightLabels = Array.from(new Set(reviewData.items.map((item) => item.reviewLabel))).slice(0, 3);
+  const highlightLabels = Array.from(
+    new Set(reviewData.items.map((item) => item.reviewLabel)),
+  ).slice(0, 3);
   const performanceLabel =
-    wrongCount === 0 ? "表现稳定" : score >= 80 ? "基础扎实" : "需要继续巩固";
+    wrongCount === 0 ? "全对通关" : score >= 80 ? "表现真棒" : "继续努力";
 
   return (
-    <div className="page-stack">
-      <section className="hero-banner hero-banner--exam">
-        <div>
-          <span className="hero-banner__eyebrow">主题考试结果</span>
-          <h1>本轮道路安全主题考试已经完成</h1>
-          <p>
-            结果页会集中展示分数、答题表现、错题入口和后续学习去向，方便你继续回看和收口。
-          </p>
-          {error ? <p className="inline-note">{error}</p> : null}
-        </div>
+    <div className="page-stack student-page student-page--exam-result">
+      <StudentAdventureHero
+        eyebrow="挑战完成"
+        title="考试宝箱已经打开"
+        description="你已经完成道路安全主题考试，快看看今天收到了什么奖励。"
+        bubbleTitle="结果播报"
+        bubbleText={wrongCount === 0 ? "恭喜你全部答对啦" : reviewData.suggestion}
+        mascotLabel={`${score}`}
+        mascotHint={error || (apiEnabled && source === "api" ? "最新成绩已同步" : performanceLabel)}
+        variant="result"
+        accent="orange"
+        stats={[
+          { label: "考试分数", value: `${score} 分`, accent: "orange" },
+          { label: "答对题数", value: `${correctCount} 题`, accent: "mint" },
+          { label: "错题数量", value: `${wrongCount} 题`, accent: "sky" },
+        ]}
+      />
 
-        <div className="result-medal result-medal--report">
-          <strong>{score} 分</strong>
-          <span>{apiEnabled && source === "api" ? "最新成绩" : performanceLabel}</span>
-        </div>
-      </section>
-
-      <section className="card-grid card-grid--three">
-        <article className="surface-card stat-card">
-          <span>答对题数</span>
-          <strong>{correctCount}</strong>
-          <p>总题数 {state.progress.exam.totalQuestions} 题，本轮表现会同步进入学习记录和成长档案。</p>
+      <section className="student-card-grid student-card-grid--three">
+        <article className="surface-card student-celebration-card student-celebration-card--orange">
+          <span className="student-celebration-card__eyebrow">考试表现</span>
+          <strong>{performanceLabel}</strong>
+          <p>总题数 {state.progress.exam.totalQuestions} 题。</p>
         </article>
 
-        <article className="surface-card stat-card">
-          <span>错题数量</span>
-          <strong>{wrongCount}</strong>
-          <p>{reviewData.suggestion}</p>
-        </article>
-
-        <article className="surface-card stat-card">
-          <span>当前积分</span>
+        <article className="surface-card student-celebration-card student-celebration-card--mint">
+          <span className="student-celebration-card__eyebrow">积分奖励</span>
           <strong>{state.progress.points}</strong>
-          <p>本轮考试带来的积分、徽章和成长奖励已经计入当前学习结果。</p>
+          <p>这轮考试的奖励已经算进当前积分。</p>
+        </article>
+
+        <article className="surface-card student-celebration-card student-celebration-card--sky">
+          <span className="student-celebration-card__eyebrow">下一步</span>
+          <strong>{wrongCount > 0 ? "去错题回看" : "去 AI 结果卡"}</strong>
+          <p>{wrongCount > 0 ? "先把薄弱点补齐。" : "继续看本轮学习总结。"}</p>
         </article>
       </section>
 
-      <section className="card-grid card-grid--two">
-        <article className="surface-card report-panel">
-          <span className="section-block__eyebrow">结果说明</span>
-          <h2>接下来最建议做什么？</h2>
-          <div className="page-stack page-stack--compact">
-            <article className="feedback-box">
-              <strong>第一步</strong>
-              <p>
-                {wrongCount > 0
-                  ? "先看错题解析和建议回看的关卡，把薄弱点补齐。"
-                  : "先查看 AI 学习结果页，完成本轮学习总结。"}
-              </p>
-            </article>
-            <article className="feedback-box">
-              <strong>第二步</strong>
-              <p>再回到学习记录或成长档案，确认这轮学习带来的变化和下一步重点。</p>
-            </article>
+      <section className="student-card-grid student-card-grid--two">
+        <article className="surface-card student-link-board">
+          <div className="student-section-heading">
+            <span className="section-block__eyebrow">结果去向</span>
+            <h2>最适合接着去哪里</h2>
           </div>
-        </article>
-
-        <article className="surface-card report-panel">
-          <span className="section-block__eyebrow">结果去向</span>
-          <h2>从结果页继续进入后续页面</h2>
-          <div className="card-grid card-grid--two">
-            <article className="report-action-card">
+          <div className="student-mini-links">
+            <Link
+              className="student-mini-link student-mini-link--link"
+              to="/student/theme/road-safety/wrong-questions"
+            >
               <strong>错题回看</strong>
-              <p>
+              <span>
                 {highlightLabels.length > 0
-                  ? `重点回看：${highlightLabels.join(" / ")}`
-                  : "本轮没有错题，可以直接进入 AI 结果页和成长页。"}
-              </p>
-              <Link className="ghost-button link-button" to="/student/theme/road-safety/wrong-questions">
-                打开错题页
-              </Link>
-            </article>
-            <article className="report-action-card">
+                  ? highlightLabels.join(" / ")
+                  : "查看解析和建议复习关卡"}
+              </span>
+            </Link>
+            <Link className="student-mini-link student-mini-link--link" to="/student/ai-report">
               <strong>AI 结果卡</strong>
-              <p>查看亮点、补强重点、成长结果和下一步动作。</p>
-              <Link className="ghost-button link-button" to="/student/ai-report">
-                查看结果卡
-              </Link>
-            </article>
+              <span>看亮点、成长和下一步</span>
+            </Link>
+            <Link className="student-mini-link student-mini-link--link" to="/student/records">
+              <strong>学习记录</strong>
+              <span>把这轮挑战收进档案</span>
+            </Link>
           </div>
         </article>
-      </section>
 
-      {reviewData.items.length > 0 ? (
-        <section className="surface-card">
-          <div className="section-block__header">
-            <div>
-              <span className="section-block__eyebrow">错题概览</span>
-              <h2>本轮最值得优先回看的题目</h2>
+        <article className="surface-card student-reward-board">
+          <div className="student-section-heading">
+            <span className="section-block__eyebrow">错题概览</span>
+            <h2>先回看这些重点</h2>
+          </div>
+          {reviewData.items.length > 0 ? (
+            <div className="student-checklist">
+              {reviewData.items.slice(0, 4).map((item) => (
+                <div key={item.questionId} className="student-checklist__item">
+                  <span className="student-checklist__dot" />
+                  <span>{item.reviewLabel}</span>
+                </div>
+              ))}
             </div>
-          </div>
-
-          <div className="card-grid card-grid--two">
-            {reviewData.items.slice(0, 4).map((item) => (
-              <article key={item.questionId} className="report-action-card">
-                <strong>{item.reviewLabel}</strong>
-                <p>{item.prompt}</p>
-                <p>{item.reviewSuggestion}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      <div className="button-row">
-        <Link className="ghost-button link-button" to="/student/theme/road-safety">
-          返回主题页
-        </Link>
-        <Link className="ghost-button link-button" to="/student/records">
-          查看学习记录
-        </Link>
-      </div>
+          ) : (
+            <div className="student-checklist">
+              <div className="student-checklist__item">
+                <span className="student-checklist__dot" />
+                <span>这轮没有错题，直接去查看 AI 结果卡吧。</span>
+              </div>
+            </div>
+          )}
+        </article>
+      </section>
     </div>
   );
 }

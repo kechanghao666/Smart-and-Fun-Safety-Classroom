@@ -530,7 +530,7 @@ export function AppShell({
               <span className="student-shell__eyebrow">学生学习端</span>
               <div>
                 <h1>智趣安全学堂</h1>
-                <p>道路安全教育主题 · 轻量 AI 助学 · 三关学习闭环</p>
+                <p>道路安全冒险地图</p>
               </div>
             </div>
 
@@ -593,27 +593,26 @@ export function AppShell({
         <div className="student-shell__main">
           <section className="student-shell__titlebar">
             <div>
-              <span className="topbar__eyebrow">当前页面</span>
+              <span className="topbar__eyebrow">当前冒险站点</span>
               <h2>{pageMeta.title}</h2>
-              <p>{pageMeta.description}</p>
             </div>
             <div className="student-shell__titlebar-tags">
-              <span className="surface-tag">道路安全主题限定</span>
-              <span className="surface-tag">学习闭环进行中</span>
+              <span className="surface-tag">道路安全地图</span>
+              <span className="surface-tag">继续向前闯关</span>
             </div>
           </section>
 
           {banner}
 
-          {canSyncStudentProgress ? (
-            <article className="feedback-box">
+          {canSyncStudentProgress && (isSyncing || Boolean(syncMessage)) ? (
+            <article className="feedback-box feedback-box--compact">
               <div className="row-between">
                 <div>
-                  <strong>{isSyncing ? "正在更新学习进度..." : "学习进度已同步更新"}</strong>
+                  <strong>{isSyncing ? "正在更新学习进度..." : "学习进度暂时未刷新"}</strong>
                   <p>{syncSummary}</p>
                 </div>
                 <span className="surface-tag">
-                  {isSyncing ? "更新中" : lastSyncedAt ? "已更新" : "等待更新"}
+                  {isSyncing ? "更新中" : "稍后再试"}
                 </span>
               </div>
             </article>

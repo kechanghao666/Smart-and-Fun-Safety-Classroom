@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { StudentAdventureHero } from "../../components/student/StudentAdventureHero";
+import { StudentMascotBubble } from "../../components/student/StudentMascotBubble";
 import {
   guardianTasks,
   levelBlueprints,
@@ -505,45 +507,33 @@ export function StudentLevelPage() {
   }
 
   return (
-    <div className="page-stack">
-      <section className="surface-card level-status-bar">
-        <div className="level-status-bar__meta">
-          <span className="surface-tag">{levelMeta.focus}</span>
-          <h1>{levelMeta.title}</h1>
-          <p>{levelMeta.description}</p>
-        </div>
-
-        <div className="level-status-bar__summary">
-          <div className="level-status-chip-group">
-            <span className="surface-tag">第 {levelOrderIndex + 1} / 3 关</span>
-            <span className="surface-tag">
-              当前任务 {currentTaskIndex} / {totalTaskCount}
-            </span>
-          </div>
-          <div className="star-preview">
-            {[1, 2, 3].map((star) => (
-              <span
-                key={star}
-                className={star <= previewStars ? "star-preview__item star-preview__item--on" : "star-preview__item"}
-              >
-                ★
-              </span>
-            ))}
-          </div>
-          <div className="progress-bar">
-            <span className="progress-bar__fill" style={{ width: `${progressWidth}%` }} />
-          </div>
-          <div className="button-row">
+    <div className="page-stack student-page student-page--level">
+      <StudentAdventureHero
+        eyebrow={`第 ${levelOrderIndex + 1} 关`}
+        title={levelMeta.title}
+        description={levelMeta.description}
+        bubbleTitle="本关任务"
+        bubbleText={levelGuide.title}
+        mascotLabel={`${currentTaskIndex}`}
+        mascotHint={levelGuide.summary}
+        variant="level"
+        accent={
+          resolvedLevelId === "level-1"
+            ? "sky"
+            : resolvedLevelId === "level-2"
+              ? "mint"
+              : "orange"
+        }
+        stats={[
+          { label: "任务进度", value: `${currentTaskIndex}/${totalTaskCount}`, accent: "sky" },
+          { label: "预计星级", value: `${previewStars} 星`, accent: "orange" },
+          { label: "关卡重点", value: levelMeta.focus, accent: "mint" },
+        ]}
+        actions={
+          <>
             <button
               type="button"
-              className="ghost-button"
-              onClick={() => navigate("/student/theme/road-safety")}
-            >
-              返回主题页
-            </button>
-            <button
-              type="button"
-              className="primary-button"
+              className="primary-button primary-button--playful"
               disabled={!completionReady || isFinishing}
               onClick={() => {
                 void finishLevel();
@@ -551,9 +541,41 @@ export function StudentLevelPage() {
             >
               {isFinishing ? "提交中..." : "完成本关"}
             </button>
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => navigate("/student/theme/road-safety")}
+            >
+              返回主题地图
+            </button>
+          </>
+        }
+        aside={
+          <div className="student-level-hero-side">
+            <div className="star-preview">
+              {[1, 2, 3].map((star) => (
+                <span
+                  key={star}
+                  className={
+                    star <= previewStars
+                      ? "star-preview__item star-preview__item--on"
+                      : "star-preview__item"
+                  }
+                >
+                  ★
+                </span>
+              ))}
+            </div>
+            <div className="progress-bar">
+              <span
+                className="progress-bar__fill"
+                style={{ width: `${progressWidth}%` }}
+              />
+            </div>
+            <p>{completionReady ? "可以提交啦" : "再完成一点点就能通关"}</p>
           </div>
-        </div>
-      </section>
+        }
+      />
 
       {syncError ? (
         <article className="feedback-box">
@@ -842,51 +864,56 @@ export function StudentLevelPage() {
         </>
       ) : null}
 
-      <section className="card-grid card-grid--two">
-        <article className="surface-card level-support-card">
-          <span className="section-block__eyebrow">关键规则</span>
+      <section className="student-card-grid student-card-grid--two">
+        <article className="surface-card student-level-rule-card">
+          <span className="section-block__eyebrow">闯关规则</span>
           <h2>{levelGuide.title}</h2>
-          <p>{levelGuide.summary}</p>
-          <ul className="plain-list">
-            <li>{levelGuide.rule}</li>
-            <li>{levelGuide.reminder}</li>
-          </ul>
+          <div className="student-checklist">
+            <div className="student-checklist__item">
+              <span className="student-checklist__dot" />
+              <span>{levelGuide.rule}</span>
+            </div>
+            <div className="student-checklist__item">
+              <span className="student-checklist__dot" />
+              <span>{levelGuide.reminder}</span>
+            </div>
+          </div>
         </article>
 
-        <article className="surface-card ai-insight-card">
-          <div className="row-between">
-            <div>
-              <span className="section-block__eyebrow">AI 关卡提示</span>
-              <h2>卡住时先看这里</h2>
-            </div>
-            <span className="surface-tag">
-              {isHintLoading ? "生成中" : state.authSource === "api" ? "AI 实时提示" : "AI 学习提示"}
-            </span>
-          </div>
-          <p className="ai-insight-card__message">
-            {isHintLoading ? "AI 正在整理本关提示..." : hintMessage}
-          </p>
-          {hintNotice ? <p className="inline-note">{hintNotice}</p> : null}
-          <div className="button-row">
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={() => {
-                void refreshHint();
-              }}
-              disabled={isHintLoading}
-            >
-              {isHintLoading ? "生成中..." : "刷新提示"}
-            </button>
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={() => navigate("/student/ai")}
-            >
-              去 AI 问答
-            </button>
-          </div>
-        </article>
+        <StudentMascotBubble
+          eyebrow="AI 关卡提示"
+          title="卡住时先看这里"
+          message={isHintLoading ? "AI 正在整理本关提示..." : hintMessage}
+          accent={
+            resolvedLevelId === "level-1"
+              ? "sky"
+              : resolvedLevelId === "level-2"
+                ? "mint"
+                : "orange"
+          }
+          notice={hintNotice}
+          actions={
+            <>
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => {
+                  void refreshHint();
+                }}
+                disabled={isHintLoading}
+              >
+                {isHintLoading ? "生成中..." : "换一句提示"}
+              </button>
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => navigate("/student/ai")}
+              >
+                去 AI 问答
+              </button>
+            </>
+          }
+        />
       </section>
     </div>
   );
