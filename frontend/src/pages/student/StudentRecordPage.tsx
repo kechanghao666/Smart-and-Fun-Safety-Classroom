@@ -103,13 +103,13 @@ export function StudentRecordPage() {
       </section>
 
       <section className="card-grid card-grid--three">
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>当前主题</span>
           <strong>{recordsData.overview.themeTitle}</strong>
           <p>最近学习位置：{recordsData.overview.lastVisitedRoute}</p>
         </article>
 
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>考试状态</span>
           <strong>
             {recordsData.overview.examStatus === "completed"
@@ -125,7 +125,7 @@ export function StudentRecordPage() {
           </p>
         </article>
 
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>成长阶段</span>
           <strong>{growthData.stageLabel}</strong>
           <p>{growthData.growthSummary}</p>
@@ -148,7 +148,7 @@ export function StudentRecordPage() {
               : `/student/theme/road-safety/level/${level.id}`;
 
             return (
-              <article key={level.id} className="surface-card result-card">
+              <article key={level.id} className="surface-card result-card result-card--compact">
                 <div className="level-card__header">
                   <div>
                     <span className="surface-tag">{level.focus}</span>
@@ -189,7 +189,7 @@ export function StudentRecordPage() {
                   查看错题回看页
                 </Link>
               </div>
-              <article className="feedback-box">
+              <article className="feedback-box feedback-box--compact">
                 <strong>本轮考试已收口</strong>
                 <p>当前得分 {state.progress.exam.score ?? 0} 分，错题 {wrongCount} 道。</p>
               </article>
@@ -210,7 +210,7 @@ export function StudentRecordPage() {
         <article className="surface-card">
           <span className="section-block__eyebrow">成长快照</span>
           <h2>本轮学习带来的变化</h2>
-          <ul className="plain-list">
+          <ul className="plain-list compact-list">
             <li>成长值：{growthData.totalGrowthPoints}</li>
             <li>当前外观：{growthData.currentAppearance}</li>
             <li>当前场景：{growthData.currentScene}</li>
@@ -232,13 +232,15 @@ export function StudentRecordPage() {
         {recordsData.records.length > 0 ? (
           <div className="timeline-list">
             {recordsData.records.map((item, index) => (
-              <article key={item.id} className={`timeline-item timeline-item--${index === 0 ? "current" : "done"}`}>
+            <article key={item.id} className={`timeline-item timeline-item--${index === 0 ? "current" : "done"}`}>
                 <span className="timeline-item__dot" />
                 <div className="timeline-item__content">
                   <div className="row-between">
                     <div>
                       <h3>{item.title}</h3>
-                      <p>{item.description}</p>
+                      <p className="compact-copy compact-copy--two-line" title={item.description}>
+                        {item.description}
+                      </p>
                       <p className="inline-note">{item.createdAt}</p>
                     </div>
                     <button type="button" className="ghost-button" onClick={() => navigate(item.route)}>
@@ -250,7 +252,7 @@ export function StudentRecordPage() {
             ))}
           </div>
         ) : (
-          <article className="feedback-box">
+          <article className="feedback-box feedback-box--compact">
             <strong>当前还没有学习记录</strong>
             <p>继续完成关卡、考试和错题重学后，这里会按时间顺序累计展示。</p>
           </article>

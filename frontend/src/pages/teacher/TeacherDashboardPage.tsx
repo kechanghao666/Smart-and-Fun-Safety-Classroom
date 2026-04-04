@@ -131,7 +131,7 @@ export function TeacherDashboardPage() {
         </div>
       </section>
 
-      <article className="feedback-box">
+      <article className="feedback-box feedback-box--compact">
         <strong>{error ? "教师端数据同步失败" : "教师端数据已从后端加载"}</strong>
         <p>
           {isLoading
@@ -141,22 +141,22 @@ export function TeacherDashboardPage() {
       </article>
 
       <section className="card-grid card-grid--four">
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>当前查看</span>
           <strong>{classLabel}</strong>
           <p>用班级选择器快速切换范围，查看不同班级的学习推进情况。</p>
         </article>
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>三关完成率</span>
           <strong>{completedRate}%</strong>
           <p>帮助教师快速判断学生是否已经完成主题主链路学习。</p>
         </article>
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>考试完成率</span>
           <strong>{examRate}%</strong>
           <p>用于观察学生是否已经进入考试和结果反馈阶段。</p>
         </article>
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>需重点跟进</span>
           <strong>{urgentCount}</strong>
           <p>优先关注尚未形成完整闭环或弱项仍较高的学生。</p>
@@ -204,7 +204,7 @@ export function TeacherDashboardPage() {
                 const attentionLevel = getTeacherAttentionLevel(student);
 
                 return (
-                  <article key={student.id} className="teacher-analysis-card">
+                  <article key={student.id} className="teacher-analysis-card teacher-analysis-card--compact">
                     <div className="row-between">
                       <div>
                         <strong>{student.name}</strong>
@@ -216,7 +216,9 @@ export function TeacherDashboardPage() {
                         {getTeacherAttentionLabel(attentionLevel)}
                       </span>
                     </div>
-                    <p>{student.weakSpot}</p>
+                    <p className="compact-copy compact-copy--two-line" title={student.weakSpot}>
+                      {student.weakSpot}
+                    </p>
                     <div className="row-between">
                       <span className="inline-note">
                         三关 {student.completedLevels} / 3 · 考试 {student.examStatus}
@@ -245,7 +247,7 @@ export function TeacherDashboardPage() {
         <article className="surface-card">
           <span className="section-block__eyebrow">风险概览</span>
           <h2>当前最需要补课支持的班级</h2>
-          <article className="feedback-box">
+          <article className="feedback-box feedback-box--compact">
             <strong>{classRiskSummary?.name ?? "暂无班级数据"}</strong>
             <p>
               {classRiskSummary
@@ -260,7 +262,7 @@ export function TeacherDashboardPage() {
           <h2>本轮最适合立刻展开的三件事</h2>
           <div className="card-grid card-grid--three">
             {dashboardActions.map((item) => (
-              <article key={item.id} className="teacher-action-card">
+              <article key={item.id} className="teacher-action-card teacher-action-card--compact">
                 <strong>{item.title}</strong>
                 <p>{item.detail}</p>
               </article>

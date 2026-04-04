@@ -138,10 +138,11 @@ export function TeacherStudentsPage() {
           <span className="hero-banner__eyebrow">班级学生列表</span>
           <h1>按班级、完成状态、考试状态和风险点快速筛选学生</h1>
           <p>列表页先承担教师的快速检索，再通过学生详情页展开完整的学习与成长状态。</p>
+          {error ? <p className="inline-note">{error}</p> : null}
         </div>
       </section>
 
-      <article className="feedback-box">
+      <article className="feedback-box teacher-feedback-note">
         <strong>{error ? "学生列表同步失败" : "学生列表已从后端加载"}</strong>
         <p>
           {isLoading
@@ -151,17 +152,17 @@ export function TeacherStudentsPage() {
       </article>
 
       <section className="card-grid card-grid--three">
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>当前筛出</span>
           <strong>{filteredStudents.length}</strong>
           <p>根据搜索词、班级、完成状态和考试状态综合筛选后的学生数量。</p>
         </article>
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>三关已完成</span>
           <strong>{fullyCompletedCount}</strong>
           <p>用于判断学生是否已经完成主题主学习流程。</p>
         </article>
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>需立即跟进</span>
           <strong>{urgentCount}</strong>
           <p>优先查看高风险学生详情页，缩短发现问题到跟进的路径。</p>
@@ -217,7 +218,7 @@ export function TeacherStudentsPage() {
         </label>
       </section>
 
-      <section className="surface-card admin-preview-card">
+      <section className="surface-card admin-preview-card admin-preview-card--compact">
         <div className="section-block__header">
           <div>
             <span className="section-block__eyebrow">优先名单</span>
@@ -245,7 +246,7 @@ export function TeacherStudentsPage() {
               const attentionLevel = getTeacherAttentionLevel(student);
 
               return (
-                <article key={student.id} className="teacher-analysis-card">
+                <article key={student.id} className="teacher-analysis-card teacher-analysis-card--compact">
                   <div className="row-between">
                     <div>
                       <strong>{student.name}</strong>
@@ -255,7 +256,9 @@ export function TeacherStudentsPage() {
                       {getTeacherAttentionLabel(attentionLevel)}
                     </span>
                   </div>
-                  <p>{student.weakSpot}</p>
+                  <p className="compact-copy compact-copy--two-line" title={student.weakSpot}>
+                    {student.weakSpot}
+                  </p>
                 </article>
               );
             })
@@ -293,9 +296,6 @@ export function TeacherStudentsPage() {
                         <strong>{student.name}</strong>
                         <p className="teacher-analysis-card__meta">{student.className}</p>
                       </div>
-                      <span className={`teacher-attention-pill teacher-attention-pill--${attentionLevel}`}>
-                        {getTeacherAttentionLabel(attentionLevel)}
-                      </span>
                     </div>
 
                     <div className="teacher-student-row__metrics">
@@ -306,11 +306,19 @@ export function TeacherStudentsPage() {
                       <span className="surface-tag">最近学习 {student.lastActiveAt}</span>
                     </div>
 
-                    <p className="teacher-student-row__weakspot">{student.weakSpot}</p>
+                    <p
+                      className="teacher-student-row__weakspot compact-copy compact-copy--two-line"
+                      title={student.weakSpot}
+                    >
+                      {student.weakSpot}
+                    </p>
 
                     <div className="teacher-student-row__actions">
+                      <span className={`teacher-attention-pill teacher-attention-pill--${attentionLevel}`}>
+                        {getTeacherAttentionLabel(attentionLevel)}
+                      </span>
                       <Link
-                        className="primary-button link-button"
+                        className="ghost-button link-button teacher-student-row__action-link"
                         to={`/teacher/students/${student.id}`}
                       >
                         查看学生详情

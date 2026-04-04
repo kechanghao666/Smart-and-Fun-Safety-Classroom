@@ -107,10 +107,10 @@ export function StudentAiReportPage() {
             key={card.title}
             className={
               index === 0
-                ? "surface-card report-card report-card--blue"
+                ? "surface-card report-card report-card--blue report-card--compact"
                 : index === 1
-                  ? "surface-card report-card report-card--mint"
-                  : "surface-card report-card report-card--orange"
+                  ? "surface-card report-card report-card--mint report-card--compact"
+                  : "surface-card report-card report-card--orange report-card--compact"
             }
           >
             <span className="section-block__eyebrow">{card.title}</span>
@@ -125,7 +125,7 @@ export function StudentAiReportPage() {
       </section>
 
       <section className="card-grid card-grid--two">
-        <article className="surface-card report-panel">
+        <article className="surface-card report-panel report-panel--compact">
           <span className="section-block__eyebrow">成长结果</span>
           <h2>{reportData.growth.title}</h2>
           <div className={`growth-scene-preview ${sceneVisualClass}`}>
@@ -140,7 +140,7 @@ export function StudentAiReportPage() {
           </ul>
         </article>
 
-        <article className="surface-card report-panel">
+        <article className="surface-card report-panel report-panel--compact">
           <span className="section-block__eyebrow">激励展示</span>
           <h2>{reportData.reward.title}</h2>
           <p>{reportData.reward.summary}</p>
@@ -162,7 +162,7 @@ export function StudentAiReportPage() {
 
         <div className="card-grid card-grid--three">
           {growthData.dimensions.map((dimension) => (
-            <article key={dimension.id} className="report-milestone-card">
+            <article key={dimension.id} className="report-milestone-card report-milestone-card--compact">
               <span className="section-block__eyebrow">{dimension.label}</span>
               <h3>{dimension.points}</h3>
               <p>当前解锁：{dimension.currentUnlockLabel}</p>

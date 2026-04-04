@@ -203,28 +203,28 @@ export function TeacherClassesPage() {
         </div>
       </section>
 
-      <article className="feedback-box">
+      <article className="feedback-box feedback-box--compact">
         <strong>{error ? "班级数据同步失败" : "班级数据已从后端加载"}</strong>
         <p>{isLoading ? "正在同步班级概览..." : error || "你可以在这里继续查看班级表现、重点关注项和班级说明。"}</p>
       </article>
 
       <section className="card-grid card-grid--four">
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>班级数量</span>
           <strong>{classes.length}</strong>
           <p>当前教师账号下可管理的班级范围。</p>
         </article>
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>班级总人数</span>
           <strong>{totalStudents}</strong>
           <p>围绕当前主题学习闭环统计班级覆盖人数。</p>
         </article>
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>平均完成率</span>
           <strong>{averageCompletion}%</strong>
           <p>帮助教师快速判断班级整体推进是否均衡。</p>
         </article>
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>优先关注班级</span>
           <strong>{priorityClass?.name ?? "--"}</strong>
           <p>{priorityClass?.focusLabel ?? "当前暂无班级数据。"}</p>
@@ -245,8 +245,8 @@ export function TeacherClassesPage() {
                 type="button"
                 className={
                   classroom.id === selectedClass?.id
-                    ? "management-list-card management-list-card--active"
-                    : "management-list-card"
+                    ? "management-list-card management-list-card--compact management-list-card--active"
+                    : "management-list-card management-list-card--compact"
                 }
                 onClick={() => setSelectedClassId(classroom.id)}
               >
@@ -261,13 +261,15 @@ export function TeacherClassesPage() {
                     {getTeacherAttentionLabel(attentionLevel)}
                   </span>
                 </div>
-                <p>{classroom.focusLabel}</p>
+                <p className="compact-copy compact-copy--two-line" title={classroom.focusLabel}>
+                  {classroom.focusLabel}
+                </p>
               </button>
             );
           })}
         </div>
 
-        <article className="surface-card management-detail-card">
+        <article className="surface-card management-detail-card management-detail-card--compact">
           {selectedClass ? (
             <div className="page-stack">
               <div className="row-between">
@@ -298,15 +300,15 @@ export function TeacherClassesPage() {
               </label>
 
               <div className="card-grid card-grid--three">
-                <article className="surface-card stat-card">
+                <article className="surface-card stat-card stat-card--compact">
                   <span>学生人数</span>
                   <strong>{selectedClass.studentCount}</strong>
                 </article>
-                <article className="surface-card stat-card">
+                <article className="surface-card stat-card stat-card--compact">
                   <span>三关完成率</span>
                   <strong>{selectedClass.completedRate}%</strong>
                 </article>
-                <article className="surface-card stat-card">
+                <article className="surface-card stat-card stat-card--compact">
                   <span>考试完成率</span>
                   <strong>{selectedClass.examCompletionRate}%</strong>
                 </article>
@@ -317,11 +319,13 @@ export function TeacherClassesPage() {
                 <div className="page-stack page-stack--compact">
                   {selectedClassStudents.length > 0 ? (
                     selectedClassStudents.slice(0, 5).map((student) => (
-                      <article key={student.id} className="teacher-analysis-card">
+                      <article key={student.id} className="teacher-analysis-card teacher-analysis-card--compact">
                         <div className="row-between">
                           <div>
                             <strong>{student.name}</strong>
-                            <p>{student.weakSpot}</p>
+                            <p className="compact-copy compact-copy--two-line" title={student.weakSpot}>
+                              {student.weakSpot}
+                            </p>
                           </div>
                           <Link className="ghost-button link-button" to={`/teacher/students/${student.id}`}>
                             查看详情

@@ -1444,8 +1444,8 @@ button {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  padding: 8px 14px;
-  font-size: 13px;
+  padding: 6px 12px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -2455,31 +2455,112 @@ button {
   font-size: 14px;
 }
 
+.page-stack--compact-density {
+  gap: 16px;
+}
+
+.surface-card--compact-section,
+.feedback-box--compact,
+.stat-card--compact,
+.report-card--compact,
+.admin-preview-card--compact,
+.teacher-analysis-card--compact,
+.teacher-action-card--compact,
+.admin-reminder-card--compact,
+.module-link-card--compact,
+.module-status-card--compact,
+.management-detail-card--compact,
+.inline-summary-card--compact,
+.editor-panel--compact,
+.result-card--compact,
+.report-panel--compact,
+.report-milestone-card--compact {
+  gap: 10px;
+}
+
+.surface-card--compact-section,
+.feedback-box--compact,
+.admin-preview-card--compact,
+.teacher-analysis-card--compact,
+.teacher-action-card--compact,
+.admin-reminder-card--compact,
+.module-link-card--compact,
+.module-status-card--compact,
+.management-detail-card--compact,
+.inline-summary-card--compact,
+.editor-panel--compact,
+.result-card--compact,
+.report-panel--compact,
+.report-milestone-card--compact {
+  padding: 16px;
+  border-radius: 20px;
+}
+
+.stat-card--compact {
+  padding: 18px 20px;
+}
+
+.stat-card--compact strong {
+  font-size: clamp(24px, 2vw, 28px);
+  line-height: 1.1;
+}
+
+.compact-copy {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.compact-copy--one-line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compact-copy--two-line {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.compact-list {
+  gap: 6px;
+}
+
+.teacher-feedback-note {
+  display: none;
+}
+
 .teacher-compact-priority-grid {
   display: grid;
-  gap: 14px;
+  gap: 12px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .teacher-student-list-panel {
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
 .teacher-student-list {
   display: grid;
-  gap: 12px;
-  min-height: 640px;
+  gap: 10px;
+  min-height: 560px;
   align-content: start;
 }
 
 .teacher-student-row {
   display: grid;
-  gap: 12px;
-  min-height: 138px;
-  padding: 16px 18px;
+  grid-template-columns: minmax(220px, 0.82fr) minmax(0, 1fr) auto;
+  grid-template-areas:
+    "identity metrics actions"
+    "weakspot weakspot weakspot";
+  align-items: center;
+  gap: 8px 14px;
+  min-height: 0;
+  padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 22px;
+  border-radius: 18px;
   background: rgba(255, 255, 255, 0.78);
 }
 
@@ -2491,16 +2572,43 @@ button {
   gap: 12px;
 }
 
+.teacher-student-row__identity {
+  grid-area: identity;
+  min-width: 0;
+}
+
 .teacher-student-row__metrics {
+  grid-area: metrics;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
+  min-width: 0;
 }
 
 .teacher-student-row__weakspot {
+  grid-area: weakspot;
   margin: 0;
-  color: var(--text);
-  line-height: 1.6;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.teacher-student-row__actions {
+  grid-area: actions;
+  justify-content: flex-end;
+}
+
+.teacher-student-row__metrics .surface-tag,
+.management-list-card--compact .surface-tag,
+.teacher-analysis-card--compact .surface-tag {
+  padding: 6px 10px;
+  font-size: 12px;
+  gap: 4px;
+}
+
+.teacher-student-row__action-link {
+  padding: 9px 14px;
+  white-space: nowrap;
 }
 
 .management-list-panel {
@@ -2510,9 +2618,25 @@ button {
   align-content: start;
 }
 
+.management-list-panel--compact {
+  min-height: 460px;
+  max-height: 460px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.management-list-panel--question-bank {
+  min-height: 620px;
+  max-height: 620px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
 .management-list-card--compact {
-  min-height: 116px;
+  min-height: 88px;
   gap: 8px;
+  padding: 14px 16px;
+  border-radius: 18px;
 }
 
 .management-list-card__title {
@@ -2619,6 +2743,81 @@ button {
   color: var(--green-deep);
 }
 
+.module-link-card--compact p,
+.module-status-card--compact p,
+.report-card--compact p,
+.admin-preview-card--compact p,
+.teacher-analysis-card--compact p,
+.teacher-action-card--compact p,
+.admin-reminder-card--compact p,
+.management-detail-card--compact p,
+.report-panel--compact p,
+.report-milestone-card--compact p {
+  margin: 0;
+}
+
+.admin-preview-card--compact,
+.module-status-card--compact,
+.management-detail-card--compact,
+.report-panel--compact {
+  min-height: 0;
+}
+
+.admin-preview-card--compact .plain-list,
+.report-panel--compact .plain-list,
+.report-card--compact .plain-list,
+.result-card--compact .plain-list {
+  gap: 6px;
+}
+
+.bar-item {
+  padding: 16px;
+  gap: 8px;
+}
+
+.bar-list {
+  gap: 12px;
+}
+
+.teacher-analysis-card--compact,
+.teacher-action-card--compact,
+.admin-reminder-card--compact {
+  padding: 14px 16px;
+  border-radius: 18px;
+}
+
+.module-link-card--compact,
+.module-status-card--compact {
+  padding: 16px;
+  border-radius: 18px;
+}
+
+.inline-summary-card--compact {
+  padding: 14px 16px;
+}
+
+.report-card--compact h2 {
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.report-panel--compact .growth-scene-preview,
+.teacher-analysis-card--compact .growth-scene-preview,
+.teacher-growth-showcase__visual {
+  padding: 14px 16px;
+  border-radius: 18px;
+}
+
+.report-milestone-card--compact {
+  padding: 14px 16px;
+  border-radius: 18px;
+}
+
+.trend-bars__item--compact {
+  padding: 16px;
+  border-radius: 18px;
+}
+
 @media (max-width: 1100px) {
   .level-status-bar,
   .level-one-layout,
@@ -2643,9 +2842,24 @@ button {
     align-items: flex-start;
   }
 
+  .teacher-student-row {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "identity"
+      "metrics"
+      "weakspot"
+      "actions";
+    gap: 8px;
+  }
+
   .teacher-student-list,
   .management-list-panel {
     min-height: auto;
+  }
+
+  .management-list-panel--compact,
+  .management-list-panel--question-bank {
+    max-height: none;
   }
 
   .growth-character-card__scene {
@@ -2654,5 +2868,13 @@ button {
 
   .growth-character-card__figure {
     width: min(100%, 220px);
+  }
+
+  .teacher-student-row__actions {
+    width: 100%;
+  }
+
+  .teacher-student-row__action-link {
+    width: 100%;
   }
 }

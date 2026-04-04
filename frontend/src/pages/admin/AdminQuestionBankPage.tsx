@@ -160,17 +160,17 @@ export function AdminQuestionBankPage() {
       />
 
       <section className="card-grid card-grid--three">
-        <article className="surface-card stat-card admin-summary-card">
+        <article className="surface-card stat-card stat-card--compact admin-summary-card">
           <span>题目总数</span>
           <strong>{questions.length}</strong>
           <p>当前题库围绕道路安全主题组织，后续可继续在此基础上扩展更多题目。</p>
         </article>
-        <article className="surface-card stat-card admin-summary-card">
+        <article className="surface-card stat-card stat-card--compact admin-summary-card">
           <span>启用题目</span>
           <strong>{enabledCount}</strong>
           <p>启用状态决定题目是否进入学生端正式考试流程。</p>
         </article>
-        <article className="surface-card stat-card admin-summary-card">
+        <article className="surface-card stat-card stat-card--compact admin-summary-card">
           <span>草稿 / 回看联动</span>
           <strong>
             {draftCount} / {linkedReviewCount}
@@ -179,7 +179,7 @@ export function AdminQuestionBankPage() {
         </article>
       </section>
 
-      <section className="surface-card">
+      <section className="surface-card surface-card--compact-section">
         <div className="section-block__header">
           <div>
             <span className="section-block__eyebrow">筛选区</span>
@@ -204,7 +204,7 @@ export function AdminQuestionBankPage() {
               ))}
             </select>
           </label>
-          <article className="surface-card inline-summary-card">
+          <article className="surface-card inline-summary-card inline-summary-card--compact">
             <strong>
               {selectedThemeId === "all" ? "全部主题" : selectedQuestion?.themeTitle ?? "当前主题"}
             </strong>
@@ -219,7 +219,7 @@ export function AdminQuestionBankPage() {
         <div className="page-stack">
           {filteredQuestions.length > 0 ? (
             <>
-              <div className="management-list-panel">
+              <div className="management-list-panel management-list-panel--question-bank">
                 {pagedQuestions.map((question) => (
                   <button
                     key={question.id}
@@ -237,7 +237,12 @@ export function AdminQuestionBankPage() {
                         {question.status === "enabled" ? "启用中" : "草稿"}
                       </span>
                     </div>
-                    <p className="management-list-card__excerpt">{question.prompt}</p>
+                    <p
+                      className="management-list-card__excerpt compact-copy compact-copy--two-line"
+                      title={question.prompt}
+                    >
+                      {question.prompt}
+                    </p>
                     <div className="management-list-card__meta">
                       <span>{question.themeTitle}</span>
                       <span>回看 {question.reviewLevelId}</span>
@@ -263,7 +268,7 @@ export function AdminQuestionBankPage() {
 
         {selectedQuestion ? (
           <div className="page-stack">
-            <article className="surface-card editor-panel">
+            <article className="surface-card editor-panel editor-panel--compact">
               <span className="section-block__eyebrow">编辑面板</span>
               <h2>{selectedQuestion.id}</h2>
               <div className="chip-row">
@@ -399,7 +404,7 @@ export function AdminQuestionBankPage() {
             </article>
 
             <section className="card-grid card-grid--two">
-              <article className="surface-card admin-preview-card admin-preview-card--question">
+              <article className="surface-card admin-preview-card admin-preview-card--question admin-preview-card--compact">
                 <span className="section-block__eyebrow">学生端题面预览</span>
                 <h3>{selectedQuestion.prompt}</h3>
                 <div className="page-stack page-stack--compact">
@@ -420,13 +425,13 @@ export function AdminQuestionBankPage() {
               </article>
 
               <div className="page-stack">
-                <article className="surface-card admin-preview-card">
+                <article className="surface-card admin-preview-card admin-preview-card--compact">
                   <span className="section-block__eyebrow">错题回看预览</span>
                   <p>{selectedQuestion.explanation}</p>
                   <span className="surface-tag">建议回看：{selectedQuestion.reviewLevelId}</span>
                 </article>
 
-                <article className="surface-card admin-preview-card">
+                <article className="surface-card admin-preview-card admin-preview-card--compact">
                   <span className="section-block__eyebrow">出题提醒</span>
                   <ul className="plain-list">
                     <li>确保解析和回看关卡保持一致。</li>
