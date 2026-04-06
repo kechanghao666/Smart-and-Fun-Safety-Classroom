@@ -1,4 +1,6 @@
-﻿import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { StudentAdventureHero } from "../../components/student/StudentAdventureHero";
+import { StudentMascotBubble } from "../../components/student/StudentMascotBubble";
 import { StatusBadge } from "../../components/StatusBadge";
 import { fetchStudentGrowth, fetchStudentRecords } from "../../services/student";
 import { useAppState } from "../../state/AppState";
@@ -16,7 +18,8 @@ export function StudentRecordPage() {
     overview: {
       themeId: state.progress.themeId,
       themeTitle: state.progress.themeTitle,
-      completedLevels: state.progress.levels.filter((level) => level.status === "completed").length,
+      completedLevels: state.progress.levels.filter((level) => level.status === "completed")
+        .length,
       totalLevels: state.progress.levels.length,
       examStatus: state.progress.exam.status,
       examScore: state.progress.exam.score,
@@ -43,7 +46,12 @@ export function StudentRecordPage() {
     currentScene: fallbackGrowth.selectedScene,
     currentAbilityTag: fallbackGrowth.currentTier.ability,
     dimensions: fallbackGrowth.dimensions.map((item) => ({
-      id: item.id === "observe" ? "appearance" : item.id === "judge" ? "safety" : "scene",
+      id:
+        item.id === "observe"
+          ? "appearance"
+          : item.id === "judge"
+            ? "safety"
+            : "scene",
       label: item.label,
       points: item.score,
       level: 0,
@@ -51,9 +59,13 @@ export function StudentRecordPage() {
       currentUnlockLabel: item.label,
       nextUnlockLabel: null,
     })),
-    unlockedAppearances: fallbackGrowth.appearanceOptions.filter((item) => item.unlocked).map((item) => item.label),
+    unlockedAppearances: fallbackGrowth.appearanceOptions
+      .filter((item) => item.unlocked)
+      .map((item) => item.label),
     unlockedAbilityTags: [fallbackGrowth.currentTier.ability],
-    unlockedScenes: fallbackGrowth.sceneOptions.filter((item) => item.unlocked).map((item) => item.label),
+    unlockedScenes: fallbackGrowth.sceneOptions
+      .filter((item) => item.unlocked)
+      .map((item) => item.label),
     history: [],
   };
 
@@ -74,185 +86,293 @@ export function StudentRecordPage() {
     enabled: apiEnabled,
     fallbackData: fallbackGrowthData,
     fetcher: () => fetchStudentGrowth(state.authToken!),
-    dependencies: [state.authToken, state.progress.points, state.progress.rewardProgress.reviewedWrongQuestionIds.join("|")],
+    dependencies: [
+      state.authToken,
+      state.progress.points,
+      state.progress.rewardProgress.reviewedWrongQuestionIds.join("|"),
+    ],
     fallbackMessage: "成长信息暂时无法更新，当前展示已保存的成长信息。",
   });
 
   const continueRoute = recordsData.overview.continueRoute || state.progress.lastVisitedRoute;
   const wrongCount = state.progress.exam.wrongQuestionIds.length;
+  const completedLevels = state.progress.levels.filter(
+    (level) => level.status === "completed",
+  ).length;
+  const examStatusLabel =
+    recordsData.overview.examStatus === "completed"
+      ? `${recordsData.overview.examScore ?? 0} 分`
+      : recordsData.overview.examStatus === "available"
+        ? "考试已解锁"
+        : "还没解锁";
+  const sourceLabel = recordsSource === "api" ? "最新记录" : "本地记录";
 
   return (
-    <div className="page-stack">
-      <section className="hero-banner hero-banner--record">
-        <div>
-          <span className="hero-banner__eyebrow">学习记录页</span>
-          <h1>把主题进度、结算回看、错题和成长放在一起</h1>
-          <p>
-            学习记录页承担“快捷续学 + 主题进度 + 结果回顾 + 错题入口 + 成长快照”的中转功能，方便快速回到下一步。
-          </p>
-          {recordsError ? <p className="inline-note">{recordsError}</p> : null}
-        </div>
-        <div className="hero-banner__actions">
-          <button type="button" className="primary-button" onClick={() => navigate(continueRoute)}>
-            继续学习
-          </button>
-          <button type="button" className="ghost-button" onClick={() => navigate("/student/growth")}>
-            查看成长档案
-          </button>
-        </div>
-      </section>
-
-      <section className="card-grid card-grid--three">
-        <article className="surface-card stat-card">
-          <span>当前主题</span>
-          <strong>{recordsData.overview.themeTitle}</strong>
-          <p>最近学习位置：{recordsData.overview.lastVisitedRoute}</p>
-        </article>
-
-        <article className="surface-card stat-card">
-          <span>考试状态</span>
-          <strong>
-            {recordsData.overview.examStatus === "completed"
-              ? `${recordsData.overview.examScore ?? 0} 分`
-              : recordsData.overview.examStatus === "available"
-                ? "已解锁"
-                : "未解锁"}
-          </strong>
-          <p>
-            {recordsData.overview.examStatus === "completed"
-              ? `当前共有 ${wrongCount} 道题可继续回看。`
-              : "完成三关后，主题考试会自动点亮。"}
-          </p>
-        </article>
-
-        <article className="surface-card stat-card">
-          <span>成长阶段</span>
-          <strong>{growthData.stageLabel}</strong>
-          <p>{growthData.growthSummary}</p>
-        </article>
-      </section>
-
-      <section className="surface-card">
-        <div className="section-block__header">
-          <div>
-            <span className="section-block__eyebrow">主题进度</span>
-            <h2>每一关的状态和结算入口</h2>
+    <div className="page-stack student-page student-page--records">
+      <StudentAdventureHero
+        eyebrow="冒险记录册"
+        title="把今天的学习旅程装进记录册"
+        description="这里像一本会发光的冒险相册。你可以从这里继续出发，也可以回看每一站做了什么。"
+        bubbleTitle="继续出发"
+        bubbleText={
+          recordsError
+            ? "记录册有一点延迟，但现在的内容已经可以继续用了。"
+            : "点一下大按钮，就能回到最该继续的地方。"
+        }
+        mascotLabel={`${completedLevels}`}
+        mascotHint={`当前记录来源：${sourceLabel}`}
+        accent="mint"
+        variant="home"
+        stats={[
+          {
+            label: "主题进度",
+            value: `${completedLevels}/${recordsData.overview.totalLevels}`,
+            accent: "sky",
+          },
+          { label: "考试状态", value: examStatusLabel, accent: "orange" },
+          { label: "成长阶段", value: growthData.stageLabel, accent: "mint" },
+        ]}
+        actions={
+          <>
+            <button
+              type="button"
+              className="primary-button primary-button--playful"
+              onClick={() => navigate(continueRoute)}
+            >
+              从这里继续
+            </button>
+            <Link className="ghost-button link-button" to="/student/growth">
+              去成长档案
+            </Link>
+          </>
+        }
+        aside={
+          <div className="student-record-hero-card">
+            <span>最近停在</span>
+            <strong>
+              {recordsData.overview.lastVisitedRoute.split("/").slice(-1)[0] || "home"}
+            </strong>
+            <p>{recordsData.overview.themeTitle}</p>
           </div>
-        </div>
+        }
+      />
 
-        <div className="card-grid card-grid--three">
-          {state.progress.levels.map((level) => {
-            const result = state.progress.levelResults[level.id];
-            const target = result
-              ? `/student/theme/road-safety/level/${level.id}/result`
-              : `/student/theme/road-safety/level/${level.id}`;
+      <section className="student-card-grid student-card-grid--two">
+        <article className="surface-card student-record-route-board">
+          <div className="student-section-heading">
+            <span className="section-block__eyebrow">冒险总览</span>
+            <h2>这一轮你已经走到哪里了？</h2>
+          </div>
 
-            return (
-              <article key={level.id} className="surface-card result-card">
-                <div className="level-card__header">
-                  <div>
-                    <span className="surface-tag">{level.focus}</span>
-                    <h3>{level.title}</h3>
-                  </div>
-                  <StatusBadge status={level.status} />
-                </div>
-                <ul className="plain-list">
-                  <li>预计时长：{level.duration}</li>
-                  <li>本关得分：{result ? `${result.score} 分` : "尚未生成结算"}</li>
-                  <li>星级表现：{result ? `${result.stars} 星` : "完成后显示"}</li>
-                </ul>
-                <button
-                  type="button"
-                  className={level.status === "locked" ? "ghost-button" : "primary-button"}
-                  disabled={level.status === "locked"}
-                  onClick={() => navigate(target)}
-                >
-                  {result ? "查看本关结算" : "进入本关"}
-                </button>
-              </article>
-            );
-          })}
-        </div>
+          <div className="student-mini-card-grid">
+            <div className="student-mini-card student-mini-card--sky">
+              <span>当前主题</span>
+              <strong>{recordsData.overview.themeTitle}</strong>
+            </div>
+            <div className="student-mini-card student-mini-card--mint">
+              <span>积分</span>
+              <strong>{recordsData.overview.points}</strong>
+            </div>
+            <div className="student-mini-card student-mini-card--orange">
+              <span>徽章</span>
+              <strong>{recordsData.overview.badges.length}</strong>
+            </div>
+          </div>
+
+          <div className="student-checklist">
+            <div className="student-checklist__item">
+              <span className="student-checklist__dot" />
+              <span>最近学习位置：{recordsData.overview.lastVisitedRoute}</span>
+            </div>
+            <div className="student-checklist__item">
+              <span className="student-checklist__dot" />
+              <span>继续入口：{recordsData.overview.continueRoute}</span>
+            </div>
+            <div className="student-checklist__item">
+              <span className="student-checklist__dot" />
+              <span>考试状态：{examStatusLabel}</span>
+            </div>
+          </div>
+        </article>
+
+        <StudentMascotBubble
+          eyebrow="小助手提醒"
+          title="想省时间，就从最亮的入口继续"
+          message="记录册会把关卡、考试、错题和成长都串起来，所以你不需要自己回忆上次停在哪里。"
+          accent="sky"
+          notice={
+            recordsError ||
+            (recordsLoading
+              ? "正在同步最新学习记录..."
+              : `当前共有 ${wrongCount} 道错题可继续回看。`)
+          }
+          actions={
+            <>
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => navigate("/student/theme/road-safety/exam/result")}
+                disabled={state.progress.exam.status !== "completed"}
+              >
+                看考试结果
+              </button>
+              <Link className="ghost-button link-button" to="/student/theme/road-safety">
+                打开主题地图
+              </Link>
+            </>
+          }
+        />
       </section>
 
-      <section className="card-grid card-grid--two">
-        <article className="surface-card">
-          <span className="section-block__eyebrow">考试与错题</span>
-          <h2>考试页、结果页与错题页入口</h2>
+      <section className="student-card-grid student-card-grid--three">
+        {state.progress.levels.map((level) => {
+          const result = state.progress.levelResults[level.id];
+          const target = result
+            ? `/student/theme/road-safety/level/${level.id}/result`
+            : `/student/theme/road-safety/level/${level.id}`;
+
+          return (
+            <article key={level.id} className="surface-card student-record-level-card">
+              <div className="student-record-level-card__top">
+                <span className="surface-tag">{level.focus}</span>
+                <StatusBadge status={level.status} />
+              </div>
+              <h3>{level.title}</h3>
+              <p>
+                {result
+                  ? `本关得到 ${result.score} 分，拿到 ${result.stars} 星。`
+                  : "还没有完成这一关，点进去继续挑战吧。"}
+              </p>
+              <div className="student-record-level-card__meta">
+                <span>{level.duration}</span>
+                <span>{result ? "已有庆祝页" : "还没生成结算"}</span>
+              </div>
+              <button
+                type="button"
+                className={
+                  level.status === "locked"
+                    ? "ghost-button"
+                    : "primary-button primary-button--playful"
+                }
+                disabled={level.status === "locked"}
+                onClick={() => navigate(target)}
+              >
+                {result ? "打开这一站" : "去闯这一站"}
+              </button>
+            </article>
+          );
+        })}
+      </section>
+
+      <section className="student-card-grid student-card-grid--two">
+        <article className="surface-card student-record-focus-card">
+          <div className="student-section-heading">
+            <span className="section-block__eyebrow">考试收口</span>
+            <h2>考试、错题和结果页都从这里进</h2>
+          </div>
+
           {state.progress.exam.status === "completed" ? (
-            <div className="page-stack page-stack--compact">
+            <>
+              <div className="student-mini-card-grid">
+                <div className="student-mini-card student-mini-card--orange">
+                  <span>考试成绩</span>
+                  <strong>{state.progress.exam.score ?? 0} 分</strong>
+                </div>
+                <div className="student-mini-card student-mini-card--sky">
+                  <span>错题数量</span>
+                  <strong>{wrongCount} 道</strong>
+                </div>
+              </div>
               <div className="button-row">
-                <Link className="primary-button link-button" to="/student/theme/road-safety/exam/result">
-                  查看考试结果页
+                <Link
+                  className="primary-button link-button"
+                  to="/student/theme/road-safety/exam/result"
+                >
+                  看考试结果
                 </Link>
-                <Link className="ghost-button link-button" to="/student/theme/road-safety/wrong-questions">
-                  查看错题回看页
+                <Link
+                  className="ghost-button link-button"
+                  to="/student/theme/road-safety/wrong-questions"
+                >
+                  去错题回看
                 </Link>
               </div>
-              <article className="feedback-box">
-                <strong>本轮考试已收口</strong>
-                <p>当前得分 {state.progress.exam.score ?? 0} 分，错题 {wrongCount} 道。</p>
-              </article>
-            </div>
+            </>
           ) : state.progress.exam.status === "available" ? (
             <button
               type="button"
-              className="primary-button"
+              className="primary-button primary-button--playful"
               onClick={() => navigate("/student/theme/road-safety/exam")}
             >
-              进入主题考试
+              立刻进入考试
             </button>
           ) : (
-            <p>先完成三关学习，考试入口才会解锁。</p>
+            <article className="student-empty-panel">
+              <strong>考试宝箱还没打开</strong>
+              <p>先把三关走完，考试入口才会出现。</p>
+            </article>
           )}
         </article>
 
-        <article className="surface-card">
-          <span className="section-block__eyebrow">成长快照</span>
-          <h2>本轮学习带来的变化</h2>
-          <ul className="plain-list">
-            <li>成长值：{growthData.totalGrowthPoints}</li>
-            <li>当前外观：{growthData.currentAppearance}</li>
-            <li>当前场景：{growthData.currentScene}</li>
-            <li>能力标签：{growthData.currentAbilityTag}</li>
-            <li>已获得徽章：{recordsData.overview.badges.join(" / ") || "暂无"}</li>
-          </ul>
+        <article className="surface-card student-record-focus-card">
+          <div className="student-section-heading">
+            <span className="section-block__eyebrow">成长快照</span>
+            <h2>这轮学习给角色带来了什么变化？</h2>
+          </div>
+
+          <div className="student-checklist">
+            <div className="student-checklist__item">
+              <span className="student-checklist__dot" />
+              <span>成长值：{growthData.totalGrowthPoints}</span>
+            </div>
+            <div className="student-checklist__item">
+              <span className="student-checklist__dot" />
+              <span>当前外观：{growthData.currentAppearance}</span>
+            </div>
+            <div className="student-checklist__item">
+              <span className="student-checklist__dot" />
+              <span>当前场景：{growthData.currentScene}</span>
+            </div>
+            <div className="student-checklist__item">
+              <span className="student-checklist__dot" />
+              <span>能力标签：{growthData.currentAbilityTag}</span>
+            </div>
+          </div>
         </article>
       </section>
 
-      <section className="surface-card">
-        <div className="section-block__header">
-          <div>
-            <span className="section-block__eyebrow">最近学习轨迹</span>
-            <h2>{recordsLoading ? "正在同步学习记录..." : "从资料设置到结果反馈的完整轨迹"}</h2>
-          </div>
-          <span className="surface-tag">{recordsSource === "api" ? "最新记录" : "示例记录"}</span>
+      <section className="surface-card student-journey-board">
+        <div className="student-section-heading">
+          <span className="section-block__eyebrow">时间轨迹</span>
+          <h2>{recordsLoading ? "正在把记录册翻到最新一页..." : "每一站都在这里排好了顺序"}</h2>
         </div>
 
         {recordsData.records.length > 0 ? (
-          <div className="timeline-list">
+          <div className="student-journey-list">
             {recordsData.records.map((item, index) => (
-              <article key={item.id} className={`timeline-item timeline-item--${index === 0 ? "current" : "done"}`}>
-                <span className="timeline-item__dot" />
-                <div className="timeline-item__content">
-                  <div className="row-between">
-                    <div>
-                      <h3>{item.title}</h3>
-                      <p>{item.description}</p>
-                      <p className="inline-note">{item.createdAt}</p>
-                    </div>
-                    <button type="button" className="ghost-button" onClick={() => navigate(item.route)}>
-                      打开入口
+              <article key={item.id} className="student-journey-item">
+                <div className="student-journey-item__marker">{index + 1}</div>
+                <div className="student-journey-item__content">
+                  <div className="student-journey-item__row">
+                    <strong>{item.title}</strong>
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      onClick={() => navigate(item.route)}
+                    >
+                      打开这一站
                     </button>
                   </div>
+                  <p>{item.description}</p>
+                  <em>{item.createdAt}</em>
                 </div>
               </article>
             ))}
           </div>
         ) : (
-          <article className="feedback-box">
-            <strong>当前还没有学习记录</strong>
-            <p>继续完成关卡、考试和错题重学后，这里会按时间顺序累计展示。</p>
+          <article className="student-empty-panel">
+            <strong>记录册还没有新内容</strong>
+            <p>继续完成关卡、考试和错题重学后，这里会慢慢装满你的冒险脚印。</p>
           </article>
         )}
       </section>

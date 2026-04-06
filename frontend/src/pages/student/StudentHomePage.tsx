@@ -95,7 +95,7 @@ export function StudentHomePage() {
       state.progress.points,
       state.progress.rewardProgress.reviewedWrongQuestionIds.join("|"),
     ],
-    fallbackMessage: "首页成长数据暂时无法更新，当前展示已保存的成长结果。",
+    fallbackMessage: "首页成长数据暂时无法更新，先展示已经保存的成长结果。",
   });
 
   const homeAiPrompt = useMemo(
@@ -113,25 +113,24 @@ export function StudentHomePage() {
     prompt: homeAiPrompt,
     scene: "welcome",
     levelId: nextLevel?.id as LevelId | undefined,
-    fallbackText:
-      "欢迎回来，先回到你上次停留的位置，继续把道路安全主题课学完整。",
+    fallbackText: "欢迎回来，先回到你上次停留的位置，把今天的安全冒险继续走完吧。",
   });
 
   return (
     <div className="page-stack student-page student-page--home">
       <StudentAdventureHero
         eyebrow="今日冒险"
-        title={`${profile?.nickname ?? "安全小卫士"}，准备出发`}
-        description="先看今天的主任务，再点一下大按钮继续闯关。"
+        title={`${profile?.nickname ?? "安全小队员"}，准备继续出发`}
+        description="首页只保留今天最重要的事。先看主任务，再按大按钮继续闯关，不会迷路。"
         bubbleTitle="小助手提醒"
-        bubbleText={isGreetingLoading ? "我在整理今天的任务" : greetingMessage}
+        bubbleText={isGreetingLoading ? "我正在整理今天的任务..." : greetingMessage}
         mascotLabel={profile?.avatarLabel.slice(0, 1) ?? "安"}
         mascotHint={greetingNotice || stageGuide.starterRoute}
         accent={avatarAccent}
         variant="home"
         stats={[
           {
-            label: "当前任务",
+            label: "今天先做",
             value:
               nextLevel?.title ??
               (state.progress.exam.status === "available"
@@ -175,18 +174,16 @@ export function StudentHomePage() {
           <h2>先做什么</h2>
           <strong>
             {nextLevel?.title ??
-              (state.progress.exam.status === "available"
-                ? "主题考试"
-                : "AI 结果卡")}
+              (state.progress.exam.status === "available" ? "主题考试" : "AI 结果卡")}
           </strong>
-          <p>点一下就能回到最该完成的任务。</p>
+          <p>点一下大按钮，就会回到最该继续的地方。</p>
         </article>
 
         <article className="surface-card student-adventure-card student-adventure-card--mint">
           <span className="student-adventure-card__icon">02</span>
           <h2>闯关进度</h2>
           <strong>{completedLevels} / 3 关</strong>
-          <p>三关完成后，考试宝箱会自动点亮。</p>
+          <p>三关完成后，考试宝箱就会自动亮起来。</p>
         </article>
 
         <article className="surface-card student-adventure-card student-adventure-card--orange">
@@ -195,17 +192,17 @@ export function StudentHomePage() {
           <strong>
             {growthData.nextLevelRemaining !== null
               ? `${growthData.nextLevelRemaining} 分`
-              : "已点亮"}
+              : "已经点亮"}
           </strong>
-          <p>{growthData.nextLevelLabel ?? "当前阶段已经全部点亮。"}</p>
+          <p>{growthData.nextLevelLabel ?? "当前阶段已经全部点亮了"}</p>
         </article>
       </section>
 
       <section className="student-card-grid student-card-grid--two">
-        <article className="surface-card student-map-panel">
+        <article className="surface-card student-home-stage-board">
           <div className="student-section-heading">
-            <span className="section-block__eyebrow">主题地图</span>
-            <h2>今天的学习路线</h2>
+            <span className="section-block__eyebrow">今日路线</span>
+            <h2>今天的学习地图很简单</h2>
           </div>
 
           <div className="student-map-strip">
@@ -231,8 +228,8 @@ export function StudentHomePage() {
                   : "student-map-step"
               }
             >
-              <strong>结果卡</strong>
-              <span>收尾总结</span>
+              <strong>结果总结</strong>
+              <span>收尾奖励</span>
             </div>
           </div>
 
@@ -284,7 +281,7 @@ export function StudentHomePage() {
         <article className="surface-card student-reward-board">
           <div className="student-section-heading">
             <span className="section-block__eyebrow">奖励进度</span>
-            <h2>把坚持变成礼盒</h2>
+            <h2>把坚持变成礼物</h2>
           </div>
 
           <div className="student-checklist">
@@ -295,7 +292,7 @@ export function StudentHomePage() {
             <div className="student-checklist__item">
               <span className="student-checklist__dot" />
               <span>
-                已领礼盒：
+                已领礼包：
                 {state.progress.rewardProgress.claimedStreakDays.join(" / ") || "暂无"}
               </span>
             </div>
@@ -320,7 +317,7 @@ export function StudentHomePage() {
                   className="primary-button"
                   onClick={() => claimStreakReward(day)}
                 >
-                  领取 {day} 天礼盒
+                  领取 {day} 天礼包
                 </button>
               ))
             ) : (
@@ -356,7 +353,7 @@ export function StudentHomePage() {
               onClick={() => navigate("/student/growth")}
             >
               <strong>成长档案</strong>
-              <span>看外观和升级</span>
+              <span>看外观、场景和升级进度</span>
             </button>
             <button
               type="button"
@@ -364,7 +361,7 @@ export function StudentHomePage() {
               onClick={() => navigate("/student/records")}
             >
               <strong>学习记录</strong>
-              <span>回到上次学习点</span>
+              <span>回到上次学习的位置</span>
             </button>
             <button
               type="button"
@@ -372,7 +369,7 @@ export function StudentHomePage() {
               onClick={() => navigate(state.progress.lastVisitedRoute)}
             >
               <strong>快捷续学</strong>
-              <span>立刻继续挑战</span>
+              <span>立刻继续当前挑战</span>
             </button>
           </div>
         </article>
@@ -388,7 +385,7 @@ export function StudentHomePage() {
       <section className="student-theme-choice">
         <div className="student-section-heading">
           <span className="section-block__eyebrow">主题入口</span>
-          <h2>选一张大地图开始吧</h2>
+          <h2>选一张大地图开始冒险</h2>
         </div>
 
         <div className="student-card-grid student-card-grid--three">
@@ -426,7 +423,9 @@ export function StudentHomePage() {
                 <button
                   type="button"
                   className={
-                    theme.isOpen ? "primary-button primary-button--playful" : "ghost-button"
+                    theme.isOpen
+                      ? "primary-button primary-button--playful"
+                      : "ghost-button"
                   }
                   onClick={() =>
                     theme.isOpen

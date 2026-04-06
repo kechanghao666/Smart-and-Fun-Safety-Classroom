@@ -1,5 +1,7 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { StudentAdventureHero } from "../../components/student/StudentAdventureHero";
+import { StudentMascotBubble } from "../../components/student/StudentMascotBubble";
 import { examQuestions } from "../../data/mockData";
 import {
   completeStudentWrongQuestionReview as completeStudentWrongQuestionReviewToApi,
@@ -12,14 +14,12 @@ import { WRONG_QUESTION_REVIEW_REWARD } from "../../utils/studentRewards";
 
 export function StudentWrongQuestionsPage() {
   const navigate = useNavigate();
-  const {
-    completeWrongQuestionReview,
-    replaceProgress,
-    state,
-  } = useAppState();
+  const { completeWrongQuestionReview, replaceProgress, state } = useAppState();
   const apiEnabled = state.authSource === "api" && Boolean(state.authToken);
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(apiEnabled && state.progress.exam.status === "completed");
+  const [isLoading, setIsLoading] = useState(
+    apiEnabled && state.progress.exam.status === "completed",
+  );
   const [submittingQuestionId, setSubmittingQuestionId] = useState<string | null>(null);
 
   const fallbackReview = useMemo<StudentExamReviewResponse>(
@@ -36,18 +36,25 @@ export function StudentWrongQuestionsPage() {
           prompt: question.prompt,
           studentAnswer:
             typeof state.progress.exam.studentAnswers?.[question.id] === "number"
-              ? question.options[state.progress.exam.studentAnswers[question.id] ?? 0] ?? null
+              ? question.options[state.progress.exam.studentAnswers[question.id] ?? 0] ??
+                null
               : null,
           correctAnswer: question.options[question.correctIndex] ?? "",
           explanation: question.explanation,
           reviewLevelId: question.reviewLevelId,
           reviewLabel: question.reviewLabel,
           reviewSuggestion: question.reviewSuggestion,
-          reviewed: state.progress.rewardProgress.reviewedWrongQuestionIds.includes(question.id),
+          reviewed: state.progress.rewardProgress.reviewedWrongQuestionIds.includes(
+            question.id,
+          ),
           reviewedAt: null,
         })),
     }),
-    [state.progress.exam.studentAnswers, state.progress.exam.wrongQuestionIds, state.progress.rewardProgress.reviewedWrongQuestionIds],
+    [
+      state.progress.exam.studentAnswers,
+      state.progress.exam.wrongQuestionIds,
+      state.progress.rewardProgress.reviewedWrongQuestionIds,
+    ],
   );
   const [reviewData, setReviewData] = useState<StudentExamReviewResponse>(fallbackReview);
 
@@ -96,29 +103,43 @@ export function StudentWrongQuestionsPage() {
 
   if (state.progress.exam.status !== "completed") {
     return (
-      <section className="surface-card empty-state-card">
-        <span className="section-block__eyebrow">错题回看页</span>
-        <h2>当前还没有可回看的错题</h2>
-        <p>请先完成主题考试，系统才会生成错题解析、学生作答记录和建议回看的关卡入口。</p>
-        <div className="button-row">
-          <button
-            type="button"
-            className="primary-button"
-            onClick={() => navigate("/student/theme/road-safety")}
-          >
-            返回主题页
-          </button>
-          {state.progress.exam.status === "available" ? (
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={() => navigate("/student/theme/road-safety/exam")}
-            >
-              进入考试
-            </button>
-          ) : null}
-        </div>
-      </section>
+      <div className="page-stack student-page student-page--repair">
+        <StudentAdventureHero
+          eyebrow="补强任务页"
+          title="还没有需要修补的错题任务"
+          description="先完成主题考试，系统才会把错题、解析和回看入口整理成一张张补强任务卡。"
+          bubbleTitle="下一步"
+          bubbleText={
+            state.progress.exam.status === "available"
+              ? "考试宝箱已经打开啦，先去完成挑战。"
+              : "先把三关都走完，考试入口才会出现。"
+          }
+          mascotLabel="修"
+          mascotHint="等你考完回来，这里会自动变成错题修补站。"
+          accent="orange"
+          variant="result"
+          actions={
+            <>
+              <button
+                type="button"
+                className="primary-button primary-button--playful"
+                onClick={() => navigate("/student/theme/road-safety")}
+              >
+                返回主题地图
+              </button>
+              {state.progress.exam.status === "available" ? (
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => navigate("/student/theme/road-safety/exam")}
+                >
+                  进入考试
+                </button>
+              ) : null}
+            </>
+          }
+        />
+      </div>
     );
   }
 
@@ -169,142 +190,185 @@ export function StudentWrongQuestionsPage() {
   }
 
   return (
-    <div className="page-stack">
-      <section className="hero-banner hero-banner--report">
-        <div>
-          <span className="hero-banner__eyebrow">错题回看页</span>
-          <h1>把错题、作答记录、解析和重学奖励放在同一页里</h1>
-          <p>
-            你可以先看自己当时的答案，再看正确答案和解析，最后回到对应关卡完成重学并刷新成长奖励。
-          </p>
-          {error ? <p className="inline-note">{error}</p> : null}
-        </div>
+    <div className="page-stack student-page student-page--repair">
+      <StudentAdventureHero
+        eyebrow="错题修补站"
+        title="把这几道题修一修，奖励会继续往上涨"
+        description="每一张错题卡都只保留最关键的信息：你当时怎么选、正确答案是什么、下一步该回看哪一关。"
+        bubbleTitle="修补顺序"
+        bubbleText={reviewData.suggestion}
+        mascotLabel={`${reviewData.totalWrongQuestions}`}
+        mascotHint={
+          error ||
+          (isLoading
+            ? "正在同步最新错题任务..."
+            : `已完成 ${reviewedCount} 道，还剩 ${remainingCount} 道。`)
+        }
+        accent="orange"
+        variant="result"
+        stats={[
+          {
+            label: "错题数量",
+            value: `${reviewData.totalWrongQuestions} 道`,
+            accent: "orange",
+          },
+          { label: "已完成重学", value: `${reviewedCount} 道`, accent: "mint" },
+          { label: "单题奖励", value: `+${WRONG_QUESTION_REVIEW_REWARD}`, accent: "sky" },
+        ]}
+        actions={
+          <>
+            <Link
+              className="ghost-button link-button"
+              to="/student/theme/road-safety/exam/result"
+            >
+              返回考试结果
+            </Link>
+            <Link className="ghost-button link-button" to="/student/ai-report">
+              查看 AI 结果卡
+            </Link>
+          </>
+        }
+      />
 
-        <div className="progress-ring">
-          <strong>{reviewData.totalWrongQuestions}</strong>
-          <span>{isLoading ? "同步中" : "当前错题数"}</span>
-        </div>
-      </section>
+      <section className="student-card-grid student-card-grid--two">
+        <article className="surface-card student-repair-summary-card">
+          <div className="student-section-heading">
+            <span className="section-block__eyebrow">奖励提示</span>
+            <h2>修好一题，就会多一份成长值</h2>
+          </div>
 
-      <section className="card-grid card-grid--three">
-        <article className="surface-card">
-          <span className="section-block__eyebrow">回看概览</span>
-          <h2>本轮最该补强什么？</h2>
-          <ul className="plain-list">
-            <li>错题数量：{reviewData.totalWrongQuestions} 题</li>
-            <li>已完成重学：{reviewedCount} 题</li>
-            <li>仍待回看：{remainingCount} 题</li>
-          </ul>
+          <div className="student-mini-card-grid">
+            <div className="student-mini-card student-mini-card--orange">
+              <span>单题奖励</span>
+              <strong>+{WRONG_QUESTION_REVIEW_REWARD}</strong>
+            </div>
+            <div className="student-mini-card student-mini-card--sky">
+              <span>当前积分</span>
+              <strong>{state.progress.points}</strong>
+            </div>
+            <div className="student-mini-card student-mini-card--mint">
+              <span>已登记重学</span>
+              <strong>{state.progress.rewardProgress.reviewedWrongQuestionIds.length}</strong>
+            </div>
+          </div>
         </article>
 
-        <article className="surface-card">
-          <span className="section-block__eyebrow">重学奖励</span>
-          <h2>完成回看也会继续点亮成长值</h2>
-          <ul className="plain-list">
-            <li>每完成 1 道错题重学：+{WRONG_QUESTION_REVIEW_REWARD} 成长值</li>
-            <li>当前积分累计：{state.progress.points}</li>
-            <li>已登记回看题目：{state.progress.rewardProgress.reviewedWrongQuestionIds.length} 题</li>
-          </ul>
-        </article>
-
-        <article className="surface-card">
-          <span className="section-block__eyebrow">回看顺序</span>
-          <h2>建议按这三个步骤复习</h2>
-          <ul className="plain-list">
-            <li>先看自己当时的作答，找到判断偏差点。</li>
-            <li>再看正确答案和简短解析，补回知识点。</li>
-            <li>最后回到对应关卡，完成一次重学并刷新成长档案。</li>
-          </ul>
-        </article>
+        <StudentMascotBubble
+          eyebrow="修补步骤"
+          title="按这 3 步走，最不容易乱"
+          message="先看看自己当时怎么想，再补回规则，最后回到对应关卡重新练一遍。"
+          accent="mint"
+          actions={
+            <>
+              <Link className="ghost-button link-button" to="/student/theme/road-safety">
+                回到主题地图
+              </Link>
+              <Link className="ghost-button link-button" to="/student/growth">
+                看成长档案
+              </Link>
+            </>
+          }
+        />
       </section>
 
       {reviewData.items.length > 0 ? (
-        <section className="page-stack exam-review-list">
+        <section className="page-stack">
           {reviewData.items.map((item, index) => {
             const isReviewed = item.reviewed;
             const isSubmittingCurrent = submittingQuestionId === item.questionId;
 
             return (
-              <article key={item.questionId} className="surface-card exam-review-card">
-                <div className="exam-review-card__header">
+              <article key={item.questionId} className="surface-card student-repair-card">
+                <div className="student-repair-card__header">
                   <div>
-                    <span className="surface-tag">错题 {index + 1}</span>
+                    <span className="surface-tag">修补任务 {index + 1}</span>
                     <h2>{item.prompt}</h2>
                   </div>
-                  <span className="exam-review-chip">{item.reviewLabel}</span>
+                  <span className="student-repair-card__badge">{item.reviewLabel}</span>
                 </div>
 
-                <div className="card-grid card-grid--three">
-                  <article className="feedback-box">
-                    <strong>你的作答</strong>
-                    <p>{item.studentAnswer ?? "当前没有记录到本地作答结果"}</p>
+                <div className="student-card-grid student-card-grid--three">
+                  <article className="student-repair-note">
+                    <span>你当时选了</span>
+                    <strong>{item.studentAnswer ?? "没有记录到你的作答"}</strong>
                   </article>
-                  <article className="feedback-box">
-                    <strong>正确答案</strong>
-                    <p>{item.correctAnswer}</p>
+                  <article className="student-repair-note student-repair-note--right">
+                    <span>正确答案</span>
+                    <strong>{item.correctAnswer}</strong>
                   </article>
-                  <article className="feedback-box">
-                    <strong>简短解析</strong>
-                    <p>{item.explanation}</p>
+                  <article className="student-repair-note">
+                    <span>简短解析</span>
+                    <strong>{item.explanation}</strong>
                   </article>
                 </div>
 
-                <article className="feedback-box">
-                  <strong>建议回看</strong>
-                  <p>{item.reviewSuggestion}</p>
-                </article>
+                <div className="student-repair-card__footer">
+                  <article className="student-repair-tip">
+                    <strong>建议先回看</strong>
+                    <p>{item.reviewSuggestion}</p>
+                  </article>
 
-                <article
-                  className={
-                    isReviewed
-                      ? "feedback-box reward-feedback-box reward-feedback-box--claimed"
-                      : "feedback-box reward-feedback-box"
-                  }
-                >
-                  <strong>错题重学奖励</strong>
-                  <p>
-                    {isReviewed
-                      ? "这道错题的重学奖励已经领取，成长档案已同步刷新。"
-                      : `完成这道错题的回看与重学后，可获得 +${WRONG_QUESTION_REVIEW_REWARD} 成长值。`}
-                  </p>
-                </article>
+                  <article
+                    className={
+                      isReviewed
+                        ? "student-repair-tip student-repair-tip--claimed"
+                        : "student-repair-tip"
+                    }
+                  >
+                    <strong>{isReviewed ? "奖励已领取" : "完成就能领奖励"}</strong>
+                    <p>
+                      {isReviewed
+                        ? "这道题的重学奖励已经记进成长档案里了。"
+                        : `完成这道错题的回看和重学后，可获得 +${WRONG_QUESTION_REVIEW_REWARD} 成长值。`}
+                    </p>
+                  </article>
+                </div>
 
                 <div className="button-row">
                   <button
                     type="button"
-                    className="primary-button"
-                    onClick={() => navigate(`/student/theme/road-safety/level/${item.reviewLevelId}`)}
+                    className="ghost-button"
+                    onClick={() =>
+                      navigate(`/student/theme/road-safety/level/${item.reviewLevelId}`)
+                    }
                   >
                     回看对应关卡
                   </button>
                   <button
                     type="button"
-                    className={isReviewed ? "ghost-button" : "primary-button"}
+                    className={
+                      isReviewed
+                        ? "ghost-button"
+                        : "primary-button primary-button--playful"
+                    }
                     disabled={isReviewed || isSubmittingCurrent}
                     onClick={() => {
                       void handleComplete(item.questionId);
                     }}
                   >
-                    {isReviewed ? "已完成本次重学" : isSubmittingCurrent ? "提交中..." : `完成本次重学并领取 +${WRONG_QUESTION_REVIEW_REWARD}`}
+                    {isReviewed
+                      ? "这道题已经修好"
+                      : isSubmittingCurrent
+                        ? "正在记录..."
+                        : `完成本次重学并领取 +${WRONG_QUESTION_REVIEW_REWARD}`}
                   </button>
-                  <Link className="ghost-button link-button" to="/student/theme/road-safety/exam/result">
-                    返回考试结果页
-                  </Link>
                 </div>
               </article>
             );
           })}
         </section>
       ) : (
-        <section className="surface-card empty-state-card">
-          <span className="section-block__eyebrow">当前状态</span>
-          <h2>本轮考试没有错题</h2>
-          <p>可以直接进入 AI 学习结果页，完成本轮学习总结与成长回看。</p>
+        <section className="surface-card student-empty-panel">
+          <strong>这一轮没有错题，太棒了</strong>
+          <p>可以直接去看 AI 结果卡，把这一轮学习收个尾。</p>
           <div className="button-row">
             <Link className="primary-button link-button" to="/student/ai-report">
               查看 AI 结果卡
             </Link>
-            <Link className="ghost-button link-button" to="/student/theme/road-safety/exam/result">
+            <Link
+              className="ghost-button link-button"
+              to="/student/theme/road-safety/exam/result"
+            >
               返回考试结果页
             </Link>
           </div>

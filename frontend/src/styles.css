@@ -3331,11 +3331,386 @@ button {
   border-radius: 34px;
 }
 
+.student-growth-stage,
+.student-record-hero-card,
+.student-growth-board__preview {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-height: 170px;
+  padding: 20px;
+  border-radius: 26px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08)),
+    rgba(255, 255, 255, 0.12);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.student-growth-stage__eyebrow,
+.student-growth-board__badge,
+.student-record-hero-card span {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.student-growth-stage strong,
+.student-growth-board__preview strong,
+.student-record-hero-card strong,
+.student-report-spotlight strong {
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.student-growth-stage p,
+.student-growth-stage span,
+.student-record-hero-card p,
+.student-growth-board__preview p,
+.student-report-spotlight p,
+.student-repair-note span,
+.student-repair-tip p {
+  margin: 0;
+}
+
+.student-growth-board,
+.student-home-stage-board,
+.student-record-route-board,
+.student-record-focus-card,
+.student-target-panel,
+.student-ai-prompt-board,
+.student-repair-summary-card,
+.student-report-path-board {
+  display: grid;
+  gap: 18px;
+}
+
+.student-growth-board__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 18px;
+}
+
+.student-growth-board__facts {
+  display: grid;
+  gap: 14px;
+}
+
+.student-growth-dimension-card {
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(240, 249, 255, 0.96));
+  border: 1px solid rgba(46, 116, 176, 0.1);
+}
+
+.student-growth-dimension-card__label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.student-growth-dimension-card strong {
+  font-size: 28px;
+  color: var(--blue-deep);
+}
+
+.student-growth-dimension-card p,
+.student-growth-dimension-card span {
+  margin: 0;
+}
+
+.student-growth-choice-list,
+.student-ai-card-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.student-growth-choice-card,
+.student-ai-prompt-card {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  border: 0;
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 249, 255, 0.96));
+  box-shadow: 0 12px 24px rgba(31, 93, 145, 0.08);
+  color: var(--blue-deep);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.student-growth-choice-card:hover:not(:disabled),
+.student-ai-prompt-card:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 30px rgba(31, 93, 145, 0.12);
+}
+
+.student-growth-choice-card:disabled,
+.student-ai-prompt-card:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.student-growth-choice-card--selected {
+  background:
+    linear-gradient(160deg, rgba(73, 206, 178, 0.18), rgba(255, 255, 255, 0.98));
+  box-shadow: inset 0 0 0 2px rgba(46, 176, 147, 0.2);
+}
+
+.student-growth-choice-card strong,
+.student-ai-prompt-card strong {
+  font-size: 18px;
+}
+
+.student-growth-choice-card em,
+.student-ai-prompt-card span {
+  font-style: normal;
+  color: var(--text-muted);
+}
+
+.student-journey-board {
+  display: grid;
+  gap: 18px;
+}
+
+.student-journey-list {
+  display: grid;
+  gap: 14px;
+}
+
+.student-journey-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.student-journey-item__marker {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #60bfff, #3c8fe8);
+  color: white;
+  font-weight: 800;
+  box-shadow: 0 10px 18px rgba(31, 93, 145, 0.16);
+}
+
+.student-journey-item__content {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 22px;
+  background: rgba(244, 250, 255, 0.88);
+  border: 1px solid rgba(50, 118, 176, 0.1);
+}
+
+.student-journey-item__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.student-journey-item__content p,
+.student-journey-item__content em {
+  margin: 0;
+}
+
+.student-empty-panel {
+  display: grid;
+  gap: 10px;
+  padding: 22px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 255, 0.96));
+  border: 1px dashed rgba(44, 117, 180, 0.2);
+}
+
+.student-empty-panel strong,
+.student-target-panel h2,
+.student-record-level-card h3,
+.student-record-focus-card h2,
+.student-repair-card h2,
+.student-ai-rule-card h2,
+.student-ai-chat-stage h2 {
+  margin: 0;
+}
+
+.student-target-panel p,
+.student-record-level-card p,
+.student-record-focus-card p,
+.student-empty-panel p {
+  margin: 0;
+}
+
+.student-record-level-card {
+  display: grid;
+  gap: 14px;
+  min-height: 240px;
+}
+
+.student-record-level-card__top,
+.student-record-level-card__meta,
+.student-repair-card__header,
+.student-repair-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.student-record-level-card__meta {
+  flex-wrap: wrap;
+  color: var(--text-muted);
+}
+
+.student-ai-workspace {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.82fr) minmax(0, 1.18fr);
+  gap: 20px;
+}
+
+.student-ai-rule-card,
+.student-ai-chat-stage {
+  display: grid;
+  gap: 18px;
+}
+
+.student-ai-chat-log {
+  display: grid;
+  gap: 14px;
+  min-height: 320px;
+  max-height: 520px;
+  padding-right: 6px;
+  overflow-y: auto;
+}
+
+.student-repair-card {
+  display: grid;
+  gap: 18px;
+}
+
+.student-repair-card__badge {
+  display: inline-flex;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 214, 133, 0.34), rgba(255, 241, 214, 0.98));
+  color: #af5c0f;
+  font-weight: 700;
+}
+
+.student-repair-note,
+.student-repair-tip {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(245, 250, 255, 0.92);
+  border: 1px solid rgba(44, 117, 180, 0.1);
+}
+
+.student-repair-note strong,
+.student-repair-tip strong {
+  font-size: 18px;
+}
+
+.student-repair-note--right {
+  background: linear-gradient(180deg, rgba(232, 255, 247, 0.96), rgba(255, 255, 255, 0.98));
+}
+
+.student-repair-tip--claimed {
+  background: linear-gradient(180deg, rgba(225, 255, 239, 0.96), rgba(255, 255, 255, 0.98));
+}
+
+.student-report-spotlight {
+  display: grid;
+  gap: 14px;
+  min-height: 240px;
+}
+
+.student-report-spotlight--sky {
+  background: linear-gradient(180deg, rgba(222, 243, 255, 0.96), rgba(255, 255, 255, 0.98));
+}
+
+.student-report-spotlight--mint {
+  background: linear-gradient(180deg, rgba(228, 255, 245, 0.96), rgba(255, 255, 255, 0.98));
+}
+
+.student-report-spotlight--orange {
+  background: linear-gradient(180deg, rgba(255, 243, 225, 0.96), rgba(255, 255, 255, 0.98));
+}
+
+.student-page--home .student-adventure-hero,
+.student-page--theme .student-adventure-hero,
+.student-page--exam .student-adventure-hero,
+.student-page--exam-result .student-adventure-hero,
+.student-page--result .student-adventure-hero {
+  box-shadow: 0 26px 46px rgba(31, 93, 145, 0.16);
+}
+
+.student-home-stage-board,
+.student-theme-map-panel {
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.74), transparent 22%),
+    linear-gradient(160deg, rgba(230, 247, 255, 0.96), rgba(255, 255, 255, 0.98));
+}
+
+.student-page--home .student-adventure-card,
+.student-page--theme .student-level-entry-card,
+.student-page--exam-result .student-celebration-card,
+.student-page--result .student-celebration-card {
+  box-shadow: 0 18px 32px rgba(31, 93, 145, 0.1);
+}
+
+.student-page--theme .student-level-entry-card {
+  min-height: 340px;
+}
+
+.student-page--theme .student-level-entry-card__visual {
+  min-height: 132px;
+}
+
+.student-page--theme .student-level-entry-card__visual span {
+  width: 86px;
+  height: 86px;
+  font-size: 30px;
+}
+
+.student-page--home .student-link-board,
+.student-page--theme .student-link-board,
+.student-page--exam-result .student-link-board,
+.student-page--result .student-link-board {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 250, 255, 0.96));
+}
+
+.student-page--exam .student-question-stage,
+.student-page--exam-result .student-reward-board,
+.student-page--result .student-reward-board {
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.6), transparent 20%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 255, 0.96));
+}
+
 @media (max-width: 1100px) {
   .student-adventure-hero,
   .student-setup-grid,
   .student-card-grid--two,
-  .student-card-grid--three {
+  .student-card-grid--three,
+  .student-growth-board__layout,
+  .student-ai-workspace {
     grid-template-columns: 1fr;
   }
 
@@ -3388,5 +3763,573 @@ button {
 
   .student-exam-nav {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .student-journey-item,
+  .student-record-level-card__top,
+  .student-record-level-card__meta,
+  .student-repair-card__header,
+  .student-repair-card__footer,
+  .student-journey-item__row {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.student-level-empty {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  padding: 28px;
+  border-radius: 28px;
+}
+
+.student-level-empty strong,
+.student-level-mission-board h2,
+.student-level-scene-card h2,
+.student-level-side-card h2,
+.student-route-map-card h2,
+.student-route-choice-card h2,
+.student-guardian-stage-card h2,
+.student-guardian-tool-card-board h2,
+.student-level-rule-card h2,
+.student-level-reward-card h2,
+.student-level-panel-heading h2 {
+  margin: 0;
+}
+
+.student-level-empty p,
+.student-level-side-card p,
+.student-route-choice-card__scenario,
+.student-guardian-stage__scene p,
+.student-level-reward-card__row strong,
+.student-level-reward-card__row span {
+  margin: 0;
+}
+
+.student-level-hud,
+.student-level-stage {
+  display: grid;
+  gap: 20px;
+}
+
+.student-level-hud {
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+}
+
+.student-level-mission-board,
+.student-level-side-card,
+.student-level-scene-card,
+.student-route-map-card,
+.student-route-choice-card,
+.student-guardian-stage-card,
+.student-guardian-tool-card-board,
+.student-level-reward-card {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.74), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 251, 255, 0.96));
+}
+
+.student-level-hero-meter {
+  display: grid;
+  gap: 12px;
+  min-width: 200px;
+}
+
+.student-level-hero-meter p {
+  margin: 0;
+  color: rgba(18, 61, 99, 0.8);
+  font-weight: 700;
+}
+
+.student-level-hero-meter__stars {
+  display: flex;
+  gap: 8px;
+  font-size: 26px;
+}
+
+.student-level-hero-meter__star {
+  opacity: 0.28;
+}
+
+.student-level-hero-meter__star--on {
+  opacity: 1;
+  color: #ffb545;
+  text-shadow: 0 6px 12px rgba(255, 181, 69, 0.32);
+}
+
+.student-level-hero-meter__bar {
+  height: 16px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: inset 0 0 0 1px rgba(20, 101, 167, 0.08);
+}
+
+.student-level-hero-meter__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #4db7ff, #31d2b0);
+}
+
+.student-level-checklist {
+  display: grid;
+  gap: 12px;
+}
+
+.student-level-checklist__item {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding: 14px 16px;
+  border-radius: 22px;
+  background: rgba(244, 249, 255, 0.96);
+  border: 1px solid rgba(46, 119, 182, 0.08);
+}
+
+.student-level-checklist__item strong,
+.student-route-node strong,
+.student-guardian-step strong,
+.student-guardian-tool strong,
+.student-level-mini-rules__card strong,
+.student-level-reward-card strong,
+.student-setup-route__stop strong,
+.student-setup-launchpad__card strong {
+  display: block;
+  margin: 0;
+}
+
+.student-level-checklist__item p,
+.student-route-node p,
+.student-guardian-tool span,
+.student-level-mini-rules__card p,
+.student-level-scene-tip p,
+.student-setup-launchpad__card span {
+  margin: 0;
+}
+
+.student-level-checklist__item--done {
+  background: linear-gradient(180deg, rgba(228, 255, 243, 0.96), rgba(255, 255, 255, 0.98));
+  border-color: rgba(44, 161, 119, 0.18);
+}
+
+.student-level-checklist__index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 18px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #1c6aa4;
+  background: linear-gradient(180deg, rgba(215, 239, 255, 0.98), rgba(255, 255, 255, 0.98));
+}
+
+.student-level-stage--observe {
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+}
+
+.student-level-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.student-observe-scene {
+  position: relative;
+  min-height: 420px;
+  border-radius: 28px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #b9e6ff 0%, #eaf6ff 48%, #d5eef2 48%, #d5eef2 100%);
+  box-shadow: inset 0 0 0 1px rgba(58, 131, 188, 0.08);
+}
+
+.student-observe-scene__sky,
+.student-observe-scene__road,
+.student-observe-scene__crosswalk,
+.student-observe-scene__building,
+.student-observe-scene__car,
+.student-observe-scene__tree {
+  position: absolute;
+}
+
+.student-observe-scene__building {
+  top: 62px;
+  width: 132px;
+  height: 152px;
+  border-radius: 24px 24px 10px 10px;
+  background: linear-gradient(180deg, #f6d996, #f3b96a);
+}
+
+.student-observe-scene__building--left {
+  left: 32px;
+}
+
+.student-observe-scene__building--right {
+  right: 42px;
+  height: 176px;
+  background: linear-gradient(180deg, #f9d0b1, #f0a777);
+}
+
+.student-observe-scene__road {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 168px;
+  background: linear-gradient(180deg, #556b81, #3f4d5f);
+}
+
+.student-observe-scene__crosswalk {
+  left: 18%;
+  right: 18%;
+  bottom: 60px;
+  height: 46px;
+  border-radius: 18px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.96) 0 28px, transparent 28px 46px);
+}
+
+.student-observe-scene__car {
+  right: 120px;
+  bottom: 82px;
+  width: 118px;
+  height: 48px;
+  border-radius: 24px 28px 18px 18px;
+  background: linear-gradient(180deg, #ff9272, #ff6f5c);
+}
+
+.student-observe-scene__tree {
+  left: 50px;
+  bottom: 118px;
+  width: 42px;
+  height: 82px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #34c885, #209e6a);
+}
+
+.student-observe-hotspot {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  border: 0;
+  font-weight: 800;
+  color: #16537f;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 24px rgba(29, 96, 148, 0.16);
+}
+
+.student-observe-hotspot--done {
+  color: #137750;
+  background: linear-gradient(180deg, rgba(224, 255, 240, 0.98), rgba(255, 255, 255, 0.98));
+}
+
+.student-level-side-card {
+  align-content: start;
+}
+
+.student-level-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.student-level-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(241, 247, 255, 0.96);
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.student-level-badge--done {
+  color: #137750;
+  background: rgba(226, 255, 239, 0.96);
+}
+
+.student-level-scene-tip {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(232, 245, 255, 0.96), rgba(255, 255, 255, 0.98));
+}
+
+.student-level-scene-tip strong {
+  margin: 0;
+}
+
+.student-level-scene-tip--mint {
+  background: linear-gradient(180deg, rgba(226, 255, 242, 0.96), rgba(255, 255, 255, 0.98));
+}
+
+.student-level-scene-tip--orange {
+  background: linear-gradient(180deg, rgba(255, 244, 222, 0.98), rgba(255, 255, 255, 0.98));
+}
+
+.student-level-stage--route,
+.student-level-stage--guardian {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.student-route-track,
+.student-guardian-step-row,
+.student-guardian-tool-grid,
+.student-level-mini-rules,
+.student-setup-launchpad {
+  display: grid;
+  gap: 14px;
+}
+
+.student-route-track {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.student-route-node,
+.student-guardian-step,
+.student-guardian-tool,
+.student-level-mini-rules__card,
+.student-setup-route__stop,
+.student-setup-launchpad__card {
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(46, 119, 182, 0.08);
+  background: rgba(245, 250, 255, 0.96);
+}
+
+.student-route-node {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.student-route-node--current {
+  background: linear-gradient(180deg, rgba(224, 247, 255, 0.98), rgba(255, 255, 255, 0.98));
+}
+
+.student-route-node--done {
+  background: linear-gradient(180deg, rgba(226, 255, 242, 0.96), rgba(255, 255, 255, 0.98));
+}
+
+.student-route-node--risk {
+  background: linear-gradient(180deg, rgba(255, 239, 230, 0.96), rgba(255, 255, 255, 0.98));
+}
+
+.student-route-node__index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  font-weight: 800;
+  color: #166899;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.student-route-choice-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.student-route-option {
+  padding: 18px 20px;
+  border: 0;
+  border-radius: 24px;
+  text-align: left;
+  font-size: 17px;
+  font-weight: 800;
+  color: #134c77;
+  background: linear-gradient(180deg, rgba(236, 247, 255, 0.98), rgba(255, 255, 255, 0.98));
+  box-shadow: 0 14px 24px rgba(29, 96, 148, 0.1);
+}
+
+.student-guardian-step-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.student-guardian-step {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+}
+
+.student-guardian-step--active {
+  background: linear-gradient(180deg, rgba(232, 247, 255, 0.98), rgba(255, 255, 255, 0.98));
+}
+
+.student-guardian-step--done {
+  background: linear-gradient(180deg, rgba(226, 255, 242, 0.96), rgba(255, 255, 255, 0.98));
+}
+
+.student-guardian-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 0.72fr) minmax(260px, 0.88fr);
+  gap: 18px;
+}
+
+.student-guardian-stage__scene {
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(240, 249, 255, 0.98), rgba(255, 255, 255, 0.98));
+}
+
+.student-guardian-dropzone {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  min-height: 220px;
+  padding: 22px;
+  border-radius: 28px;
+  border: 2px dashed rgba(50, 128, 186, 0.24);
+  background: linear-gradient(180deg, rgba(234, 246, 255, 0.98), rgba(255, 255, 255, 0.98));
+  text-align: center;
+}
+
+.student-guardian-dropzone--ready {
+  border-color: rgba(44, 161, 119, 0.34);
+}
+
+.student-guardian-dropzone--done {
+  border-style: solid;
+  border-color: rgba(44, 161, 119, 0.24);
+  background: linear-gradient(180deg, rgba(226, 255, 242, 0.96), rgba(255, 255, 255, 0.98));
+}
+
+.student-guardian-tool-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.student-guardian-tool {
+  display: grid;
+  gap: 10px;
+  text-align: left;
+}
+
+.student-guardian-tool--dragging {
+  transform: translateY(-2px);
+}
+
+.student-guardian-tool--done {
+  background: linear-gradient(180deg, rgba(226, 255, 242, 0.96), rgba(255, 255, 255, 0.98));
+}
+
+.student-level-mini-rules {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.student-level-reward-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: rgba(245, 250, 255, 0.96);
+}
+
+.student-level-reward-card__token {
+  display: inline-flex;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(223, 238, 255, 0.98);
+  color: #18618f;
+  font-weight: 800;
+}
+
+.student-setup-route {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.student-setup-route__stop {
+  display: grid;
+  gap: 8px;
+  place-items: start;
+}
+
+.student-setup-route__stop span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  font-weight: 800;
+  background: rgba(223, 238, 255, 0.98);
+}
+
+.student-setup-route__stop--current {
+  background: linear-gradient(180deg, rgba(225, 245, 255, 0.98), rgba(255, 255, 255, 0.98));
+}
+
+.student-setup-launchpad {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.student-setup-launchpad__card {
+  display: grid;
+  gap: 8px;
+  background: linear-gradient(180deg, rgba(232, 245, 255, 0.98), rgba(255, 255, 255, 0.98));
+}
+
+.student-setup-launchpad__card--mint {
+  background: linear-gradient(180deg, rgba(229, 255, 245, 0.98), rgba(255, 255, 255, 0.98));
+}
+
+@media (max-width: 1100px) {
+  .student-level-hud,
+  .student-level-stage--observe,
+  .student-guardian-stage,
+  .student-level-mini-rules,
+  .student-setup-launchpad {
+    grid-template-columns: 1fr;
+  }
+
+  .student-route-track,
+  .student-guardian-step-row,
+  .student-guardian-tool-grid,
+  .student-setup-route {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .student-level-mission-board,
+  .student-level-side-card,
+  .student-level-scene-card,
+  .student-route-map-card,
+  .student-route-choice-card,
+  .student-guardian-stage-card,
+  .student-guardian-tool-card-board,
+  .student-level-reward-card {
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  .student-observe-scene {
+    min-height: 340px;
+  }
+
+  .student-route-node {
+    grid-template-columns: 1fr;
   }
 }

@@ -156,8 +156,8 @@ export function StudentLevelResultPage() {
       <section className="student-card-grid student-card-grid--two">
         <article className="surface-card student-reward-board">
           <div className="student-section-heading">
-            <span className="section-block__eyebrow">奖励到账</span>
-            <h2>这次点亮了什么</h2>
+            <span className="section-block__eyebrow">奖励到帐</span>
+            <h2>这次点亮了什么？</h2>
           </div>
           <div className="student-checklist">
             <div className="student-checklist__item">
@@ -182,7 +182,7 @@ export function StudentLevelResultPage() {
         <article className="surface-card student-link-board">
           <div className="student-section-heading">
             <span className="section-block__eyebrow">下一站</span>
-            <h2>现在最适合做什么</h2>
+            <h2>现在最适合做什么？</h2>
           </div>
           <div className="student-mini-links">
             {levelId !== "level-3" && nextLevelRoute ? (
@@ -231,7 +231,7 @@ export function StudentLevelResultPage() {
           <article className="surface-card student-treasure-modal">
             <span className="section-block__eyebrow">宝箱已解锁</span>
             <h2>三关学习全部完成啦</h2>
-            <p>现在可以打开考试宝箱，完成这轮道路安全冒险。</p>
+            <p>现在可以打开考试宝箱，完成这一轮道路安全冒险。</p>
             <div className="student-treasure-modal__badge">考试宝箱</div>
             <div className="button-row">
               <button

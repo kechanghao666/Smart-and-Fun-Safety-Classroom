@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { StudentAdventureHero } from "../../components/student/StudentAdventureHero";
+import { StudentMascotBubble } from "../../components/student/StudentMascotBubble";
 import { examQuestions } from "../../data/mockData";
 import { useAppState } from "../../state/AppState";
 import {
@@ -10,7 +12,7 @@ import {
 
 export function StudentAiPage() {
   const { state } = useAppState();
-  const profileName = state.studentProfile?.nickname ?? "安全小卫士";
+  const profileName = state.studentProfile?.nickname ?? "安全学员";
   const [input, setInput] = useState("");
   const [isAsking, setIsAsking] = useState(false);
   const [assistantNotice, setAssistantNotice] = useState("");
@@ -18,7 +20,7 @@ export function StudentAiPage() {
     {
       id: "welcome",
       role: "assistant",
-      text: `你好，${profileName}。我是安全小助手，可以围绕道路安全教育主题帮助你回顾重点、解释规则和整理复习方向。`,
+      text: `你好，${profileName}。我是安全小助手，可以陪你一起复习道路安全重点、解释规则，还能帮你整理下一步复习方向。`,
     },
   ]);
 
@@ -37,8 +39,20 @@ export function StudentAiPage() {
       question: `帮我复习${question.reviewLabel}`,
     }));
 
-    return Array.from(new Map(prompts.map((item) => [item.id, item])).values()).slice(0, 3);
+    return Array.from(new Map(prompts.map((item) => [item.id, item])).values()).slice(
+      0,
+      3,
+    );
   }, [wrongQuestionDetails]);
+  const completedLevels = state.progress.levels.filter(
+    (level) => level.status === "completed",
+  ).length;
+  const examStatusLabel =
+    state.progress.exam.status === "completed"
+      ? `${state.progress.exam.score ?? 0} 分`
+      : state.progress.exam.status === "available"
+        ? "考试已解锁"
+        : "还没解锁";
 
   async function ask(question: string, scene: "hint" | "qa" = "qa") {
     const trimmed = question.trim();
@@ -69,85 +83,83 @@ export function StudentAiPage() {
   }
 
   return (
-    <div className="page-stack">
-      <section className="hero-banner hero-banner--student">
-        <div>
-          <span className="hero-banner__eyebrow">独立 AI 问答页</span>
-          <h1>围绕道路安全主题随时提问、复习和回看</h1>
-          <p>
-            本页固定服务于道路安全教育主题，适合在卡关、回看错题或整理学习重点时进行轻量问答。
-          </p>
-        </div>
-        <div className="hero-banner__actions">
-          <Link className="ghost-button link-button" to="/student/theme/road-safety">
-            返回主题页
-          </Link>
-          <Link className="ghost-button link-button" to="/student/ai-report">
-            查看 AI 结果卡
-          </Link>
-        </div>
-      </section>
+    <div className="page-stack student-page student-page--ai">
+      <StudentAdventureHero
+        eyebrow="AI 冒险营地"
+        title="把问题说给安全小助手听"
+        description="这里像一个轻量复习营地。你可以点卡片快速提问，也可以自己输入问题，让 AI 用短句帮你理清方向。"
+        bubbleTitle="先试试这样问"
+        bubbleText={
+          reviewPrompts[0]?.label
+            ? `如果你刚做完题，可以先问“${reviewPrompts[0].label}”`
+            : "试试问斑马线、盲区、安全带或候车距离。"
+        }
+        mascotLabel="AI"
+        mascotHint={
+          assistantNotice ||
+          "我只回答道路安全主题，还会优先给你提示而不是直接给答案。"
+        }
+        accent="sky"
+        variant="exam"
+        stats={[
+          { label: "你的身份", value: profileName, accent: "mint" },
+          { label: "关卡进度", value: `${completedLevels}/3`, accent: "sky" },
+          { label: "考试状态", value: examStatusLabel, accent: "orange" },
+        ]}
+        actions={
+          <>
+            <Link className="ghost-button link-button" to="/student/theme/road-safety">
+              返回主题地图
+            </Link>
+            <Link className="ghost-button link-button" to="/student/ai-report">
+              查看 AI 结果卡
+            </Link>
+          </>
+        }
+      />
 
-      <section className="card-grid card-grid--three">
-        <article className="surface-card stat-card">
-          <span>当前身份</span>
-          <strong>{profileName}</strong>
-          <p>{state.studentProfile ? state.studentProfile.stage : "待完善学生资料"}</p>
+      <section className="student-card-grid student-card-grid--two">
+        <article className="surface-card student-ai-prompt-board">
+          <div className="student-section-heading">
+            <span className="section-block__eyebrow">快速提问卡</span>
+            <h2>点一下就能开始问</h2>
+          </div>
+
+          <div className="student-ai-card-grid">
+            {quickPrompts.map((prompt) => (
+              <button
+                key={prompt.id}
+                type="button"
+                className="student-ai-prompt-card"
+                disabled={isAsking}
+                onClick={() => {
+                  void ask(prompt.question);
+                }}
+              >
+                <span>马上问</span>
+                <strong>{prompt.label}</strong>
+              </button>
+            ))}
+          </div>
         </article>
 
-        <article className="surface-card stat-card">
-          <span>关卡进度</span>
-          <strong>
-            {state.progress.levels.filter((level) => level.status === "completed").length} / 3
-          </strong>
-          <p>完成关卡越多，AI 越适合帮助你回顾更完整的学习闭环。</p>
-        </article>
-
-        <article className="surface-card stat-card">
-          <span>考试状态</span>
-          <strong>
-            {state.progress.exam.status === "completed"
-              ? `${state.progress.exam.score ?? 0} 分`
-              : state.progress.exam.status === "available"
-                ? "已解锁"
-                : "未解锁"}
-          </strong>
-          <p>考试完成后，最适合继续追问错题和相关规则原因。</p>
-        </article>
-      </section>
-
-      <section className="ai-study-layout">
-        <div className="page-stack">
-          <article className="surface-card">
-            <span className="section-block__eyebrow">常见问题区</span>
-            <h2>先从这些主题开始问</h2>
-            <div className="chip-row">
-              {quickPrompts.map((prompt) => (
-                <button
-                  key={prompt.id}
-                  type="button"
-                  className="quick-chip"
-                  disabled={isAsking}
-                  onClick={() => {
-                    void ask(prompt.question);
-                  }}
-                >
-                  {prompt.label}
-                </button>
-              ))}
-            </div>
-          </article>
-
-          <article className="surface-card">
-            <span className="section-block__eyebrow">错题复习方向</span>
-            <h2>根据当前结果推荐追问方向</h2>
-            {reviewPrompts.length > 0 ? (
-              <div className="chip-row">
+        <StudentMascotBubble
+          eyebrow="补强任务"
+          title="如果刚做完考试，先点这些复习方向"
+          message={
+            reviewPrompts.length > 0
+              ? "这些提问会更贴近你当前的错题和薄弱点。"
+              : "你现在还没有错题推荐，也可以直接从上面的快速提问卡开始。"
+          }
+          accent="mint"
+          actions={
+            reviewPrompts.length > 0 ? (
+              <>
                 {reviewPrompts.map((prompt) => (
                   <button
                     key={prompt.id}
                     type="button"
-                    className="quick-chip"
+                    className="ghost-button"
                     disabled={isAsking}
                     onClick={() => {
                       void ask(prompt.question, "hint");
@@ -156,32 +168,49 @@ export function StudentAiPage() {
                     {prompt.label}
                   </button>
                 ))}
-              </div>
+              </>
             ) : (
-              <p>当前还没有错题推荐，可以先问斑马线、公交车盲区或乘车防护这几个主题。</p>
-            )}
-          </article>
+              <Link
+                className="ghost-button link-button"
+                to="/student/theme/road-safety/wrong-questions"
+              >
+                去看错题回看页
+              </Link>
+            )
+          }
+        />
+      </section>
 
-          <article className="surface-card">
-            <span className="section-block__eyebrow">使用边界</span>
-            <h2>本页 AI 只会做这些事</h2>
-            <ul className="plain-list">
-              <li>只回答道路安全教育主题相关问题。</li>
-              <li>优先给提示和解释，不直接替学生完成关卡答案。</li>
-              <li>适合复习斑马线、盲区、头盔、安全带和候车距离等主题。</li>
-            </ul>
-          </article>
-        </div>
-
-        <article className="surface-card ai-study-panel">
-          <div className="section-block__header">
-            <div>
-              <span className="section-block__eyebrow">对话区</span>
-              <h2>把问题说出来，AI 会给出轻量提示</h2>
-            </div>
+      <section className="student-ai-workspace">
+        <article className="surface-card student-ai-rule-card">
+          <div className="student-section-heading">
+            <span className="section-block__eyebrow">可以帮你什么</span>
+            <h2>把 AI 当成轻量复习搭子</h2>
           </div>
 
-          <div className="ai-panel__messages ai-panel__messages--page">
+          <div className="student-checklist">
+            <div className="student-checklist__item">
+              <span className="student-checklist__dot" />
+              <span>只回答道路安全教育主题的问题。</span>
+            </div>
+            <div className="student-checklist__item">
+              <span className="student-checklist__dot" />
+              <span>优先给提示、解释和复习方向，不直接替你完成答案。</span>
+            </div>
+            <div className="student-checklist__item">
+              <span className="student-checklist__dot" />
+              <span>最适合拿来回看斑马线、盲区、安全带和候车距离这些重点。</span>
+            </div>
+          </div>
+        </article>
+
+        <article className="surface-card student-ai-chat-stage">
+          <div className="student-section-heading">
+            <span className="section-block__eyebrow">聊天舞台</span>
+            <h2>把问题说出来，小助手会用短句回应你</h2>
+          </div>
+
+          <div className="student-ai-chat-log">
             {messages.map((message) => (
               <article key={message.id} className={`chat-bubble chat-bubble--${message.role}`}>
                 {message.text}
@@ -201,10 +230,14 @@ export function StudentAiPage() {
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="例如：为什么过马路要看信号灯和车？"
+              placeholder="例如：过马路为什么要先看信号灯和来车？"
               disabled={isAsking}
             />
-            <button type="submit" className="primary-button" disabled={isAsking}>
+            <button
+              type="submit"
+              className="primary-button primary-button--playful"
+              disabled={isAsking}
+            >
               {isAsking ? "思考中..." : "发送问题"}
             </button>
           </form>

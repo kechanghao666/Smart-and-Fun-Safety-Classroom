@@ -38,8 +38,8 @@ export function StudentExamPage() {
     return (
       <section className="surface-card empty-state-card">
         <span className="section-block__eyebrow">主题考试</span>
-        <h2>这轮考试已经完成</h2>
-        <p>去看结果页和错题页，继续把这轮学习收口吧。</p>
+        <h2>这一轮考试已经完成</h2>
+        <p>去看结果页和错题页，继续把这一轮学习收口吧。</p>
         <div className="button-row">
           <Link
             className="primary-button link-button"
@@ -112,21 +112,17 @@ export function StudentExamPage() {
     <div className="page-stack student-page student-page--exam">
       <StudentAdventureHero
         eyebrow="考试宝箱"
-        title="道路安全挑战开始"
-        description="一题一题完成，集满答题进度后再打开结果宝箱。"
+        title="道路安全挑战开始啦"
+        description="一题一题慢慢做，先想想学过的安全规则，再选最稳妥的做法。"
         bubbleTitle="答题规则"
-        bubbleText="先看清题目，再选最安全的做法。"
+        bubbleText="先看清题目，再选最安全的做法。全部答完后，结果宝箱就会打开。"
         mascotLabel={`${answeredCount}/${examQuestions.length}`}
         mascotHint="答完全部题目后，提交按钮就会亮起来。"
         variant="exam"
         accent="orange"
         stats={[
           { label: "已完成", value: `${answeredCount} 题`, accent: "sky" },
-          {
-            label: "当前题目",
-            value: `第 ${activeQuestionIndex + 1} 题`,
-            accent: "orange",
-          },
+          { label: "当前题号", value: `第 ${activeQuestionIndex + 1} 题`, accent: "orange" },
           {
             label: "剩余题目",
             value: `${examQuestions.length - answeredCount} 题`,
@@ -170,8 +166,8 @@ export function StudentExamPage() {
 
         <article className="surface-card student-exam-panel">
           <div className="student-section-heading">
-            <span className="section-block__eyebrow">答题提示</span>
-            <h2>先想想学过的安全规则</h2>
+            <span className="section-block__eyebrow">答题提醒</span>
+            <h2>先想起这几个安全规则</h2>
           </div>
           <div className="student-checklist">
             <div className="student-checklist__item">
@@ -180,7 +176,7 @@ export function StudentExamPage() {
             </div>
             <div className="student-checklist__item">
               <span className="student-checklist__dot" />
-              <span>遇到大车时要注意盲区。</span>
+              <span>看到大车时，要特别注意盲区。</span>
             </div>
             <div className="student-checklist__item">
               <span className="student-checklist__dot" />

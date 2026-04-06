@@ -15,7 +15,7 @@ export function StudentExamResultPage() {
     return (
       <section className="surface-card empty-state-card">
         <span className="section-block__eyebrow">考试结果页</span>
-        <h2>还没有可展示的结果</h2>
+        <h2>还没有可以展示的结果</h2>
         <p>先完成三关学习并提交考试，再回来打开结果宝箱。</p>
         <div className="button-row">
           <button
@@ -96,7 +96,9 @@ export function StudentExamResultPage() {
         bubbleTitle="结果播报"
         bubbleText={wrongCount === 0 ? "恭喜你全部答对啦" : reviewData.suggestion}
         mascotLabel={`${score}`}
-        mascotHint={error || (apiEnabled && source === "api" ? "最新成绩已同步" : performanceLabel)}
+        mascotHint={
+          error || (apiEnabled && source === "api" ? "最新成绩已经同步" : performanceLabel)
+        }
         variant="result"
         accent="orange"
         stats={[
@@ -130,7 +132,7 @@ export function StudentExamResultPage() {
         <article className="surface-card student-link-board">
           <div className="student-section-heading">
             <span className="section-block__eyebrow">结果去向</span>
-            <h2>最适合接着去哪里</h2>
+            <h2>现在最适合接着去哪儿？</h2>
           </div>
           <div className="student-mini-links">
             <Link
@@ -150,7 +152,7 @@ export function StudentExamResultPage() {
             </Link>
             <Link className="student-mini-link student-mini-link--link" to="/student/records">
               <strong>学习记录</strong>
-              <span>把这轮挑战收进档案</span>
+              <span>把这轮挑战收进记录册</span>
             </Link>
           </div>
         </article>
@@ -173,7 +175,7 @@ export function StudentExamResultPage() {
             <div className="student-checklist">
               <div className="student-checklist__item">
                 <span className="student-checklist__dot" />
-                <span>这轮没有错题，直接去查看 AI 结果卡吧。</span>
+                <span>这一轮没有错题，直接去看 AI 结果卡吧。</span>
               </div>
             </div>
           )}

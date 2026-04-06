@@ -1,9 +1,14 @@
-﻿import { Link } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { StudentAdventureHero } from "../../components/student/StudentAdventureHero";
+import { StudentMascotBubble } from "../../components/student/StudentMascotBubble";
 import { fetchStudentAiReport, fetchStudentGrowth } from "../../services/student";
 import { useAppState } from "../../state/AppState";
 import type { StudentAiReportResponse, StudentGrowthResponse } from "../../types";
 import { buildStudentAiReport } from "../../utils/studentAiReport";
-import { buildGrowthSnapshot, getGrowthSceneVisualClass } from "../../utils/studentGrowth";
+import {
+  buildGrowthSnapshot,
+  getGrowthSceneVisualClass,
+} from "../../utils/studentGrowth";
 import { useApiResource } from "../../utils/useApiResource";
 
 export function StudentAiReportPage() {
@@ -54,7 +59,12 @@ export function StudentAiReportPage() {
     currentScene: fallbackGrowth.selectedScene,
     currentAbilityTag: fallbackGrowth.currentTier.ability,
     dimensions: fallbackGrowth.dimensions.map((item) => ({
-      id: item.id === "observe" ? "appearance" : item.id === "judge" ? "safety" : "scene",
+      id:
+        item.id === "observe"
+          ? "appearance"
+          : item.id === "judge"
+            ? "safety"
+            : "scene",
       label: item.label,
       points: item.score,
       level: 0,
@@ -62,9 +72,13 @@ export function StudentAiReportPage() {
       currentUnlockLabel: item.label,
       nextUnlockLabel: null,
     })),
-    unlockedAppearances: fallbackGrowth.appearanceOptions.filter((item) => item.unlocked).map((item) => item.label),
+    unlockedAppearances: fallbackGrowth.appearanceOptions
+      .filter((item) => item.unlocked)
+      .map((item) => item.label),
     unlockedAbilityTags: [fallbackGrowth.currentTier.ability],
-    unlockedScenes: fallbackGrowth.sceneOptions.filter((item) => item.unlocked).map((item) => item.label),
+    unlockedScenes: fallbackGrowth.sceneOptions
+      .filter((item) => item.unlocked)
+      .map((item) => item.label),
     history: [],
   };
 
@@ -80,109 +94,183 @@ export function StudentAiReportPage() {
     enabled: apiEnabled,
     fallbackData: fallbackGrowthData,
     fetcher: () => fetchStudentGrowth(state.authToken!),
-    dependencies: [state.authToken, state.progress.points, state.progress.rewardProgress.reviewedWrongQuestionIds.join("|")],
+    dependencies: [
+      state.authToken,
+      state.progress.points,
+      state.progress.rewardProgress.reviewedWrongQuestionIds.join("|"),
+    ],
     fallbackMessage: "成长结果暂时无法同步，当前展示当前成长概览。",
   });
 
   const sceneVisualClass = getGrowthSceneVisualClass(growthData.currentScene);
 
   return (
-    <div className="page-stack">
-      <section className="hero-banner hero-banner--report">
-        <div>
-          <span className="hero-banner__eyebrow">AI 结果卡页</span>
-          <h1>{reportData.completion.title}</h1>
-          <p>{reportData.completion.summary}</p>
-          {error ? <p className="inline-note">{error}</p> : null}
-        </div>
-        <div className="result-medal result-medal--report">
-          <strong>{growthData.stageLabel}</strong>
-          <span>{growthData.totalGrowthPoints} 成长值</span>
-        </div>
-      </section>
-
-      <section className="card-grid card-grid--three">
-        {[reportData.completion, reportData.performance, reportData.suggestion].map((card, index) => (
-          <article
-            key={card.title}
-            className={
-              index === 0
-                ? "surface-card report-card report-card--blue"
-                : index === 1
-                  ? "surface-card report-card report-card--mint"
-                  : "surface-card report-card report-card--orange"
-            }
-          >
-            <span className="section-block__eyebrow">{card.title}</span>
-            <h2>{card.summary}</h2>
-            <ul className="plain-list">
-              {card.bullets.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </article>
-        ))}
-      </section>
-
-      <section className="card-grid card-grid--two">
-        <article className="surface-card report-panel">
-          <span className="section-block__eyebrow">成长结果</span>
-          <h2>{reportData.growth.title}</h2>
-          <div className={`growth-scene-preview ${sceneVisualClass}`}>
+    <div className="page-stack student-page student-page--report">
+      <StudentAdventureHero
+        eyebrow="AI 总结卡"
+        title={reportData.completion.title}
+        description={reportData.completion.summary}
+        bubbleTitle="今天的亮点"
+        bubbleText={reportData.performance.summary}
+        mascotLabel={`${growthData.totalGrowthPoints}`}
+        mascotHint={error || `${growthData.stageLabel} · ${growthData.currentAbilityTag}`}
+        accent="orange"
+        variant="result"
+        stats={[
+          { label: "成长值", value: `${growthData.totalGrowthPoints}`, accent: "orange" },
+          { label: "当前阶段", value: growthData.stageLabel, accent: "mint" },
+          { label: "当前场景", value: growthData.currentScene, accent: "sky" },
+        ]}
+        actions={
+          <>
+            <Link
+              className="ghost-button link-button"
+              to="/student/theme/road-safety/exam/result"
+            >
+              返回考试结果
+            </Link>
+            <Link className="ghost-button link-button" to="/student/records">
+              打开学习记录
+            </Link>
+          </>
+        }
+        aside={
+          <div className={`student-growth-stage ${sceneVisualClass}`}>
+            <span className="student-growth-stage__eyebrow">角色展示</span>
             <strong>{growthData.currentAppearance}</strong>
             <p>{growthData.currentScene}</p>
+            <span>{growthData.currentAbilityTag}</span>
           </div>
-          <ul className="plain-list">
-            <li>当前阶段：{growthData.stageLabel}</li>
-            <li>能力标签：{growthData.currentAbilityTag}</li>
-            <li>已解锁外观：{growthData.unlockedAppearances.join(" / ") || "暂无"}</li>
-            <li>已解锁场景：{growthData.unlockedScenes.join(" / ") || "暂无"}</li>
-          </ul>
-        </article>
+        }
+      />
 
-        <article className="surface-card report-panel">
-          <span className="section-block__eyebrow">激励展示</span>
-          <h2>{reportData.reward.title}</h2>
-          <p>{reportData.reward.summary}</p>
-          <ul className="plain-list">
-            {reportData.reward.bullets.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </article>
+      <section className="student-card-grid student-card-grid--three">
+        {[reportData.completion, reportData.performance, reportData.suggestion].map(
+          (card, index) => (
+            <article
+              key={card.title}
+              className={
+                index === 0
+                  ? "surface-card student-report-spotlight student-report-spotlight--sky"
+                  : index === 1
+                    ? "surface-card student-report-spotlight student-report-spotlight--mint"
+                    : "surface-card student-report-spotlight student-report-spotlight--orange"
+              }
+            >
+              <span className="section-block__eyebrow">{card.title}</span>
+              <strong>{card.summary}</strong>
+              <div className="student-checklist">
+                {card.bullets.map((item) => (
+                  <div key={item} className="student-checklist__item">
+                    <span className="student-checklist__dot" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </article>
+          ),
+        )}
       </section>
 
-      <section className="surface-card">
-        <div className="section-block__header">
-          <div>
-            <span className="section-block__eyebrow">成长维度</span>
-            <h2>把结果、成长和激励放到同一页</h2>
+      <section className="student-card-grid student-card-grid--two">
+        <article className="surface-card student-growth-board">
+          <div className="student-section-heading">
+            <span className="section-block__eyebrow">成长结果</span>
+            <h2>这轮学习把角色推到了哪里？</h2>
           </div>
+
+          <div className="student-growth-board__layout">
+            <div className={`student-growth-board__preview ${sceneVisualClass}`}>
+              <div className="student-growth-board__badge">{growthData.stageLabel}</div>
+              <strong>{growthData.currentAppearance}</strong>
+              <p>{growthData.currentScene}</p>
+            </div>
+
+            <div className="student-checklist">
+              <div className="student-checklist__item">
+                <span className="student-checklist__dot" />
+                <span>当前能力：{growthData.currentAbilityTag}</span>
+              </div>
+              <div className="student-checklist__item">
+                <span className="student-checklist__dot" />
+                <span>
+                  已解锁外观：{growthData.unlockedAppearances.join(" / ") || "暂无"}
+                </span>
+              </div>
+              <div className="student-checklist__item">
+                <span className="student-checklist__dot" />
+                <span>已解锁场景：{growthData.unlockedScenes.join(" / ") || "暂无"}</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <StudentMascotBubble
+          eyebrow="奖励口袋"
+          title={reportData.reward.title}
+          message={reportData.reward.summary}
+          accent="mint"
+          actions={
+            reportData.reward.bullets.length > 0 ? (
+              <>
+                {reportData.reward.bullets.slice(0, 3).map((item) => (
+                  <span key={item} className="surface-tag">
+                    {item}
+                  </span>
+                ))}
+              </>
+            ) : (
+              <span className="surface-tag">继续完成学习会点亮更多奖励</span>
+            )
+          }
+        />
+      </section>
+
+      <section className="surface-card student-report-path-board">
+        <div className="student-section-heading">
+          <span className="section-block__eyebrow">成长里程碑</span>
+          <h2>观察、判断和防护这三条路都往前走了</h2>
         </div>
 
-        <div className="card-grid card-grid--three">
+        <div className="student-card-grid student-card-grid--three">
           {growthData.dimensions.map((dimension) => (
-            <article key={dimension.id} className="report-milestone-card">
-              <span className="section-block__eyebrow">{dimension.label}</span>
-              <h3>{dimension.points}</h3>
-              <p>当前解锁：{dimension.currentUnlockLabel}</p>
-              <p>{dimension.nextUnlockLabel ? `下一档：${dimension.nextUnlockLabel}` : "当前维度已解锁到最高档。"}</p>
+            <article key={dimension.id} className="student-growth-dimension-card">
+              <span className="student-growth-dimension-card__label">{dimension.label}</span>
+              <strong>{dimension.points}</strong>
+              <div className="growth-track">
+                <span
+                  className="growth-track__fill growth-track__fill--warm"
+                  style={{ width: `${dimension.progressPercent}%` }}
+                />
+              </div>
+              <p>{dimension.currentUnlockLabel}</p>
+              <span>
+                {dimension.nextUnlockLabel
+                  ? `下一档：${dimension.nextUnlockLabel}`
+                  : "这一项已经全部点亮"}
+              </span>
             </article>
           ))}
         </div>
       </section>
 
-      <div className="button-row">
-        <Link className="ghost-button link-button" to="/student/theme/road-safety/exam/result">
-          返回考试结果页
+      <section className="student-card-grid student-card-grid--three">
+        <Link
+          className="student-mini-link student-mini-link--link"
+          to="/student/theme/road-safety/wrong-questions"
+        >
+          <strong>错题回看</strong>
+          <span>把这轮挑战里需要补的点再修一修</span>
         </Link>
-        <Link className="ghost-button link-button" to="/student/theme/road-safety/wrong-questions">
-          错题回看页
+        <Link className="student-mini-link student-mini-link--link" to="/student/records">
+          <strong>学习记录</strong>
+          <span>回看这一轮从开始到收尾的每一站</span>
         </Link>
-        <Link className="ghost-button link-button" to="/student/records">
-          学习记录页
+        <Link className="student-mini-link student-mini-link--link" to="/student/theme/road-safety">
+          <strong>回到主题地图</strong>
+          <span>从地图重新开始下一轮冒险</span>
         </Link>
-      </div>
+      </section>
     </div>
   );
 }

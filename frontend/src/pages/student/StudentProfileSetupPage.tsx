@@ -109,6 +109,21 @@ export function StudentProfileSetupPage() {
       <section className="student-setup-grid">
         <article className="surface-card student-choice-panel">
           <form className="profile-form" onSubmit={handleSubmit}>
+            <div className="student-setup-route">
+              <article className="student-setup-route__stop student-setup-route__stop--current">
+                <span>1</span>
+                <strong>起名字</strong>
+              </article>
+              <article className="student-setup-route__stop">
+                <span>2</span>
+                <strong>选角色</strong>
+              </article>
+              <article className="student-setup-route__stop">
+                <span>3</span>
+                <strong>去冒险</strong>
+              </article>
+            </div>
+
             <div className="student-section-heading">
               <span className="section-block__eyebrow">第一步</span>
               <h2>给自己取个冒险名字</h2>
@@ -242,6 +257,17 @@ export function StudentProfileSetupPage() {
               ))}
             </div>
             <p className="inline-note">{stageGuide.starterRoute}</p>
+
+            <div className="student-setup-launchpad">
+              <article className="student-setup-launchpad__card">
+                <span>今天的主任务</span>
+                <strong>完成道路安全主题冒险</strong>
+              </article>
+              <article className="student-setup-launchpad__card student-setup-launchpad__card--mint">
+                <span>进入首页后</span>
+                <strong>直接点“继续学习”就能出发</strong>
+              </article>
+            </div>
           </article>
         </div>
       </section>

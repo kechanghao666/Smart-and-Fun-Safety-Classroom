@@ -79,7 +79,7 @@ export function StudentThemePage() {
       state.progress.points,
       state.progress.rewardProgress.reviewedWrongQuestionIds.join("|"),
     ],
-    fallbackMessage: "主题页成长信息暂时无法同步，当前展示学习中的成长概览。",
+    fallbackMessage: "主题页成长信息暂时无法同步，先展示当前的成长状态。",
   });
 
   const sceneVisualClass = getGrowthSceneVisualClass(growthData.currentScene);
@@ -104,8 +104,7 @@ export function StudentThemePage() {
     prompt: themeAiPrompt,
     scene: "hint",
     levelId: nextLevel?.id as LevelId | undefined,
-    fallbackText:
-      "先确认当前最该完成的关卡，再按照观察、判断、选择的顺序进入学习。",
+    fallbackText: "先看清现在最该完成的关卡，再沿着观察、判断、选择的顺序继续往前走。",
   });
 
   useEffect(() => {
@@ -146,10 +145,14 @@ export function StudentThemePage() {
       <StudentAdventureHero
         eyebrow="主题地图"
         title="道路安全冒险地图"
-        description="跟着地图走完三关，再去打开考试宝箱。"
+        description="这里不是说明页，而是整轮冒险的大地图。顺着路线走完三关，再去打开考试宝箱。"
         bubbleTitle="出发提示"
         bubbleText={
-          nextLevel ? `先挑战 ${nextLevel.title}` : examCompleted ? "去看结果卡" : "考试已经解锁"
+          nextLevel
+            ? `先去挑战 ${nextLevel.title}`
+            : examCompleted
+              ? "去看看你的结果卡"
+              : "考试宝箱已经亮起来了"
         }
         mascotLabel={state.studentProfile?.avatarLabel.slice(0, 1) ?? "安"}
         mascotHint={`${growthData.stageLabel} · ${growthData.currentAbilityTag}`}
@@ -162,7 +165,7 @@ export function StudentThemePage() {
             value: examCompleted ? "已完成" : examUnlocked ? "已解锁" : "未解锁",
             accent: "orange",
           },
-          { label: "成长外观", value: growthData.currentAppearance, accent: "mint" },
+          { label: "当前外观", value: growthData.currentAppearance, accent: "mint" },
         ]}
         actions={
           <>
@@ -178,7 +181,7 @@ export function StudentThemePage() {
               className="ghost-button"
               onClick={() => navigate("/student/records")}
             >
-              看学习记录
+              打开学习记录
             </button>
           </>
         }
@@ -194,7 +197,7 @@ export function StudentThemePage() {
       <section className="surface-card student-theme-map-panel">
         <div className="student-section-heading">
           <span className="section-block__eyebrow">冒险路线</span>
-          <h2>跟着这条路往前走</h2>
+          <h2>沿着这条线往前走就好</h2>
         </div>
 
         <div className="student-theme-map">
@@ -299,7 +302,7 @@ export function StudentThemePage() {
               ? "找出路口里的安全线索"
               : index === 1
                 ? "一路做出更安全的判断"
-                : "把装备放回正确场景";
+                : "把装备放回正确的场景";
 
           return (
             <article key={level.id} className="surface-card student-level-entry-card">
@@ -353,7 +356,7 @@ export function StudentThemePage() {
         >
           <div className="student-section-heading">
             <span className="section-block__eyebrow">考试宝箱</span>
-            <h2>三关结束后在这里挑战</h2>
+            <h2>三关结束后就在这里挑战</h2>
           </div>
           <p>
             {examCompleted
@@ -393,16 +396,16 @@ export function StudentThemePage() {
         <article className="surface-card student-link-board">
           <div className="student-section-heading">
             <span className="section-block__eyebrow">收尾入口</span>
-            <h2>完成主题后去哪里</h2>
+            <h2>完成主题后去哪儿？</h2>
           </div>
           <div className="student-mini-links">
             <Link className="student-mini-link student-mini-link--link" to="/student/ai-report">
               <strong>AI 结果卡</strong>
-              <span>看亮点和下一步</span>
+              <span>看亮点、成长和下一步</span>
             </Link>
             <Link className="student-mini-link student-mini-link--link" to="/student/records">
               <strong>学习记录</strong>
-              <span>回顾整个主题旅程</span>
+              <span>回看整个主题旅程</span>
             </Link>
             <Link className="student-mini-link student-mini-link--link" to="/student/home">
               <strong>返回首页</strong>
@@ -417,7 +420,7 @@ export function StudentThemePage() {
           <article className="surface-card student-treasure-modal">
             <span className="section-block__eyebrow">宝箱已解锁</span>
             <h2>三关学习全部完成啦</h2>
-            <p>现在可以打开考试宝箱，完成这轮道路安全冒险。</p>
+            <p>现在可以打开考试宝箱，完成这一轮道路安全冒险。</p>
             <div className="student-treasure-modal__badge">奖章宝箱</div>
             <div className="button-row">
               <button
