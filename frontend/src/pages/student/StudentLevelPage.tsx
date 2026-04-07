@@ -2,11 +2,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { StudentAdventureHero } from "../../components/student/StudentAdventureHero";
 import { StudentMascotBubble } from "../../components/student/StudentMascotBubble";
+import levelOneStreetScene from "../../assets/levels/level-1-city-street.svg";
+import { levelOneObservationConfig } from "../../data/levelOneObservation";
 import { levelBlueprints } from "../../data/mockData";
 import { ApiError } from "../../services/http";
 import { completeStudentLevel, startStudentLevel } from "../../services/student";
 import { useAppState } from "../../state/AppState";
-import type { LevelId, LevelResult } from "../../types";
+import type {
+  LevelId,
+  LevelResult,
+  ObservationSceneTarget,
+  ObservationTaskChoice,
+  ObservationTaskStep,
+} from "../../types";
 import { useStudentAiScene } from "../../utils/useStudentAiScene";
 
 interface RouteChoiceLog {
@@ -15,26 +23,12 @@ interface RouteChoiceLog {
   safe: boolean;
 }
 
-interface StreetHotspot {
-  id: string;
-  task: string;
-  label: string;
-  clue: string;
-  success: string;
-  top: string;
-  left: string;
-}
-
 interface RouteStepCard {
   id: string;
   title: string;
   scenario: string;
   hint: string;
-  options: Array<{
-    label: string;
-    safe: boolean;
-    feedback: string;
-  }>;
+  options: ObservationTaskChoice[];
 }
 
 interface GuardianSceneConfig {
@@ -47,58 +41,21 @@ interface GuardianSceneConfig {
   successText: string;
 }
 
-const streetHotspots: StreetHotspot[] = [
-  {
-    id: "crosswalk",
-    task: "找到安全通行的斑马线",
-    label: "斑马线",
-    clue: "先找过马路应该站的位置。",
-    success: "找到了，过马路要优先走斑马线。",
-    top: "70%",
-    left: "24%",
-  },
-  {
-    id: "signal-light",
-    task: "识别可以通行的信号灯",
-    label: "信号灯",
-    clue: "看清灯色和车辆状态再行动。",
-    success: "看到了，通行前要同时看灯和看车。",
-    top: "25%",
-    left: "47%",
-  },
-  {
-    id: "danger-action",
-    task: "指出危险行为",
-    label: "危险动作",
-    clue: "翻越护栏很危险，不能模仿。",
-    success: "发现危险行为了，要远离护栏旁的捷径。",
-    top: "47%",
-    left: "75%",
-  },
-  {
-    id: "road-sign",
-    task: "找到人行横道标志",
-    label: "路牌",
-    clue: "路牌会提醒你这里适合安全通行。",
-    success: "找到了，先看标志能帮助你更快做判断。",
-    top: "20%",
-    left: "16%",
-  },
-];
-
 const routeStepCards: RouteStepCard[] = [
   {
     id: "school-gate",
     title: "校门口起点",
-    scenario: "同学喊你从护栏旁抄近路，你会怎么走？",
+    scenario: "同学喊你从护栏旁边抄近路，你会怎么做？",
     hint: "先选安全路线，再看能不能通过。",
     options: [
       {
-        label: "跟着同学从护栏旁钻过去",
+        id: "school-gate-risk",
+        label: "跟着同学从护栏边钻过去",
         safe: false,
-        feedback: "护栏边视线差，转弯车辆可能看不到你。",
+        feedback: "护栏旁边视线差，转弯车辆可能根本看不到你。",
       },
       {
+        id: "school-gate-safe",
         label: "坚持走斑马线，等安全后再通过",
         safe: true,
         feedback: "做得对，先选安全路线才是第一步。",
@@ -107,34 +64,38 @@ const routeStepCards: RouteStepCard[] = [
   },
   {
     id: "cross-road",
-    title: "路口判断站",
-    scenario: "绿灯亮了，但右转车辆还在经过，下一步怎么做？",
+    title: "十字路口",
+    scenario: "绿灯亮了，但右转车辆还在经过，下一步你会怎么做？",
     hint: "绿灯不是唯一信号，还要看车有没有停稳。",
     options: [
       {
+        id: "cross-road-risk",
         label: "马上跑过去，绿灯肯定安全",
         safe: false,
         feedback: "不能只看灯，还要看车和视线。",
       },
       {
+        id: "cross-road-safe",
         label: "先观察车辆，再沿斑马线通过",
         safe: true,
-        feedback: "很好，过马路时要同时看灯、看车、看路。",
+        feedback: "很棒，过马路时要同时看灯、看车、看路。",
       },
     ],
   },
   {
     id: "bus-stop",
     title: "公交站终点",
-    scenario: "公交车刚靠站，车前方有盲区，你应该怎么做？",
+    scenario: "公交车刚靠站，车前方有盲区，你会怎么做？",
     hint: "大车前方和车尾附近都要特别小心。",
     options: [
       {
+        id: "bus-stop-risk",
         label: "从车前快速穿过去，省时间",
         safe: false,
         feedback: "车前盲区很危险，司机可能完全看不到你。",
       },
       {
+        id: "bus-stop-safe",
         label: "停下来观察，绕到安全区域后再走",
         safe: true,
         feedback: "正确，遇到公交车和大车要主动避开盲区。",
@@ -178,7 +139,7 @@ function isLevelId(value: string | undefined): value is LevelId {
 }
 
 function buildProgressValue(current: number, total: number) {
-  if (total === 0) {
+  if (!total) {
     return 0;
   }
 
@@ -197,22 +158,79 @@ function getLevelAccent(levelId: LevelId) {
   return "sky" as const;
 }
 
+function countObservationMistakes(attempts: Record<string, number>) {
+  return Object.values(attempts).reduce((total, count) => total + count, 0);
+}
+
+function getObservationStars(mistakes: number) {
+  if (mistakes <= 1) {
+    return 3;
+  }
+
+  if (mistakes <= 3) {
+    return 2;
+  }
+
+  return 1;
+}
+
+function getObservationScore(mistakes: number) {
+  return Math.max(78, 100 - mistakes * 4);
+}
+
+function hasTargetBeenSolved(
+  targetId: string,
+  completedStepIds: string[],
+  steps: ObservationTaskStep[],
+) {
+  return completedStepIds.some((stepId) => {
+    const matchedStep = steps.find((item) => item.id === stepId);
+    return matchedStep?.targetIds.includes(targetId);
+  });
+}
+
 export function StudentLevelPage() {
   const { levelId } = useParams();
   const navigate = useNavigate();
   const { completeLevel, markLevelInProgress, replaceProgress, state } = useAppState();
   const resolvedLevelId: LevelId = isLevelId(levelId) ? levelId : "level-1";
-  const currentLevel =
+  const currentProgressLevel =
     state.progress.levels.find((level) => level.id === resolvedLevelId) ?? null;
-  const levelMeta =
-    levelBlueprints.find((level) => level.id === resolvedLevelId) ?? null;
+  const currentLevel =
+    currentProgressLevel ??
+    levelBlueprints.find((level) => level.id === resolvedLevelId) ??
+    null;
   const levelOrderIndex = state.progress.levels.findIndex(
     (level) => level.id === resolvedLevelId,
   );
+  const accent = getLevelAccent(resolvedLevelId);
+  const canUseApi = state.authSource === "api" && Boolean(state.authToken);
+  const startRequestRef = useRef<LevelId | null>(null);
+
+  const observationConfig = currentLevel?.observationConfig ?? levelOneObservationConfig;
+  const observationScene = observationConfig.observationScene;
+  const observationSteps = observationConfig.taskSteps;
+  const observationTargets = [
+    ...observationScene.targets,
+    ...observationScene.dangerMarkers,
+  ] as ObservationSceneTarget[];
+
   const [syncError, setSyncError] = useState("");
   const [isFinishing, setIsFinishing] = useState(false);
-  const [selectedHotspots, setSelectedHotspots] = useState<string[]>([]);
-  const [hotspotMessage, setHotspotMessage] = useState("");
+  const [observationStepIndex, setObservationStepIndex] = useState(0);
+  const [completedObservationSteps, setCompletedObservationSteps] = useState<string[]>([]);
+  const [observationFeedback, setObservationFeedback] = useState(
+    "先从斑马线开始观察，把安全线索一个一个找出来。",
+  );
+  const [observationAttempts, setObservationAttempts] = useState<Record<string, number>>({});
+  const [showObservationMidpoint, setShowObservationMidpoint] = useState(false);
+  const [selectedObservationChoiceId, setSelectedObservationChoiceId] = useState<string | null>(
+    null,
+  );
+  const [activeObservationTargetId, setActiveObservationTargetId] = useState<string | null>(
+    null,
+  );
+  const [selectedStickerId, setSelectedStickerId] = useState<string | null>(null);
   const [routeIndex, setRouteIndex] = useState(0);
   const [routeSafety, setRouteSafety] = useState(3);
   const [routeFeedback, setRouteFeedback] = useState<string | null>(null);
@@ -224,11 +242,9 @@ export function StudentLevelPage() {
   );
   const [guardianFeedback, setGuardianFeedback] = useState<string | null>(null);
   const [draggedGuardianTaskId, setDraggedGuardianTaskId] = useState<string | null>(null);
-  const startRequestRef = useRef<LevelId | null>(null);
-  const canUseApi = state.authSource === "api" && Boolean(state.authToken);
 
   useEffect(() => {
-    if (!isLevelId(levelId) || currentLevel?.status !== "available") {
+    if (!isLevelId(levelId) || currentProgressLevel?.status !== "available") {
       return;
     }
 
@@ -252,12 +268,12 @@ export function StudentLevelPage() {
         setSyncError(
           error instanceof ApiError
             ? error.message
-            : "关卡已打开，你可以继续挑战，稍后会再和学习记录同步。",
+            : "关卡已经打开，你可以继续挑战，稍后我会再和学习记录同步。",
         );
       });
   }, [
     canUseApi,
-    currentLevel?.status,
+    currentProgressLevel?.status,
     levelId,
     markLevelInProgress,
     replaceProgress,
@@ -265,8 +281,14 @@ export function StudentLevelPage() {
   ]);
 
   useEffect(() => {
-    setSelectedHotspots([]);
-    setHotspotMessage("");
+    setObservationStepIndex(0);
+    setCompletedObservationSteps([]);
+    setObservationFeedback("先从斑马线开始观察，把安全线索一个一个找出来。");
+    setObservationAttempts({});
+    setShowObservationMidpoint(false);
+    setSelectedObservationChoiceId(null);
+    setActiveObservationTargetId(null);
+    setSelectedStickerId(null);
     setRouteIndex(0);
     setRouteSafety(3);
     setRouteFeedback(null);
@@ -278,20 +300,59 @@ export function StudentLevelPage() {
     setActiveGuardianSceneId(guardianScenes[0]?.id ?? "bus-line");
   }, [resolvedLevelId]);
 
-  const accent = getLevelAccent(resolvedLevelId);
-  const routeStep = routeStepCards[routeIndex] ?? routeStepCards[0]!;
+  const activeObservationStep =
+    observationSteps[Math.min(observationStepIndex, observationSteps.length - 1)] ??
+    observationSteps[0];
   const activeGuardianScene =
-    guardianScenes.find((scene) => scene.id === activeGuardianSceneId) ?? guardianScenes[0]!;
-  const completedGuardianCount = selectedGuardianTasks.length;
+    guardianScenes.find((scene) => scene.id === activeGuardianSceneId) ?? guardianScenes[0];
+  const routeStep = routeStepCards[routeIndex] ?? routeStepCards[0];
+
+  const observationMistakes = countObservationMistakes(observationAttempts);
+  const previewStars =
+    resolvedLevelId === "level-1"
+      ? getObservationStars(observationMistakes)
+      : resolvedLevelId === "level-2"
+        ? routeSafety >= 3
+          ? 3
+          : routeSafety === 2
+            ? 2
+            : 1
+        : Math.max(1, Math.ceil((selectedGuardianTasks.length / guardianScenes.length) * 3));
+  const completionReady =
+    resolvedLevelId === "level-1"
+      ? completedObservationSteps.length === observationSteps.length
+      : resolvedLevelId === "level-2"
+        ? routeCompleted && routeSafety > 0
+        : selectedGuardianTasks.length === guardianScenes.length;
+  const currentTaskIndex =
+    resolvedLevelId === "level-1"
+      ? Math.min(completedObservationSteps.length + 1, observationSteps.length)
+      : resolvedLevelId === "level-2"
+        ? Math.min(routeChoices.length + 1, routeStepCards.length)
+        : Math.min(selectedGuardianTasks.length + 1, guardianScenes.length);
+  const totalTaskCount =
+    resolvedLevelId === "level-1"
+      ? observationSteps.length
+      : resolvedLevelId === "level-2"
+        ? routeStepCards.length
+        : guardianScenes.length;
+  const progressWidth =
+    resolvedLevelId === "level-1"
+      ? buildProgressValue(completedObservationSteps.length, observationSteps.length)
+      : resolvedLevelId === "level-2"
+        ? routeCompleted
+          ? 100
+          : buildProgressValue(routeChoices.length, routeStepCards.length)
+        : buildProgressValue(selectedGuardianTasks.length, guardianScenes.length);
 
   const levelGuide = useMemo(() => {
     if (resolvedLevelId === "level-1") {
       return {
-        title: "在图里找到四个安全关键点",
-        summary: `已找到 ${selectedHotspots.length} / ${streetHotspots.length} 个目标`,
-        rule: "先看斑马线、信号灯、危险动作和路牌，再决定怎么通过路口。",
-        reminder: "四个目标都点亮后，就能完成这一关。",
-        shortGoal: "看清楚，再行动",
+        title: activeObservationStep?.title ?? "城市交通观察员",
+        summary: `已完成 ${completedObservationSteps.length} / ${observationSteps.length} 个观察任务`,
+        rule: activeObservationStep?.instruction ?? observationScene.sceneCaption,
+        reminder: observationScene.sceneCaption,
+        shortGoal: "先观察，再判断",
       };
     }
 
@@ -309,25 +370,30 @@ export function StudentLevelPage() {
 
     return {
       title: "把安全装备放回正确场景",
-      summary: `已完成 ${completedGuardianCount} / ${guardianScenes.length} 个守护步骤`,
+      summary: `已完成 ${selectedGuardianTasks.length} / ${guardianScenes.length} 个守护步骤`,
       rule: "候车要站在线后，乘车要系安全带，坐电动车要先戴头盔。",
       reminder: "三项准备都完成后，就能解锁主题考试。",
       shortGoal: "装备放到位",
     };
   }, [
-    completedGuardianCount,
+    activeObservationStep,
+    completedObservationSteps.length,
+    observationScene.sceneCaption,
+    observationSteps.length,
     resolvedLevelId,
     routeChoices.length,
     routeCompleted,
     routeSafety,
-    selectedHotspots.length,
+    selectedGuardianTasks.length,
   ]);
 
-  const levelHintPrompt = useMemo(
-    () =>
-      `我正在进行${levelMeta?.title ?? "道路安全关卡"}。${levelGuide.summary}。请用儿童友好的语气提醒我这一关最重要的安全规则，并告诉我现在最适合做的下一步。`,
-    [levelGuide.summary, levelMeta?.title],
-  );
+  const levelHintPrompt = useMemo(() => {
+    if (resolvedLevelId === "level-1") {
+      return `我正在进行第一关“${currentLevel?.title ?? "城市交通观察员"}”，当前任务是：${activeObservationStep?.title ?? "观察路口"}。请用儿童友好的语气提醒我这一小步最该先观察什么。`;
+    }
+
+    return `我正在进行${currentLevel?.title ?? "道路安全关卡"}。${levelGuide.summary}。请用儿童友好的语气提醒我这一关最重要的安全规则，并告诉我现在最适合做的下一步。`;
+  }, [activeObservationStep?.title, currentLevel?.title, levelGuide.summary, resolvedLevelId]);
 
   const {
     isLoading: isHintLoading,
@@ -338,57 +404,23 @@ export function StudentLevelPage() {
     prompt: levelHintPrompt,
     scene: "hint",
     levelId: resolvedLevelId,
-    fallbackText: levelGuide.rule,
+    fallbackText:
+      resolvedLevelId === "level-1"
+        ? activeObservationStep?.aiHint ?? levelGuide.rule
+        : levelGuide.rule,
   });
-
-  const completionReady =
-    resolvedLevelId === "level-1"
-      ? selectedHotspots.length === streetHotspots.length
-      : resolvedLevelId === "level-2"
-        ? routeCompleted && routeSafety > 0
-        : completedGuardianCount === guardianScenes.length;
-
-  const previewStars =
-    resolvedLevelId === "level-1"
-      ? Math.max(1, Math.ceil((selectedHotspots.length / streetHotspots.length) * 3))
-      : resolvedLevelId === "level-2"
-        ? routeSafety >= 3
-          ? 3
-          : routeSafety === 2
-            ? 2
-            : 1
-        : Math.max(1, Math.ceil((completedGuardianCount / guardianScenes.length) * 3));
-
-  const currentTaskIndex =
-    resolvedLevelId === "level-1"
-      ? Math.min(selectedHotspots.length + 1, streetHotspots.length)
-      : resolvedLevelId === "level-2"
-        ? Math.min(routeChoices.length + 1, routeStepCards.length)
-        : Math.min(completedGuardianCount + 1, guardianScenes.length);
-
-  const totalTaskCount =
-    resolvedLevelId === "level-1"
-      ? streetHotspots.length
-      : resolvedLevelId === "level-2"
-        ? routeStepCards.length
-        : guardianScenes.length;
-
-  const progressWidth =
-    resolvedLevelId === "level-1"
-      ? buildProgressValue(selectedHotspots.length, streetHotspots.length)
-      : resolvedLevelId === "level-2"
-        ? routeCompleted
-          ? 100
-          : buildProgressValue(routeChoices.length, routeStepCards.length)
-        : buildProgressValue(completedGuardianCount, guardianScenes.length);
 
   const levelChecklist = useMemo(() => {
     if (resolvedLevelId === "level-1") {
-      return streetHotspots.map((hotspot) => ({
-        id: hotspot.id,
-        label: hotspot.task,
-        done: selectedHotspots.includes(hotspot.id),
-        note: selectedHotspots.includes(hotspot.id) ? hotspot.success : hotspot.clue,
+      return observationSteps.map((step, index) => ({
+        id: step.id,
+        label: step.title,
+        done: completedObservationSteps.includes(step.id),
+        note: completedObservationSteps.includes(step.id)
+          ? step.successCopy
+          : index === observationStepIndex
+            ? step.instruction
+            : step.aiHint,
       }));
     }
 
@@ -413,20 +445,123 @@ export function StudentLevelPage() {
       done: selectedGuardianTasks.includes(scene.id),
       note: selectedGuardianTasks.includes(scene.id) ? scene.successText : scene.toolHint,
     }));
-  }, [resolvedLevelId, routeChoices, selectedGuardianTasks, selectedHotspots]);
+  }, [
+    completedObservationSteps,
+    observationStepIndex,
+    observationSteps,
+    resolvedLevelId,
+    routeChoices,
+    selectedGuardianTasks,
+  ]);
+
+  function moveToNextObservationStep() {
+    setObservationStepIndex((current) => Math.min(current + 1, observationSteps.length - 1));
+    setSelectedObservationChoiceId(null);
+    setSelectedStickerId(null);
+  }
+
+  function recordObservationError(step: ObservationTaskStep) {
+    setObservationAttempts((current) => ({
+      ...current,
+      [step.id]: (current[step.id] ?? 0) + 1,
+    }));
+    setObservationFeedback(step.errorCopy);
+  }
+
+  function completeObservationStep(step: ObservationTaskStep, focusId?: string) {
+    setCompletedObservationSteps((current) =>
+      current.includes(step.id) ? current : [...current, step.id],
+    );
+    setObservationFeedback(step.successCopy);
+    setActiveObservationTargetId(focusId ?? step.targetIds[0] ?? null);
+
+    if (step.id === observationSteps[2]?.id) {
+      setShowObservationMidpoint(true);
+      return;
+    }
+
+    if (step.id !== observationSteps[observationSteps.length - 1]?.id) {
+      moveToNextObservationStep();
+    }
+  }
+
+  function handleObservationTargetSelect(targetId: string) {
+    if (resolvedLevelId !== "level-1" || !activeObservationStep) {
+      return;
+    }
+
+    setActiveObservationTargetId(targetId);
+
+    if (activeObservationStep.interactionType === "state_judge") {
+      setObservationFeedback("先想一想现在该怎么做，再选一个安全做法。");
+      return;
+    }
+
+    if (activeObservationStep.interactionType === "drag_marker") {
+      if (!selectedStickerId) {
+        setObservationFeedback("先从下方拿起安全贴纸，再贴到正确位置。");
+        return;
+      }
+
+      if (activeObservationStep.targetIds.includes(targetId)) {
+        completeObservationStep(activeObservationStep, targetId);
+        return;
+      }
+
+      recordObservationError(activeObservationStep);
+      return;
+    }
+
+    if (activeObservationStep.targetIds.includes(targetId)) {
+      completeObservationStep(activeObservationStep, targetId);
+      return;
+    }
+
+    recordObservationError(activeObservationStep);
+  }
+
+  function handleObservationChoiceSelect(choice: ObservationTaskChoice) {
+    if (resolvedLevelId !== "level-1" || !activeObservationStep) {
+      return;
+    }
+
+    setSelectedObservationChoiceId(choice.id);
+
+    if (choice.safe) {
+      completeObservationStep(activeObservationStep, activeObservationStep.targetIds[0]);
+      return;
+    }
+
+    recordObservationError(activeObservationStep);
+    setObservationFeedback(choice.feedback);
+  }
+
+  function handleObservationStickerSelect(stickerId: string) {
+    setSelectedStickerId(stickerId);
+    setObservationFeedback("贴纸拿好了，把它贴到斑马线起步观察点。");
+  }
 
   function buildLevelResult(): LevelResult {
     const completedAt = new Date().toLocaleString("zh-CN", { hour12: false });
 
     if (resolvedLevelId === "level-1") {
+      const stars = getObservationStars(observationMistakes);
+      const score = getObservationScore(observationMistakes);
+
       return {
         levelId: resolvedLevelId,
-        score: 100,
-        stars: 3,
+        score,
+        stars,
         completedAt,
-        highlight: "你已经会在路口主动寻找斑马线、信号灯、路牌和危险动作了。",
-        caution: "下一关要把“看得见”升级成“会判断、会选择”。",
-        aiSummary: "继续保持先观察再行动的节奏，你会越来越像真正的安全观察员。",
+        highlight:
+          stars >= 2
+            ? "你已经会先找斑马线、再看路牌和红绿灯，还能认出危险动作了。"
+            : "你已经把整条观察链走完了，对路口里的安全线索越来越熟悉。",
+        caution:
+          stars >= 2
+            ? "下一关记得把“看得见”升级成“会判断、会选择”。"
+            : "看到绿灯也要继续看车，别着急往前冲。",
+        aiSummary: observationConfig.completionCopy,
       };
     }
 
@@ -451,11 +586,8 @@ export function StudentLevelPage() {
         caution:
           routeSafety >= 2
             ? "记得看到绿灯也要继续观察车辆和盲区。"
-            : "下次遇到路口时，要再多停一下，先看车再行动。",
-        aiSummary:
-          routeSafety >= 2
-            ? "你的路线判断越来越稳了，已经能把规则用到真实场景里。"
-            : "你完成了挑战，接下来只要再多观察一点点，就会更安全。",
+            : "下一次别着急做选择，先停一停、想一想。",
+        aiSummary: "继续保持先观察再决定的节奏，你会越来越像真正的路线小先锋。",
       };
     }
 
@@ -464,18 +596,10 @@ export function StudentLevelPage() {
       score: 100,
       stars: 3,
       completedAt,
-      highlight: "你已经会在不同乘车场景里准备好重要的安全装备。",
-      caution: "进入考试前，再回想一次候车距离、安全带和头盔这三个重点。",
-      aiSummary: "守护任务完成得很棒，你已经拥有更完整的出行防护意识。",
+      highlight: "你已经会在不同乘车场景里补齐关键防护动作了。",
+      caution: "出发前先准备好，再行动，安全就会更稳。",
+      aiSummary: "把防护动作变成习惯，才是真正的安全守护达人。",
     };
-  }
-
-  function selectHotspot(hotspotId: string) {
-    const hotspot = streetHotspots.find((item) => item.id === hotspotId);
-    setSelectedHotspots((current) =>
-      current.includes(hotspotId) ? current : [...current, hotspotId],
-    );
-    setHotspotMessage(hotspot?.success ?? "你已经找到一个安全关键点。");
   }
 
   function handleRouteOptionSelect(option: RouteStepCard["options"][number]) {
@@ -550,7 +674,8 @@ export function StudentLevelPage() {
           ...response.progress,
           levelResults: {
             ...response.progress.levelResults,
-            [resolvedLevelId]: response.result ?? result,
+            [resolvedLevelId]:
+              resolvedLevelId === "level-1" ? result : response.result ?? result,
           },
         });
       } catch (error) {
@@ -572,57 +697,48 @@ export function StudentLevelPage() {
     navigate(`/student/theme/road-safety/level/${resolvedLevelId}/result`);
   }
 
-  if (!isLevelId(levelId) || !currentLevel || !levelMeta) {
+  if (!isLevelId(levelId) || !currentLevel) {
     return (
-      <section className="surface-card student-level-empty">
-        <strong>这张冒险地图还没准备好</strong>
-        <p>先回到主题地图，重新选择要挑战的关卡吧。</p>
+      <article className="surface-card student-level-empty">
+        <strong>没有找到这一关</strong>
+        <p>先回到主题页，再从可进入的关卡重新开始。</p>
         <button
           type="button"
           className="primary-button primary-button--playful"
           onClick={() => navigate("/student/theme/road-safety")}
         >
-          返回主题地图
+          回到主题页
         </button>
-      </section>
-    );
-  }
-
-  if (currentLevel.status === "locked") {
-    return (
-      <section className="surface-card student-level-empty">
-        <strong>这一关还没有打开</strong>
-        <p>先完成前一关，再回来继续闯关。</p>
-        <button
-          type="button"
-          className="primary-button primary-button--playful"
-          onClick={() => navigate("/student/theme/road-safety")}
-        >
-          返回主题地图
-        </button>
-      </section>
+      </article>
     );
   }
 
   return (
     <div className="page-stack student-page student-page--level">
       <StudentAdventureHero
-        eyebrow={`第 ${levelOrderIndex + 1} 站`}
-        title={levelMeta.title}
-        description={levelMeta.description}
-        bubbleTitle="本关目标"
-        bubbleText={levelGuide.shortGoal}
-        mascotLabel={`${currentTaskIndex}`}
-        mascotHint={levelGuide.summary}
-        variant="level"
+        eyebrow={`第 ${levelOrderIndex + 1 || 1} 关`}
+        title={currentLevel.title}
+        description={currentLevel.description}
+        bubbleTitle="闯关目标"
+        bubbleText={levelGuide.title}
+        mascotLabel={`${previewStars}★`}
+        mascotHint={levelGuide.rule}
         accent={accent}
+        variant="level"
         stats={[
           { label: "任务进度", value: `${currentTaskIndex}/${totalTaskCount}`, accent: "sky" },
-          { label: "预计星级", value: `${previewStars} 星`, accent: "orange" },
-          { label: "本关重点", value: levelMeta.focus, accent: "mint" },
+          { label: "预计时长", value: currentLevel.duration, accent: "orange" },
+          { label: "奖励预览", value: `${previewStars} 星`, accent: "mint" },
         ]}
         actions={
           <>
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => navigate("/student/theme/road-safety")}
+            >
+              返回主题页
+            </button>
             <button
               type="button"
               className="primary-button primary-button--playful"
@@ -631,19 +747,13 @@ export function StudentLevelPage() {
                 void finishLevel();
               }}
             >
-              {isFinishing ? "正在结算..." : "完成本关"}
-            </button>
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={() => navigate("/student/theme/road-safety")}
-            >
-              回到地图
+              {isFinishing ? "正在结算..." : completionReady ? "完成本关" : "继续闯关"}
             </button>
           </>
         }
         aside={
           <div className="student-level-hero-meter">
+            <p>进度条会一直告诉你，现在闯到哪一步了。</p>
             <div className="student-level-hero-meter__stars">
               {[1, 2, 3].map((star) => (
                 <span
@@ -664,340 +774,457 @@ export function StudentLevelPage() {
                 style={{ width: `${progressWidth}%` }}
               />
             </div>
-            <p>{completionReady ? "已经可以提交啦" : "再完成一点点就能过关"}</p>
+            <p>{levelGuide.summary}</p>
           </div>
         }
       />
 
       {syncError ? (
-        <article className="feedback-box">
-          <strong>学习提醒</strong>
+        <article className="surface-card notice-card notice-card--warning">
+          <strong>同步提醒</strong>
           <p>{syncError}</p>
         </article>
       ) : null}
 
-      <section className="student-level-hud">
-        <article className="surface-card student-level-mission-board">
-          <span className="section-block__eyebrow">本关任务板</span>
-          <h2>{levelGuide.title}</h2>
-          <div className="student-level-checklist">
-            {levelChecklist.map((item, index) => (
-              <article
-                key={item.id}
-                className={
-                  item.done
-                    ? "student-level-checklist__item student-level-checklist__item--done"
-                    : "student-level-checklist__item"
-                }
-              >
-                <span className="student-level-checklist__index">{index + 1}</span>
-                <div>
-                  <strong>{item.label}</strong>
-                  <p>{item.note}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </article>
-
-        <StudentMascotBubble
-          eyebrow="AI 小提醒"
-          title="卡住时先看这里"
-          message={isHintLoading ? "正在整理本关提示..." : hintMessage}
-          accent={accent}
-          notice={hintNotice}
-          actions={
-            <>
-              <button
-                type="button"
-                className="ghost-button"
-                onClick={() => {
-                  void refreshHint();
-                }}
-                disabled={isHintLoading}
-              >
-                {isHintLoading ? "生成中..." : "换一句提示"}
-              </button>
-              <button
-                type="button"
-                className="ghost-button"
-                onClick={() => navigate("/student/ai")}
-              >
-                去 AI 问答
-              </button>
-            </>
-          }
-        />
-      </section>
-
       {resolvedLevelId === "level-1" ? (
-        <section className="student-level-stage student-level-stage--observe">
+        <section className="student-level-observe-layout">
+          <article className="surface-card student-level-mission-board">
+            <span className="section-block__eyebrow">当前任务</span>
+            <div className="student-level-task-focus">
+              <span className="student-level-task-focus__icon">{currentTaskIndex}</span>
+              <div>
+                <strong>{activeObservationStep.title}</strong>
+                <p>{activeObservationStep.instruction}</p>
+              </div>
+            </div>
+
+            <div className="student-level-checklist">
+              {levelChecklist.map((item, index) => (
+                <article
+                  key={item.id}
+                  className={
+                    item.done
+                      ? "student-level-checklist__item student-level-checklist__item--done"
+                      : "student-level-checklist__item"
+                  }
+                >
+                  <span className="student-level-checklist__index">{index + 1}</span>
+                  <div>
+                    <strong>{item.label}</strong>
+                    <p>{item.note}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <StudentMascotBubble
+              eyebrow="AI 小提示"
+              title="这一步先看哪里？"
+              message={isHintLoading ? "正在整理观察提示..." : hintMessage}
+              accent="sky"
+              notice={hintNotice}
+              actions={
+                <>
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => {
+                      void refreshHint();
+                    }}
+                    disabled={isHintLoading}
+                  >
+                    {isHintLoading ? "生成中..." : "换一句提示"}
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => navigate("/student/ai")}
+                  >
+                    去 AI 问答
+                  </button>
+                </>
+              }
+            />
+          </article>
+
           <article className="surface-card student-level-scene-card">
             <div className="student-level-panel-heading">
               <div>
-                <span className="section-block__eyebrow">主场景</span>
-                <h2>在路口里找出安全关键点</h2>
+                <span className="section-block__eyebrow">街道观察场景</span>
+                <h2>在大图里找出安全线索</h2>
               </div>
-              <span className="surface-tag">
-                {selectedHotspots.length} / {streetHotspots.length} 已点亮
-              </span>
+              <span className="surface-tag">{observationScene.referenceLabel}</span>
             </div>
 
-            <div className="student-observe-scene">
-              <div className="student-observe-scene__sky" />
-              <div className="student-observe-scene__building student-observe-scene__building--left" />
-              <div className="student-observe-scene__building student-observe-scene__building--right" />
-              <div className="student-observe-scene__road" />
-              <div className="student-observe-scene__crosswalk" />
-              <div className="student-observe-scene__car" />
-              <div className="student-observe-scene__tree" />
+            <div className="student-observe-scene-board">
+              <img
+                src={levelOneStreetScene}
+                alt="城市交通观察场景"
+                className="student-observe-scene-board__image"
+              />
+              <div className="student-observe-scene-board__targets">
+                {observationTargets.map((target) => {
+                  const isActive = activeObservationStep.targetIds.includes(target.id);
+                  const isDone = hasTargetBeenSolved(
+                    target.id,
+                    completedObservationSteps,
+                    observationSteps,
+                  );
 
-              {streetHotspots.map((hotspot) => {
-                const isDone = selectedHotspots.includes(hotspot.id);
+                  return (
+                    <button
+                      key={target.id}
+                      type="button"
+                      className={[
+                        "student-observe-marker",
+                        `student-observe-marker--${target.accent}`,
+                        isActive ? "student-observe-marker--active" : "",
+                        isDone ? "student-observe-marker--done" : "",
+                        activeObservationTargetId === target.id
+                          ? "student-observe-marker--focus"
+                          : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      style={{
+                        top: `${target.top}%`,
+                        left: `${target.left}%`,
+                        width: `${target.width}%`,
+                        height: `${target.height}%`,
+                      }}
+                      onClick={() => handleObservationTargetSelect(target.id)}
+                      onDragOver={(event) => {
+                        if (activeObservationStep.interactionType === "drag_marker") {
+                          event.preventDefault();
+                        }
+                      }}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        if (
+                          activeObservationStep.interactionType === "drag_marker" &&
+                          selectedStickerId
+                        ) {
+                          handleObservationTargetSelect(target.id);
+                        }
+                      }}
+                    >
+                      <span className="student-observe-marker__pulse" />
+                      <span className="student-observe-marker__label">{target.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-                return (
+            <div className="student-observe-feedback">
+              <strong>观察反馈</strong>
+              <p>{observationFeedback}</p>
+            </div>
+
+            {activeObservationStep.interactionType === "state_judge" ? (
+              <div className="student-state-choice-grid">
+                {activeObservationStep.choices?.map((choice) => (
                   <button
-                    key={hotspot.id}
+                    key={choice.id}
                     type="button"
                     className={
-                      isDone
-                        ? "student-observe-hotspot student-observe-hotspot--done"
-                        : "student-observe-hotspot"
+                      selectedObservationChoiceId === choice.id
+                        ? "student-state-choice-card student-state-choice-card--active"
+                        : "student-state-choice-card"
                     }
-                    style={{ top: hotspot.top, left: hotspot.left }}
-                    onClick={() => selectHotspot(hotspot.id)}
+                    onClick={() => handleObservationChoiceSelect(choice)}
                   >
-                    <span>{hotspot.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="student-level-scene-tip">
-              <strong>玩法</strong>
-              <p>把四个热点都点亮，就能完成这一关。</p>
-            </div>
-          </article>
-
-          <article className="surface-card student-level-side-card">
-            <span className="section-block__eyebrow">观察结果</span>
-            <h2>我已经发现了什么</h2>
-            <p>{hotspotMessage || "先点击场景里的贴纸按钮，把四个关键点全部找出来。"}</p>
-            <div className="student-level-badge-row">
-              {streetHotspots.map((item) => (
-                <span
-                  key={item.id}
-                  className={
-                    selectedHotspots.includes(item.id)
-                      ? "student-level-badge student-level-badge--done"
-                      : "student-level-badge"
-                  }
-                >
-                  {item.label}
-                </span>
-              ))}
-            </div>
-          </article>
-        </section>
-      ) : null}
-
-      {resolvedLevelId === "level-2" ? (
-        <section className="student-level-stage student-level-stage--route">
-          <article className="surface-card student-route-map-card">
-            <div className="student-level-panel-heading">
-              <div>
-                <span className="section-block__eyebrow">路线地图</span>
-                <h2>沿着放学路线一站一站前进</h2>
-              </div>
-              <span className="surface-tag">安全护盾 {routeSafety} / 3</span>
-            </div>
-
-            <div className="student-route-track">
-              {routeStepCards.map((step, index) => {
-                const choice = routeChoices.find((item) => item.stepId === step.id);
-                const cardClass = choice
-                  ? choice.safe
-                    ? "student-route-node student-route-node--done"
-                    : "student-route-node student-route-node--risk"
-                  : index === routeIndex && !routeCompleted
-                    ? "student-route-node student-route-node--current"
-                    : "student-route-node";
-
-                return (
-                  <article key={step.id} className={cardClass}>
-                    <span className="student-route-node__index">{index + 1}</span>
-                    <div>
-                      <strong>{step.title}</strong>
-                      <p>{choice ? choice.selectedLabel : step.hint}</p>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </article>
-
-          <article className="surface-card student-route-choice-card">
-            <span className="section-block__eyebrow">当前挑战</span>
-            <h2>{routeCompleted ? "路线挑战完成" : routeStep.title}</h2>
-            <p className="student-route-choice-card__scenario">
-              {routeCompleted ? "你已经走完整条路线，可以提交本关了。" : routeStep.scenario}
-            </p>
-
-            {!routeCompleted ? (
-              <div className="student-route-choice-grid">
-                {routeStep.options.map((option) => (
-                  <button
-                    key={option.label}
-                    type="button"
-                    className="student-route-option"
-                    onClick={() => handleRouteOptionSelect(option)}
-                  >
-                    {option.label}
+                    <strong>{choice.label}</strong>
+                    <span>{choice.safe ? "稳妥做法" : "危险做法"}</span>
                   </button>
                 ))}
               </div>
             ) : null}
 
-            {routeFeedback ? (
-              <article className="student-level-scene-tip student-level-scene-tip--mint">
-                <strong>刚才的反馈</strong>
-                <p>{routeFeedback}</p>
-              </article>
-            ) : null}
-
-            <div className="button-row">
-              <button type="button" className="ghost-button" onClick={resetRouteChallenge}>
-                重新挑战
-              </button>
-              <button
-                type="button"
-                className="primary-button primary-button--playful"
-                disabled={!completionReady || isFinishing}
-                onClick={() => {
-                  void finishLevel();
-                }}
-              >
-                {isFinishing ? "正在结算..." : "完成本关"}
-              </button>
-            </div>
-          </article>
-        </section>
-      ) : null}
-
-      {resolvedLevelId === "level-3" ? (
-        <section className="student-level-stage student-level-stage--guardian">
-          <article className="surface-card student-guardian-stage-card">
-            <div className="student-level-panel-heading">
-              <div>
-                <span className="section-block__eyebrow">守护步骤</span>
-                <h2>把安全装备放到正确场景</h2>
-              </div>
-              <span className="surface-tag">
-                {completedGuardianCount} / {guardianScenes.length} 已完成
-              </span>
-            </div>
-
-            <div className="student-guardian-step-row">
-              {guardianScenes.map((scene) => {
-                const isDone = selectedGuardianTasks.includes(scene.id);
-                const isActive = activeGuardianSceneId === scene.id;
-
-                return (
+            {activeObservationStep.interactionType === "drag_marker" ? (
+              <div className="student-sticker-tray">
+                {observationScene.dragMarkers.map((marker) => (
                   <button
-                    key={scene.id}
+                    key={marker.id}
                     type="button"
+                    draggable
                     className={
-                      isDone
-                        ? "student-guardian-step student-guardian-step--done"
-                        : isActive
-                          ? "student-guardian-step student-guardian-step--active"
-                          : "student-guardian-step"
+                      selectedStickerId === marker.id
+                        ? "student-sticker-card student-sticker-card--active"
+                        : "student-sticker-card"
                     }
-                    onClick={() => setActiveGuardianSceneId(scene.id)}
+                    onClick={() => handleObservationStickerSelect(marker.id)}
+                    onDragStart={() => setSelectedStickerId(marker.id)}
+                    onDragEnd={() => setSelectedStickerId(null)}
                   >
-                    <strong>{scene.title}</strong>
-                    <span>{isDone ? "已完成" : isActive ? "进行中" : "等待中"}</span>
+                    <span className="student-sticker-card__emoji">{marker.emoji}</span>
+                    <div>
+                      <strong>{marker.label}</strong>
+                      <p>{marker.hint}</p>
+                    </div>
                   </button>
-                );
-              })}
-            </div>
-
-            <div className="student-guardian-stage">
-              <div className="student-guardian-stage__scene">
-                <span className="surface-tag">当前场景</span>
-                <h3>{activeGuardianScene.title}</h3>
-                <p>{activeGuardianScene.detail}</p>
+                ))}
               </div>
-              <div
-                className={
-                  selectedGuardianTasks.includes(activeGuardianScene.id)
-                    ? "student-guardian-dropzone student-guardian-dropzone--done"
-                    : draggedGuardianTaskId
-                      ? "student-guardian-dropzone student-guardian-dropzone--ready"
-                      : "student-guardian-dropzone"
-                }
-                onDragOver={(event) => {
-                  event.preventDefault();
-                }}
-                onDrop={(event) => {
-                  event.preventDefault();
-
-                  if (draggedGuardianTaskId) {
-                    handleGuardianPlacement(draggedGuardianTaskId, activeGuardianScene.id);
-                  }
-                }}
-              >
-                <strong>{activeGuardianScene.stageLabel}</strong>
-                <span>
-                  {selectedGuardianTasks.includes(activeGuardianScene.id)
-                    ? "装备已经放好了"
-                    : "把合适的装备拖进来，或点击下方道具卡"}
-                </span>
-              </div>
-            </div>
-          </article>
-
-          <article className="surface-card student-guardian-tool-card-board">
-            <span className="section-block__eyebrow">装备栏</span>
-            <h2>选择合适的安全装备</h2>
-            <div className="student-guardian-tool-grid">
-              {guardianScenes.map((scene) => {
-                const isDone = selectedGuardianTasks.includes(scene.id);
-                const isDragging = draggedGuardianTaskId === scene.id;
-
-                return (
-                  <button
-                    key={scene.id}
-                    type="button"
-                    draggable={!isDone}
-                    className={
-                      isDone
-                        ? "student-guardian-tool student-guardian-tool--done"
-                        : isDragging
-                          ? "student-guardian-tool student-guardian-tool--dragging"
-                          : "student-guardian-tool"
-                    }
-                    onDragStart={() => setDraggedGuardianTaskId(scene.id)}
-                    onDragEnd={() => setDraggedGuardianTaskId(null)}
-                    onClick={() => handleGuardianPlacement(scene.id, activeGuardianScene.id)}
-                    disabled={isDone}
-                  >
-                    <strong>{scene.toolLabel}</strong>
-                    <span>{scene.toolHint}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {guardianFeedback ? (
-              <article className="student-level-scene-tip student-level-scene-tip--orange">
-                <strong>场景反馈</strong>
-                <p>{guardianFeedback}</p>
-              </article>
             ) : null}
           </article>
         </section>
-      ) : null}
+      ) : (
+        <>
+          <section className="student-level-hud">
+            <article className="surface-card student-level-mission-board">
+              <span className="section-block__eyebrow">本关任务条</span>
+              <h2>{levelGuide.title}</h2>
+              <div className="student-level-checklist">
+                {levelChecklist.map((item, index) => (
+                  <article
+                    key={item.id}
+                    className={
+                      item.done
+                        ? "student-level-checklist__item student-level-checklist__item--done"
+                        : "student-level-checklist__item"
+                    }
+                  >
+                    <span className="student-level-checklist__index">{index + 1}</span>
+                    <div>
+                      <strong>{item.label}</strong>
+                      <p>{item.note}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </article>
+
+            <StudentMascotBubble
+              eyebrow="AI 小提示"
+              title="卡住时先看这里"
+              message={isHintLoading ? "正在整理本关提示..." : hintMessage}
+              accent={accent}
+              notice={hintNotice}
+              actions={
+                <>
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => {
+                      void refreshHint();
+                    }}
+                    disabled={isHintLoading}
+                  >
+                    {isHintLoading ? "生成中..." : "换一句提示"}
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => navigate("/student/ai")}
+                  >
+                    去 AI 问答
+                  </button>
+                </>
+              }
+            />
+          </section>
+
+          {resolvedLevelId === "level-2" ? (
+            <section className="student-level-stage student-level-stage--route">
+              <article className="surface-card student-route-map-card">
+                <div className="student-level-panel-heading">
+                  <div>
+                    <span className="section-block__eyebrow">路线地图</span>
+                    <h2>沿着放学路线一站一站前进</h2>
+                  </div>
+                  <span className="surface-tag">安全护盾 {routeSafety} / 3</span>
+                </div>
+
+                <div className="student-route-track">
+                  {routeStepCards.map((step, index) => {
+                    const choice = routeChoices.find((item) => item.stepId === step.id);
+                    const cardClass = choice
+                      ? choice.safe
+                        ? "student-route-node student-route-node--done"
+                        : "student-route-node student-route-node--risk"
+                      : index === routeIndex && !routeCompleted
+                        ? "student-route-node student-route-node--current"
+                        : "student-route-node";
+
+                    return (
+                      <article key={step.id} className={cardClass}>
+                        <span className="student-route-node__index">{index + 1}</span>
+                        <div>
+                          <strong>{step.title}</strong>
+                          <p>{choice ? choice.selectedLabel : step.hint}</p>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </article>
+
+              <article className="surface-card student-route-choice-card">
+                <span className="section-block__eyebrow">当前挑战</span>
+                <h2>{routeCompleted ? "路线挑战完成" : routeStep.title}</h2>
+                <p className="student-route-choice-card__scenario">
+                  {routeCompleted
+                    ? "你已经走完整条路线，可以提交本关了。"
+                    : routeStep.scenario}
+                </p>
+
+                {!routeCompleted ? (
+                  <div className="student-route-choice-grid">
+                    {routeStep.options.map((option) => (
+                      <button
+                        key={option.label}
+                        type="button"
+                        className="student-route-option"
+                        onClick={() => handleRouteOptionSelect(option)}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+
+                {routeFeedback ? (
+                  <article className="student-level-scene-tip student-level-scene-tip--mint">
+                    <strong>刚才的反馈</strong>
+                    <p>{routeFeedback}</p>
+                  </article>
+                ) : null}
+
+                <div className="button-row">
+                  <button type="button" className="ghost-button" onClick={resetRouteChallenge}>
+                    重新挑战
+                  </button>
+                  <button
+                    type="button"
+                    className="primary-button primary-button--playful"
+                    disabled={!completionReady || isFinishing}
+                    onClick={() => {
+                      void finishLevel();
+                    }}
+                  >
+                    {isFinishing ? "正在结算..." : "完成本关"}
+                  </button>
+                </div>
+              </article>
+            </section>
+          ) : null}
+
+          {resolvedLevelId === "level-3" ? (
+            <section className="student-level-stage student-level-stage--guardian">
+              <article className="surface-card student-guardian-stage-card">
+                <div className="student-level-panel-heading">
+                  <div>
+                    <span className="section-block__eyebrow">守护步骤</span>
+                    <h2>把安全装备放到正确场景</h2>
+                  </div>
+                  <span className="surface-tag">
+                    {selectedGuardianTasks.length} / {guardianScenes.length} 已完成
+                  </span>
+                </div>
+
+                <div className="student-guardian-step-row">
+                  {guardianScenes.map((scene) => {
+                    const isDone = selectedGuardianTasks.includes(scene.id);
+                    const isActive = activeGuardianSceneId === scene.id;
+
+                    return (
+                      <button
+                        key={scene.id}
+                        type="button"
+                        className={
+                          isDone
+                            ? "student-guardian-step student-guardian-step--done"
+                            : isActive
+                              ? "student-guardian-step student-guardian-step--active"
+                              : "student-guardian-step"
+                        }
+                        onClick={() => setActiveGuardianSceneId(scene.id)}
+                      >
+                        <strong>{scene.title}</strong>
+                        <span>{isDone ? "已完成" : isActive ? "进行中" : "等待中"}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="student-guardian-stage">
+                  <div className="student-guardian-stage__scene">
+                    <span className="surface-tag">当前场景</span>
+                    <h3>{activeGuardianScene.title}</h3>
+                    <p>{activeGuardianScene.detail}</p>
+                  </div>
+                  <div
+                    className={
+                      selectedGuardianTasks.includes(activeGuardianScene.id)
+                        ? "student-guardian-dropzone student-guardian-dropzone--done"
+                        : draggedGuardianTaskId
+                          ? "student-guardian-dropzone student-guardian-dropzone--ready"
+                          : "student-guardian-dropzone"
+                    }
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+
+                      if (draggedGuardianTaskId) {
+                        handleGuardianPlacement(draggedGuardianTaskId, activeGuardianScene.id);
+                      }
+                    }}
+                  >
+                    <strong>{activeGuardianScene.stageLabel}</strong>
+                    <span>
+                      {selectedGuardianTasks.includes(activeGuardianScene.id)
+                        ? "装备已经放好了"
+                        : "把合适的装备拖进来，或点击下方道具卡"}
+                    </span>
+                  </div>
+                </div>
+              </article>
+
+              <article className="surface-card student-guardian-tool-card-board">
+                <span className="section-block__eyebrow">装备栏</span>
+                <h2>选择合适的安全装备</h2>
+                <div className="student-guardian-tool-grid">
+                  {guardianScenes.map((scene) => {
+                    const isDone = selectedGuardianTasks.includes(scene.id);
+                    const isDragging = draggedGuardianTaskId === scene.id;
+
+                    return (
+                      <button
+                        key={scene.id}
+                        type="button"
+                        draggable={!isDone}
+                        className={
+                          isDone
+                            ? "student-guardian-tool student-guardian-tool--done"
+                            : isDragging
+                              ? "student-guardian-tool student-guardian-tool--dragging"
+                              : "student-guardian-tool"
+                        }
+                        onDragStart={() => setDraggedGuardianTaskId(scene.id)}
+                        onDragEnd={() => setDraggedGuardianTaskId(null)}
+                        onClick={() => handleGuardianPlacement(scene.id, activeGuardianScene.id)}
+                        disabled={isDone}
+                      >
+                        <strong>{scene.toolLabel}</strong>
+                        <span>{scene.toolHint}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {guardianFeedback ? (
+                  <article className="student-level-scene-tip student-level-scene-tip--orange">
+                    <strong>场景反馈</strong>
+                    <p>{guardianFeedback}</p>
+                  </article>
+                ) : null}
+              </article>
+            </section>
+          ) : null}
+        </>
+      )}
 
       <section className="student-card-grid student-card-grid--two">
         <article className="surface-card student-level-rule-card">
@@ -1005,7 +1232,7 @@ export function StudentLevelPage() {
           <h2>{levelGuide.shortGoal}</h2>
           <div className="student-level-mini-rules">
             <article className="student-level-mini-rules__card">
-              <strong>这一关要做什么</strong>
+              <strong>这一关要做什么？</strong>
               <p>{levelGuide.rule}</p>
             </article>
             <article className="student-level-mini-rules__card">
@@ -1024,7 +1251,7 @@ export function StudentLevelPage() {
           </div>
           <div className="student-level-reward-card__row">
             <span className="student-level-reward-card__token">时长</span>
-            <strong>{levelMeta.duration}</strong>
+            <strong>{currentLevel.duration}</strong>
           </div>
           <div className="student-level-reward-card__row">
             <span className="student-level-reward-card__token">下一步</span>
@@ -1032,6 +1259,28 @@ export function StudentLevelPage() {
           </div>
         </article>
       </section>
+
+      {showObservationMidpoint ? (
+        <div className="student-level-midpoint-overlay">
+          <article className="surface-card student-level-midpoint-card">
+            <span className="section-block__eyebrow">观察半程完成</span>
+            <h2>你已经找到前半段关键线索啦</h2>
+            <p>{observationConfig.midpointCopy}</p>
+            <div className="student-level-midpoint-card__actions">
+              <button
+                type="button"
+                className="primary-button primary-button--playful"
+                onClick={() => {
+                  setShowObservationMidpoint(false);
+                  moveToNextObservationStep();
+                }}
+              >
+                继续观察
+              </button>
+            </div>
+          </article>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -1,5 +1,9 @@
 ﻿import { defaultGrowthConfig } from "../constants/growth";
 import { examQuestions } from "../constants/content";
+import {
+  levelOneManagementDefaults,
+  levelOneObservationConfig,
+} from "../constants/levelOneObservation";
 import { getDb } from "../db/connection";
 import type {
   AiCopyTemplateItem,
@@ -7,6 +11,8 @@ import type {
   GrowthConfigItem,
   LevelId,
   LevelManagementItem,
+  ObservationSceneConfig,
+  ObservationTaskStep,
   QuestionBankManagementItem,
   ThemeManagementItem,
 } from "../types/contracts";
@@ -40,6 +46,11 @@ type LevelRow = {
   hotspot_items_json: string;
   prop_items_json: string;
   target_area_notes_json: string;
+  scene_reference_label: string;
+  observation_scene_json: string;
+  task_steps_json: string;
+  midpoint_copy: string;
+  completion_copy: string;
   updated_at: string;
 };
 
@@ -88,6 +99,10 @@ type LevelPayload = Partial<LevelManagementItem> & {
   hotspotItems?: string[];
   propItems?: string[];
   targetAreaNotes?: string[];
+  observationScene?: ObservationSceneConfig | null;
+  taskSteps?: ObservationTaskStep[];
+  midpointCopy?: string;
+  completionCopy?: string;
 };
 
 type QuestionPayload = Partial<QuestionBankManagementItem> &
@@ -118,21 +133,24 @@ const levelFieldFallbacks: Record<
     hotspotItems: string[];
     propItems: string[];
     targetAreaNotes: string[];
+    observationScene: ObservationSceneConfig | null;
+    taskSteps: ObservationTaskStep[];
+    midpointCopy: string;
+    completionCopy: string;
   }
 > = {
   "level-1": {
-    displayOrder: 1,
-    sceneAssetLabel: "城市路口主场景插画 A",
-    taskOutline: [
-      "找出安全通行位置",
-      "识别当前信号灯状态",
-      "圈出错误过马路行为",
-      "找到人行横道交通标志",
-    ],
-    feedbackCopy: "完成观察任务后，高亮正确热点并提醒先看灯、再看车、最后行动。",
-    hotspotItems: ["斑马线热点", "信号灯热点", "翻越护栏危险行为标点", "人行横道标志标点"],
-    propItems: [],
-    targetAreaNotes: ["场景中错误点击只出现轻提示气泡，不中断当前任务。"],
+    displayOrder: levelOneManagementDefaults.displayOrder ?? 1,
+    sceneAssetLabel: levelOneManagementDefaults.sceneAssetLabel ?? "level-1-city-street",
+    taskOutline: levelOneManagementDefaults.taskOutline ?? [],
+    feedbackCopy: levelOneManagementDefaults.feedbackCopy ?? "",
+    hotspotItems: levelOneManagementDefaults.hotspotItems ?? [],
+    propItems: levelOneManagementDefaults.propItems ?? [],
+    targetAreaNotes: levelOneManagementDefaults.targetAreaNotes ?? [],
+    observationScene: levelOneManagementDefaults.observationScene ?? null,
+    taskSteps: levelOneManagementDefaults.taskSteps ?? [],
+    midpointCopy: levelOneManagementDefaults.midpointCopy ?? "",
+    completionCopy: levelOneManagementDefaults.completionCopy ?? "",
   },
   "level-2": {
     displayOrder: 2,
@@ -142,6 +160,10 @@ const levelFieldFallbacks: Record<
     hotspotItems: ["校门口近路节点", "十字路口观察节点", "公交站候车节点"],
     propItems: [],
     targetAreaNotes: ["路线图上每个节点都要给出风险说明与安全建议。"],
+    observationScene: null,
+    taskSteps: [],
+    midpointCopy: "",
+    completionCopy: "",
   },
   "level-3": {
     displayOrder: 3,
@@ -151,6 +173,10 @@ const levelFieldFallbacks: Record<
     hotspotItems: ["头盔佩戴区域", "安全带卡扣区域", "候车安全线区域"],
     propItems: ["儿童安全头盔", "安全带插扣", "候车安全线提示牌"],
     targetAreaNotes: ["拖拽道具需要吸附到目标区域，并在成功后给出鼓励反馈。"],
+    observationScene: null,
+    taskSteps: [],
+    midpointCopy: "",
+    completionCopy: "",
   },
 };
 
@@ -168,6 +194,50 @@ function parseStringArray(value: string | null | undefined, fallback: string[] =
     return Array.isArray(parsed) && parsed.every((item) => typeof item === "string")
       ? parsed
       : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function parseObservationScene(
+  value: string | null | undefined,
+  fallback: ObservationSceneConfig,
+) {
+  if (!value) {
+    return fallback;
+  }
+
+  try {
+    const parsed = JSON.parse(value) as ObservationSceneConfig;
+    return parsed && typeof parsed === "object"
+      ? {
+          ...fallback,
+          ...parsed,
+          targets: Array.isArray(parsed.targets) ? parsed.targets : fallback.targets,
+          dangerMarkers: Array.isArray(parsed.dangerMarkers)
+            ? parsed.dangerMarkers
+            : fallback.dangerMarkers,
+          dragMarkers: Array.isArray(parsed.dragMarkers)
+            ? parsed.dragMarkers
+            : fallback.dragMarkers,
+        }
+      : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function parseObservationTaskSteps(
+  value: string | null | undefined,
+  fallback: ObservationTaskStep[],
+) {
+  if (!value) {
+    return fallback;
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? (parsed as ObservationTaskStep[]) : fallback;
   } catch {
     return fallback;
   }
@@ -292,6 +362,16 @@ function mapLevelRow(row: LevelRow) {
       row.target_area_notes_json,
       fallback.targetAreaNotes,
     ),
+    observationScene:
+      row.id === "level-1"
+        ? parseObservationScene(row.observation_scene_json, fallback.observationScene ?? levelOneObservationConfig.observationScene)
+        : null,
+    taskSteps:
+      row.id === "level-1"
+        ? parseObservationTaskSteps(row.task_steps_json, fallback.taskSteps)
+        : [],
+    midpointCopy: row.midpoint_copy || fallback.midpointCopy,
+    completionCopy: row.completion_copy || fallback.completionCopy,
   };
 }
 
@@ -592,6 +672,11 @@ export async function getAdminLevelsFromDb() {
       hotspot_items_json,
       prop_items_json,
       target_area_notes_json,
+      scene_reference_label,
+      observation_scene_json,
+      task_steps_json,
+      midpoint_copy,
+      completion_copy,
       updated_at
     FROM admin_levels
     ORDER BY display_order ASC, id ASC
@@ -618,6 +703,11 @@ export async function updateAdminLevel(id: string, input: LevelPayload) {
         hotspot_items_json,
         prop_items_json,
         target_area_notes_json,
+        scene_reference_label,
+        observation_scene_json,
+        task_steps_json,
+        midpoint_copy,
+        completion_copy,
         updated_at
       FROM admin_levels
       WHERE id = ?
@@ -678,6 +768,26 @@ export async function updateAdminLevel(id: string, input: LevelPayload) {
       input.targetAreaNotes !== undefined
         ? parseLevelStringArray(input.targetAreaNotes, "目标区域说明")
         : parseStringArray(existing.target_area_notes_json),
+    observationScene:
+      id === "level-1"
+        ? input.observationScene ?? parseObservationScene(existing.observation_scene_json, levelOneManagementDefaults.observationScene ?? levelOneObservationConfig.observationScene)
+        : null,
+    taskSteps:
+      id === "level-1"
+        ? input.taskSteps ?? parseObservationTaskSteps(existing.task_steps_json, levelOneManagementDefaults.taskSteps ?? [])
+        : [],
+    midpointCopy:
+      id === "level-1"
+        ? typeof input.midpointCopy === "string" && input.midpointCopy.trim()
+          ? input.midpointCopy.trim()
+          : existing.midpoint_copy || levelOneManagementDefaults.midpointCopy || ""
+        : "",
+    completionCopy:
+      id === "level-1"
+        ? typeof input.completionCopy === "string" && input.completionCopy.trim()
+          ? input.completionCopy.trim()
+          : existing.completion_copy || levelOneManagementDefaults.completionCopy || ""
+        : "",
   };
 
   await db.run(
@@ -696,6 +806,11 @@ export async function updateAdminLevel(id: string, input: LevelPayload) {
         hotspot_items_json = ?,
         prop_items_json = ?,
         target_area_notes_json = ?,
+        scene_reference_label = ?,
+        observation_scene_json = ?,
+        task_steps_json = ?,
+        midpoint_copy = ?,
+        completion_copy = ?,
         updated_at = ?
       WHERE id = ?
     `,
@@ -711,6 +826,11 @@ export async function updateAdminLevel(id: string, input: LevelPayload) {
     JSON.stringify(next.hotspotItems),
     JSON.stringify(next.propItems),
     JSON.stringify(next.targetAreaNotes),
+    next.observationScene?.referenceLabel ?? "",
+    JSON.stringify(next.observationScene ?? {}),
+    JSON.stringify(next.taskSteps ?? []),
+    next.midpointCopy,
+    next.completionCopy,
     new Date().toISOString(),
     id,
   );

@@ -5,6 +5,13 @@ export type AuthSource = "mock" | "api";
 export type LearningStatus = "locked" | "available" | "in_progress" | "completed";
 export type LevelId = "level-1" | "level-2" | "level-3";
 export type GrowthDimensionId = "appearance" | "safety" | "scene";
+export type ObservationInteractionType =
+  | "hotspot"
+  | "danger_mark"
+  | "state_judge"
+  | "drag_marker";
+export type ObservationTargetShape = "circle" | "pill" | "rect";
+export type ObservationTargetAccent = "sky" | "mint" | "orange" | "danger";
 export type LearningRecordType =
   | "login"
   | "profile_updated"
@@ -30,12 +37,70 @@ export interface ThemeCard {
   accent: ThemeAccent;
 }
 
+export interface ObservationTaskChoice {
+  id: string;
+  label: string;
+  safe: boolean;
+  feedback: string;
+}
+
+export interface ObservationSceneTarget {
+  id: string;
+  label: string;
+  hint: string;
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  shape: ObservationTargetShape;
+  accent: ObservationTargetAccent;
+}
+
+export interface ObservationDragMarker {
+  id: string;
+  label: string;
+  emoji: string;
+  hint: string;
+  targetId: string;
+  successCopy: string;
+}
+
+export interface ObservationTaskStep {
+  id: string;
+  title: string;
+  instruction: string;
+  interactionType: ObservationInteractionType;
+  targetIds: string[];
+  successCopy: string;
+  errorCopy: string;
+  aiHint: string;
+  choices?: ObservationTaskChoice[];
+  stickerId?: string;
+}
+
+export interface ObservationSceneConfig {
+  backgroundAsset: string;
+  referenceLabel: string;
+  sceneCaption: string;
+  targets: ObservationSceneTarget[];
+  dangerMarkers: ObservationSceneTarget[];
+  dragMarkers: ObservationDragMarker[];
+}
+
+export interface ObservationLevelConfig {
+  observationScene: ObservationSceneConfig;
+  taskSteps: ObservationTaskStep[];
+  midpointCopy: string;
+  completionCopy: string;
+}
+
 export interface LevelBlueprint {
   id: LevelId;
   title: string;
   focus: string;
   description: string;
   duration: string;
+  observationConfig?: ObservationLevelConfig | null;
 }
 
 export interface LevelProgress extends LevelBlueprint {
@@ -334,6 +399,10 @@ export interface LevelManagementItem {
   hotspotItems: string[];
   propItems: string[];
   targetAreaNotes: string[];
+  observationScene?: ObservationSceneConfig | null;
+  taskSteps?: ObservationTaskStep[];
+  midpointCopy?: string;
+  completionCopy?: string;
 }
 
 export interface QuestionBankManagementItem {

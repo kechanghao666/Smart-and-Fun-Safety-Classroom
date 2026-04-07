@@ -118,6 +118,11 @@ export async function createSchema(db: Database) {
       hotspot_items_json TEXT NOT NULL DEFAULT '[]',
       prop_items_json TEXT NOT NULL DEFAULT '[]',
       target_area_notes_json TEXT NOT NULL DEFAULT '[]',
+      scene_reference_label TEXT NOT NULL DEFAULT '',
+      observation_scene_json TEXT NOT NULL DEFAULT '{}',
+      task_steps_json TEXT NOT NULL DEFAULT '[]',
+      midpoint_copy TEXT NOT NULL DEFAULT '',
+      completion_copy TEXT NOT NULL DEFAULT '',
       updated_at TEXT NOT NULL
     );
 
@@ -229,6 +234,36 @@ export async function createSchema(db: Database) {
   await ensureColumn(db, "admin_levels", "hotspot_items_json", "TEXT NOT NULL DEFAULT '[]'");
   await ensureColumn(db, "admin_levels", "prop_items_json", "TEXT NOT NULL DEFAULT '[]'");
   await ensureColumn(db, "admin_levels", "target_area_notes_json", "TEXT NOT NULL DEFAULT '[]'");
+  await ensureColumn(
+    db,
+    "admin_levels",
+    "scene_reference_label",
+    "TEXT NOT NULL DEFAULT ''",
+  );
+  await ensureColumn(
+    db,
+    "admin_levels",
+    "observation_scene_json",
+    "TEXT NOT NULL DEFAULT '{}'",
+  );
+  await ensureColumn(
+    db,
+    "admin_levels",
+    "task_steps_json",
+    "TEXT NOT NULL DEFAULT '[]'",
+  );
+  await ensureColumn(
+    db,
+    "admin_levels",
+    "midpoint_copy",
+    "TEXT NOT NULL DEFAULT ''",
+  );
+  await ensureColumn(
+    db,
+    "admin_levels",
+    "completion_copy",
+    "TEXT NOT NULL DEFAULT ''",
+  );
 
   await ensureColumn(db, "question_bank", "theme_id", "TEXT NOT NULL DEFAULT 'road-safety'");
   await ensureColumn(db, "question_bank", "theme_title", "TEXT NOT NULL DEFAULT '道路安全教育'");

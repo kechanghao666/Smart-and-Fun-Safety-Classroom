@@ -5,12 +5,14 @@ import {
   THEME_ID,
   THEME_TITLE,
 } from "../constants/content";
+import { levelOneObservationConfig } from "../constants/levelOneObservation";
 import { getDb } from "../db/connection";
 import type {
   AiCopyTemplateRow,
   ExamQuestion,
   LevelBlueprint,
   LevelManagementRow,
+  ObservationLevelConfig,
   QuestionBankRow,
   ThemeManagementRow,
 } from "../types/contracts";
@@ -21,6 +23,47 @@ function parseJsonArray(value: string, fallback: string[]) {
     return Array.isArray(parsed) ? parsed.filter((item) => typeof item === "string") : fallback;
   } catch {
     return fallback;
+  }
+}
+
+function parseObservationConfigFromRow(row: LevelManagementRow): ObservationLevelConfig | null {
+  if (row.id !== "level-1") {
+    return null;
+  }
+
+  try {
+    const observationScene = row.observation_scene_json
+      ? JSON.parse(row.observation_scene_json)
+      : levelOneObservationConfig.observationScene;
+    const taskSteps = row.task_steps_json
+      ? JSON.parse(row.task_steps_json)
+      : levelOneObservationConfig.taskSteps;
+
+    return {
+      observationScene:
+        observationScene && typeof observationScene === "object"
+          ? {
+              ...levelOneObservationConfig.observationScene,
+              ...observationScene,
+              targets: Array.isArray(observationScene.targets)
+                ? observationScene.targets
+                : levelOneObservationConfig.observationScene.targets,
+              dangerMarkers: Array.isArray(observationScene.dangerMarkers)
+                ? observationScene.dangerMarkers
+                : levelOneObservationConfig.observationScene.dangerMarkers,
+              dragMarkers: Array.isArray(observationScene.dragMarkers)
+                ? observationScene.dragMarkers
+                : levelOneObservationConfig.observationScene.dragMarkers,
+            }
+          : levelOneObservationConfig.observationScene,
+      taskSteps: Array.isArray(taskSteps)
+        ? taskSteps
+        : levelOneObservationConfig.taskSteps,
+      midpointCopy: row.midpoint_copy || levelOneObservationConfig.midpointCopy,
+      completionCopy: row.completion_copy || levelOneObservationConfig.completionCopy,
+    };
+  } catch {
+    return levelOneObservationConfig;
   }
 }
 
@@ -42,7 +85,10 @@ export async function getLevelBlueprintsFromDb(): Promise<LevelBlueprint[]> {
   const db = await getDb();
   const rows = await db.all<LevelManagementRow[]>(
     `
-      SELECT id, title, focus, duration, reward_label, feedback_style, updated_at
+      SELECT
+        id, title, focus, duration, reward_label, feedback_style,
+        scene_reference_label, observation_scene_json, task_steps_json,
+        midpoint_copy, completion_copy, updated_at
       FROM admin_levels
       ORDER BY id ASC
     `,
@@ -61,6 +107,10 @@ export async function getLevelBlueprintsFromDb(): Promise<LevelBlueprint[]> {
       title: override.title,
       focus: override.focus,
       duration: override.duration,
+      observationConfig:
+        override.id === "level-1"
+          ? parseObservationConfigFromRow(override)
+          : level.observationConfig ?? null,
     };
   });
 }

@@ -12,6 +12,7 @@ import {
   themeManagementItems,
 } from "../constants/content";
 import { defaultGrowthConfig } from "../constants/growth";
+import { levelOneManagementDefaults } from "../constants/levelOneObservation";
 import type { LevelId, StudentStage } from "../types/contracts";
 
 function hashPassword(password: string, salt: string) {
@@ -317,23 +318,48 @@ async function seedThemes(db: Database) {
 
 async function seedAdminLevels(db: Database) {
   for (const item of levelManagementItems) {
+    const enrichedItem =
+      item.id === "level-1"
+        ? {
+            ...item,
+            ...levelOneManagementDefaults,
+          }
+        : item;
     const existing = await db.get<{ id: string }>(
       "SELECT id FROM admin_levels WHERE id = ?",
-      item.id,
+      enrichedItem.id,
     );
 
     if (!existing) {
       await db.run(
         `
-          INSERT INTO admin_levels (id, title, focus, duration, reward_label, feedback_style, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO admin_levels (
+            id, title, focus, duration, display_order, scene_asset_label,
+            task_outline_json, reward_label, feedback_style, feedback_copy,
+            hotspot_items_json, prop_items_json, target_area_notes_json,
+            scene_reference_label, observation_scene_json, task_steps_json,
+            midpoint_copy, completion_copy, updated_at
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
-        item.id,
-        item.title,
-        item.focus,
-        item.duration,
-        item.rewardLabel,
-        item.feedbackStyle,
+        enrichedItem.id,
+        enrichedItem.title,
+        enrichedItem.focus,
+        enrichedItem.duration,
+        enrichedItem.displayOrder ?? 1,
+        enrichedItem.sceneAssetLabel ?? "",
+        JSON.stringify(enrichedItem.taskOutline ?? []),
+        enrichedItem.rewardLabel,
+        enrichedItem.feedbackStyle,
+        enrichedItem.feedbackCopy ?? "",
+        JSON.stringify(enrichedItem.hotspotItems ?? []),
+        JSON.stringify(enrichedItem.propItems ?? []),
+        JSON.stringify(enrichedItem.targetAreaNotes ?? []),
+        enrichedItem.observationScene?.referenceLabel ?? "",
+        JSON.stringify(enrichedItem.observationScene ?? {}),
+        JSON.stringify(enrichedItem.taskSteps ?? []),
+        enrichedItem.midpointCopy ?? "",
+        enrichedItem.completionCopy ?? "",
         new Date().toISOString(),
       );
     }
