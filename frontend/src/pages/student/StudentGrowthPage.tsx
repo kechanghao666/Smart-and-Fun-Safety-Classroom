@@ -7,8 +7,13 @@ import { useAppState } from "../../state/AppState";
 import type { StudentGrowthResponse } from "../../types";
 import {
   buildGrowthSnapshot,
+  getGrowthAppearanceAccent,
+  getGrowthAppearanceBadgeLabel,
+  getGrowthAppearanceShowcaseInfo,
   getGrowthSceneVisualClass,
+  getGrowthSceneShowcaseInfo,
 } from "../../utils/studentGrowth";
+import { getStudentRouteLabel } from "../../utils/studentRouteLabels";
 
 const avatarAccentMap = {
   "sunny-guard": "sky",
@@ -67,16 +72,17 @@ export function StudentGrowthPage() {
         title: item.title,
         description: item.detail,
         points: 0,
-        createdAt: item.href,
+        createdAt: getStudentRouteLabel(item.href, state.progress.levels),
       })),
     }),
-    [fallbackGrowth, profile?.nickname],
+    [fallbackGrowth, profile?.nickname, state.progress.levels],
   );
 
   const [growthData, setGrowthData] = useState<StudentGrowthResponse>(fallbackGrowthData);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(apiEnabled);
   const [isSavingSelection, setIsSavingSelection] = useState(false);
+  const [selectionNotice, setSelectionNotice] = useState("");
 
   useEffect(() => {
     setGrowthData(fallbackGrowthData);
@@ -132,9 +138,22 @@ export function StudentGrowthPage() {
     }
 
     setError("");
+    setSelectionNotice(
+      type === "appearance"
+        ? `展示台已换成 ${value}`
+        : `展示台舞台已切换为 ${value}`,
+    );
+    const previousGrowth = growthData;
+
+    setGrowthData((current) => ({
+      ...current,
+      currentAppearance:
+        type === "appearance" ? value : current.currentAppearance,
+      currentScene: type === "scene" ? value : current.currentScene,
+    }));
+    saveGrowthPreferences({ [type]: value });
 
     if (!apiEnabled || !state.authToken) {
-      saveGrowthPreferences({ [type]: value });
       return;
     }
 
@@ -145,7 +164,18 @@ export function StudentGrowthPage() {
         [type]: value,
       });
       setGrowthData(nextGrowth);
+      setSelectionNotice(
+        type === "appearance"
+          ? `展示台已换成 ${nextGrowth.currentAppearance}`
+          : `展示台舞台已切换为 ${nextGrowth.currentScene}`,
+      );
+      saveGrowthPreferences({
+        appearance: nextGrowth.currentAppearance,
+        scene: nextGrowth.currentScene,
+      });
     } catch (requestError) {
+      setGrowthData(previousGrowth);
+      setSelectionNotice("");
       setError(
         requestError instanceof Error
           ? requestError.message
@@ -157,6 +187,14 @@ export function StudentGrowthPage() {
   }
 
   const sceneVisualClass = getGrowthSceneVisualClass(growthData.currentScene);
+  const appearanceAccent = getGrowthAppearanceAccent(growthData.currentAppearance);
+  const appearanceBadgeLabel = getGrowthAppearanceBadgeLabel(
+    growthData.currentAppearance,
+  );
+  const appearanceShowcase = getGrowthAppearanceShowcaseInfo(
+    growthData.currentAppearance,
+  );
+  const sceneShowcase = getGrowthSceneShowcaseInfo(growthData.currentScene);
   const appearanceOptions = Array.from(
     new Set([growthData.currentAppearance, ...growthData.unlockedAppearances]),
   );
@@ -233,10 +271,60 @@ export function StudentGrowthPage() {
           </div>
 
           <div className="student-growth-board__layout">
-            <div className={`student-growth-board__preview ${sceneVisualClass}`}>
-              <div className="student-growth-board__badge">{growthData.stageLabel}</div>
-              <strong>{growthData.currentAppearance}</strong>
-              <p>{growthData.currentScene}</p>
+            <div
+              className={`student-growth-board__preview student-growth-board__preview--showcase ${sceneVisualClass}`}
+            >
+              <div className="student-growth-board__headline">
+                <div className="student-growth-board__badge">{growthData.stageLabel}</div>
+                <div className="student-growth-board__chips">
+                  <span>{appearanceShowcase.spotlight}</span>
+                  <span>{sceneShowcase.spotlight}</span>
+                  <span>{growthData.currentAbilityTag}</span>
+                </div>
+              </div>
+
+              <div className="student-growth-showcase">
+                <div className="student-growth-showcase__spark student-growth-showcase__spark--one" />
+                <div className="student-growth-showcase__spark student-growth-showcase__spark--two" />
+                <div
+                  className={`student-growth-showcase__mascot student-growth-showcase__mascot--${appearanceAccent}`}
+                >
+                  <div className="student-growth-showcase__head">
+                    <span className="student-growth-showcase__eye student-growth-showcase__eye--left" />
+                    <span className="student-growth-showcase__eye student-growth-showcase__eye--right" />
+                    <span className="student-growth-showcase__smile" />
+                  </div>
+                  <div className="student-growth-showcase__body">
+                    <span className="student-growth-showcase__badge">
+                      {appearanceBadgeLabel}
+                    </span>
+                  </div>
+                </div>
+                <div className="student-growth-showcase__pedestal" />
+              </div>
+
+              <div className="student-growth-board__meta">
+                <strong>{appearanceShowcase.title}</strong>
+                <p>{sceneShowcase.title}</p>
+                <small className="student-growth-board__caption">
+                  {appearanceShowcase.detail}
+                </small>
+                <small className="student-growth-board__caption">
+                  {sceneShowcase.detail}
+                </small>
+                {selectionNotice ? (
+                  <span className="student-growth-board__selection-notice">
+                    {selectionNotice}
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="student-growth-board__footer">
+                <span>当前外观：{growthData.currentAppearance}</span>
+                <span>当前舞台：{growthData.currentScene}</span>
+                <span>已点亮 {growthData.unlockedAppearances.length} 套外观</span>
+                <span>已解锁 {growthData.unlockedScenes.length} 个场景</span>
+              </div>
             </div>
 
             <div className="student-growth-board__facts">
@@ -318,6 +406,7 @@ export function StudentGrowthPage() {
                 <button
                   key={option}
                   type="button"
+                  aria-pressed={isSelected}
                   className={
                     isSelected
                       ? "student-growth-choice-card student-growth-choice-card--selected"
@@ -351,6 +440,7 @@ export function StudentGrowthPage() {
                 <button
                   key={option}
                   type="button"
+                  aria-pressed={isSelected}
                   className={
                     isSelected
                       ? "student-growth-choice-card student-growth-choice-card--selected"
@@ -388,7 +478,11 @@ export function StudentGrowthPage() {
                     <span>{item.points > 0 ? `+${item.points}` : "已记录"}</span>
                   </div>
                   <p>{item.description}</p>
-                  <em>{item.createdAt}</em>
+                  <em>
+                    {item.createdAt.startsWith("/student")
+                      ? getStudentRouteLabel(item.createdAt, state.progress.levels)
+                      : item.createdAt}
+                  </em>
                 </div>
               </article>
             ))}

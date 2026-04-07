@@ -33,11 +33,17 @@ export function useStudentAiScene({
     setIsLoading(true);
 
     try {
-      const result = await resolveAiReply(prompt, {
+      const requestPrompt =
+        message && message !== fallbackText
+          ? `${prompt} 这次请换一种新的说法，不要重复上一句提醒：${message}`
+          : prompt;
+
+      const result = await resolveAiReply(requestPrompt, {
         authSource: state.authSource,
         authToken: state.authToken,
         scene,
         levelId,
+        includeSuggestions: false,
       });
 
       setMessage(result.text || fallbackText);
@@ -49,6 +55,7 @@ export function useStudentAiScene({
     enabled,
     fallbackText,
     levelId,
+    message,
     prompt,
     scene,
     state.authSource,

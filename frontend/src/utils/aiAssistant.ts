@@ -17,6 +17,7 @@ interface ResolveAiReplyOptions {
   authToken?: string | null;
   scene?: "welcome" | "hint" | "qa";
   levelId?: LevelId;
+  includeSuggestions?: boolean;
 }
 
 interface ResolveAiReplyResult {
@@ -24,8 +25,12 @@ interface ResolveAiReplyResult {
   notice?: string;
 }
 
-function buildAiReplyText(reply: string, suggestions?: string[]) {
-  if (!suggestions?.length) {
+function buildAiReplyText(
+  reply: string,
+  suggestions?: string[],
+  includeSuggestions = true,
+) {
+  if (!includeSuggestions || !suggestions?.length) {
     return reply;
   }
 
@@ -45,7 +50,11 @@ export async function resolveAiReply(
       });
 
       return {
-        text: buildAiReplyText(response.reply, response.suggestions),
+        text: buildAiReplyText(
+          response.reply,
+          response.suggestions,
+          options.includeSuggestions ?? true,
+        ),
       };
     } catch {
       return {

@@ -16,3 +16,15 @@ export function loginWithPassword(account: string, password: string) {
     body: { account, password },
   });
 }
+
+export function registerWithPassword(input: {
+  account: string;
+  password: string;
+  displayName: string;
+  role: UserRole;
+}) {
+  return requestJson<LoginResponse>("/api/auth/register", {
+    method: "POST",
+    body: input,
+  });
+}

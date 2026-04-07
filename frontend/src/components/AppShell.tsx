@@ -352,6 +352,37 @@ export function AppShell({
     () => (role === "student" ? buildGrowthSnapshot(state) : null),
     [role, state],
   );
+  const studentNextLevel = useMemo(
+    () =>
+      role === "student"
+        ? state.progress.levels.find((level) => level.status === "available")
+        : null,
+    [role, state.progress.levels],
+  );
+  const studentContinueRoute = useMemo(() => {
+    if (role !== "student") {
+      return "/";
+    }
+
+    if (studentNextLevel) {
+      return `/student/theme/road-safety/level/${studentNextLevel.id}`;
+    }
+
+    if (state.progress.exam.status === "available") {
+      return "/student/theme/road-safety/exam";
+    }
+
+    if (state.progress.exam.status === "completed") {
+      return "/student/theme/road-safety/exam/result";
+    }
+
+    return state.progress.lastVisitedRoute || "/student/home";
+  }, [
+    role,
+    state.progress.exam.status,
+    state.progress.lastVisitedRoute,
+    studentNextLevel,
+  ]);
   const [growthTierSeenMap, setGrowthTierSeenMap] = usePersistedState<
     Record<string, string>
   >("student-growth-tier-seen", {});
@@ -590,9 +621,20 @@ export function AppShell({
               <span className="topbar__eyebrow">当前冒险站点</span>
               <h2>{pageMeta.title}</h2>
             </div>
-            <div className="student-shell__titlebar-tags">
-              <span className="surface-tag">道路安全地图</span>
-              <span className="surface-tag">继续向前闯关</span>
+            <div className="student-shell__titlebar-actions">
+              <Link
+                className="ghost-button link-button student-shell__titlebar-action"
+                to="/student/theme/road-safety"
+              >
+                道路安全地图
+              </Link>
+              <button
+                type="button"
+                className="primary-button student-shell__titlebar-action"
+                onClick={() => navigate(studentContinueRoute)}
+              >
+                继续向前闯关
+              </button>
             </div>
           </section>
 

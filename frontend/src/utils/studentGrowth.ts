@@ -121,6 +121,86 @@ export function getGrowthSceneVisualClass(sceneLabel: string) {
   return "scene-visual--campus";
 }
 
+export function getGrowthAppearanceAccent(appearanceLabel: string) {
+  if (appearanceLabel.includes("阳光") || appearanceLabel.includes("边框")) {
+    return "sky" as const;
+  }
+
+  if (appearanceLabel.includes("披风")) {
+    return "mint" as const;
+  }
+
+  if (appearanceLabel.includes("星级") || appearanceLabel.includes("勋章")) {
+    return "orange" as const;
+  }
+
+  return "sky" as const;
+}
+
+export function getGrowthAppearanceShowcaseInfo(appearanceLabel: string) {
+  if (appearanceLabel.includes("披风")) {
+    return {
+      title: "守护披风形态",
+      detail: "披风会让展示台更像出发前的小队长，适合路线挑战和放学归家任务。",
+      spotlight: "轻快披风",
+    };
+  }
+
+  if (appearanceLabel.includes("星级") || appearanceLabel.includes("勋章")) {
+    return {
+      title: "星级守护形态",
+      detail: "勋章会点亮更醒目的奖励感，适合在完成整轮冒险后作为展示台主角。",
+      spotlight: "闪亮勋章",
+    };
+  }
+
+  return {
+    title: "阳光守护形态",
+    detail: "边框会让角色看起来更像刚出发的安全观察员，适合基础观察训练阶段。",
+    spotlight: "阳光边框",
+  };
+}
+
+export function getGrowthAppearanceBadgeLabel(appearanceLabel: string) {
+  if (appearanceLabel.includes("披风")) {
+    return "披";
+  }
+
+  if (appearanceLabel.includes("星级")) {
+    return "星";
+  }
+
+  if (appearanceLabel.includes("勋章")) {
+    return "章";
+  }
+
+  return "守";
+}
+
+export function getGrowthSceneShowcaseInfo(sceneLabel: string) {
+  if (sceneLabel.includes("路线")) {
+    return {
+      title: "放学归家冒险舞台",
+      detail: "舞台背景会切成路线地图风格，更适合展示放学回家的判断挑战。",
+      spotlight: "路线地图",
+    };
+  }
+
+  if (sceneLabel.includes("城市")) {
+    return {
+      title: "城市安全出行舞台",
+      detail: "舞台背景会切成城市守护风格，更适合展示综合出行和守护成果。",
+      spotlight: "城市舞台",
+    };
+  }
+
+  return {
+    title: "校园出发行程舞台",
+    detail: "舞台背景会保持校园出发风格，适合展示最初的观察与准备状态。",
+    spotlight: "校园舞台",
+  };
+}
+
 export function buildGrowthUpgradeEncouragement(snapshot: GrowthSnapshot) {
   if (snapshot.availableStreakRewards.length > 0) {
     return `AI 助手提示：你已经连续学习 ${snapshot.currentStreakDays} 天，记得领取成长礼包，把这次坚持转成新的成长值。`;

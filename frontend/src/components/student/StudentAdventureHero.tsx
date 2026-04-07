@@ -73,24 +73,30 @@ export function StudentAdventureHero({
         <div className="student-adventure-hero__road" />
         <div className="student-adventure-hero__sign" />
 
-        <div className={`student-mascot student-mascot--${accent}`}>
-          <div className="student-mascot__head">
-            <span className="student-mascot__eye" />
-            <span className="student-mascot__eye" />
-            <span className="student-mascot__smile" />
+        <div className="student-adventure-hero__scene-grid">
+          <div className="student-adventure-hero__visual">
+            <div className={`student-mascot student-mascot--${accent}`}>
+              <div className="student-mascot__head">
+                <span className="student-mascot__eye student-mascot__eye--left" />
+                <span className="student-mascot__eye student-mascot__eye--right" />
+                <span className="student-mascot__smile" />
+              </div>
+              <div className="student-mascot__body">
+                <span className="student-mascot__badge">{mascotLabel}</span>
+              </div>
+            </div>
           </div>
-          <div className="student-mascot__body">
-            <span className="student-mascot__badge">{mascotLabel}</span>
+
+          <div className="student-adventure-hero__panel-stack">
+            <article className="student-adventure-bubble">
+              <span className="student-adventure-bubble__eyebrow">{bubbleTitle}</span>
+              <strong>{bubbleText}</strong>
+              {mascotHint ? <p>{mascotHint}</p> : null}
+            </article>
+
+            {aside ? <div className="student-adventure-hero__aside">{aside}</div> : null}
           </div>
         </div>
-
-        <article className="student-adventure-bubble">
-          <span className="student-adventure-bubble__eyebrow">{bubbleTitle}</span>
-          <strong>{bubbleText}</strong>
-          {mascotHint ? <p>{mascotHint}</p> : null}
-        </article>
-
-        {aside ? <div className="student-adventure-hero__aside">{aside}</div> : null}
       </div>
     </section>
   );

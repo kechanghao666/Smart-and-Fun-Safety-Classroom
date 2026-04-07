@@ -321,10 +321,12 @@ export async function buildStudentProgress(userId: string): Promise<StudentProgr
     badges,
     levels: levelCatalog.map((level) => {
       const row = levelRows.find((item) => item.level_id === level.id);
+      const normalizedStatus =
+        row?.status === "in_progress" ? "available" : row?.status ?? "locked";
 
       return {
         ...level,
-        status: row?.status ?? "locked",
+        status: normalizedStatus,
       };
     }),
     levelResults,

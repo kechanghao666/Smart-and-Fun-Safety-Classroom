@@ -9,6 +9,7 @@ import { useAppState } from "../../state/AppState";
 import type { LevelId, StudentGrowthResponse } from "../../types";
 import { buildGrowthSnapshot } from "../../utils/studentGrowth";
 import { useApiResource } from "../../utils/useApiResource";
+import { getStudentRouteLabel } from "../../utils/studentRouteLabels";
 import { useStudentAiScene } from "../../utils/useStudentAiScene";
 import { buildStageGuide } from "../../utils/studentOnboarding";
 
@@ -41,6 +42,10 @@ export function StudentHomePage() {
         ? "已解锁"
         : "未解锁";
   const stageGuide = buildStageGuide(profile?.stage);
+  const lastVisitedLabel = getStudentRouteLabel(
+    state.progress.lastVisitedRoute,
+    state.progress.levels,
+  );
   const continueRoute = nextLevel
     ? `/student/theme/road-safety/level/${nextLevel.id}`
     : state.progress.exam.status === "available"
@@ -236,9 +241,7 @@ export function StudentHomePage() {
           <div className="student-mini-card-grid">
             <article className="student-mini-card student-mini-card--sky">
               <span>最近位置</span>
-              <strong>
-                {state.progress.lastVisitedRoute.split("/").slice(-1)[0] || "home"}
-              </strong>
+              <strong>{lastVisitedLabel}</strong>
             </article>
             <article className="student-mini-card student-mini-card--mint">
               <span>连续学习</span>

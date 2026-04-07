@@ -1,9 +1,13 @@
-import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
+import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from "crypto";
 import { env } from "../config/env";
 import { getDb } from "../db/connection";
 import { buildStudentProgress, getStudentProfile } from "./studentService";
 import { recordStudentLogin } from "./growthService";
-import type { AuthenticatedUser, LoginResponse } from "../types/contracts";
+import type {
+  AuthenticatedUser,
+  LoginResponse,
+  UserRole,
+} from "../types/contracts";
 import { HttpError } from "../utils/httpError";
 
 function hashPassword(password: string, salt: string) {
@@ -18,6 +22,32 @@ function verifyPassword(password: string, salt: string, expectedHash: string) {
     actualHash.length === expected.length &&
     timingSafeEqual(actualHash, expected)
   );
+}
+
+function normalizeRole(role: string): UserRole {
+  if (role === "student" || role === "teacher" || role === "admin") {
+    return role;
+  }
+
+  throw new HttpError(400, "注册角色不合法。");
+}
+
+function validateAccount(account: string) {
+  if (!/^[a-zA-Z0-9_]{4,24}$/.test(account)) {
+    throw new HttpError(400, "账号需为 4 到 24 位字母、数字或下划线。");
+  }
+}
+
+function validateDisplayName(displayName: string) {
+  if (displayName.length < 2 || displayName.length > 20) {
+    throw new HttpError(400, "称呼需为 2 到 20 个字符。");
+  }
+}
+
+function validatePassword(password: string) {
+  if (password.length < 6 || password.length > 32) {
+    throw new HttpError(400, "密码需为 6 到 32 位。");
+  }
 }
 
 export async function loginWithPassword(
@@ -86,6 +116,56 @@ export async function loginWithPassword(
     account: user.account,
     displayName: user.display_name,
   };
+}
+
+export async function registerWithPassword(input: {
+  account: string;
+  password: string;
+  displayName: string;
+  role: string;
+}): Promise<LoginResponse> {
+  const account = input.account.trim();
+  const displayName = input.displayName.trim();
+  const password = input.password;
+  const role = normalizeRole(String(input.role ?? "").trim());
+
+  validateAccount(account);
+  validateDisplayName(displayName);
+  validatePassword(password);
+
+  const db = await getDb();
+  const existing = await db.get<{ id: string }>(
+    "SELECT id FROM users WHERE account = ?",
+    account,
+  );
+
+  if (existing) {
+    throw new HttpError(409, "这个账号已经被注册了，请换一个账号。");
+  }
+
+  const passwordSalt = randomBytes(16).toString("hex");
+  const passwordHash = hashPassword(password, passwordSalt).toString("hex");
+  const now = new Date().toISOString();
+
+  await db.run(
+    `
+      INSERT INTO users (
+        id, account, role, password_hash, password_salt,
+        display_name, status, admin_note, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, 'active', '', ?, ?)
+    `,
+    randomUUID(),
+    account,
+    role,
+    passwordHash,
+    passwordSalt,
+    displayName,
+    now,
+    now,
+  );
+
+  return loginWithPassword(account, password);
 }
 
 export async function authenticateToken(token: string): Promise<AuthenticatedUser> {

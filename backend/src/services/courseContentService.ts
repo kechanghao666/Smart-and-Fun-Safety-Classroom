@@ -32,33 +32,41 @@ function parseObservationConfigFromRow(row: LevelManagementRow): ObservationLeve
   }
 
   try {
-    const observationScene = row.observation_scene_json
+    const rawObservationScene = row.observation_scene_json
       ? JSON.parse(row.observation_scene_json)
       : levelOneObservationConfig.observationScene;
-    const taskSteps = row.task_steps_json
+    const rawTaskSteps = row.task_steps_json
       ? JSON.parse(row.task_steps_json)
       : levelOneObservationConfig.taskSteps;
+    const observationScene =
+      rawObservationScene && typeof rawObservationScene === "object"
+        ? rawObservationScene
+        : levelOneObservationConfig.observationScene;
+    const taskSteps =
+      Array.isArray(rawTaskSteps) && rawTaskSteps.length > 0
+        ? rawTaskSteps
+        : levelOneObservationConfig.taskSteps;
 
     return {
-      observationScene:
-        observationScene && typeof observationScene === "object"
-          ? {
-              ...levelOneObservationConfig.observationScene,
-              ...observationScene,
-              targets: Array.isArray(observationScene.targets)
-                ? observationScene.targets
-                : levelOneObservationConfig.observationScene.targets,
-              dangerMarkers: Array.isArray(observationScene.dangerMarkers)
-                ? observationScene.dangerMarkers
-                : levelOneObservationConfig.observationScene.dangerMarkers,
-              dragMarkers: Array.isArray(observationScene.dragMarkers)
-                ? observationScene.dragMarkers
-                : levelOneObservationConfig.observationScene.dragMarkers,
-            }
-          : levelOneObservationConfig.observationScene,
-      taskSteps: Array.isArray(taskSteps)
-        ? taskSteps
-        : levelOneObservationConfig.taskSteps,
+      observationScene: {
+        ...levelOneObservationConfig.observationScene,
+        ...observationScene,
+        targets:
+          Array.isArray(observationScene.targets) && observationScene.targets.length > 0
+            ? observationScene.targets
+            : levelOneObservationConfig.observationScene.targets,
+        dangerMarkers:
+          Array.isArray(observationScene.dangerMarkers) &&
+          observationScene.dangerMarkers.length > 0
+            ? observationScene.dangerMarkers
+            : levelOneObservationConfig.observationScene.dangerMarkers,
+        dragMarkers:
+          Array.isArray(observationScene.dragMarkers) &&
+          observationScene.dragMarkers.length > 0
+            ? observationScene.dragMarkers
+            : levelOneObservationConfig.observationScene.dragMarkers,
+      },
+      taskSteps,
       midpointCopy: row.midpoint_copy || levelOneObservationConfig.midpointCopy,
       completionCopy: row.completion_copy || levelOneObservationConfig.completionCopy,
     };

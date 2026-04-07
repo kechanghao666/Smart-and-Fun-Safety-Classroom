@@ -6,6 +6,7 @@ import { fetchStudentGrowth, fetchStudentRecords } from "../../services/student"
 import { useAppState } from "../../state/AppState";
 import type { StudentGrowthResponse, StudentRecordsResponse } from "../../types";
 import { buildGrowthSnapshot } from "../../utils/studentGrowth";
+import { getStudentRouteLabel } from "../../utils/studentRouteLabels";
 import { useApiResource } from "../../utils/useApiResource";
 
 export function StudentRecordPage() {
@@ -95,6 +96,14 @@ export function StudentRecordPage() {
   });
 
   const continueRoute = recordsData.overview.continueRoute || state.progress.lastVisitedRoute;
+  const lastVisitedLabel = getStudentRouteLabel(
+    recordsData.overview.lastVisitedRoute,
+    state.progress.levels,
+  );
+  const continueRouteLabel = getStudentRouteLabel(
+    recordsData.overview.continueRoute,
+    state.progress.levels,
+  );
   const wrongCount = state.progress.exam.wrongQuestionIds.length;
   const completedLevels = state.progress.levels.filter(
     (level) => level.status === "completed",
@@ -149,9 +158,7 @@ export function StudentRecordPage() {
         aside={
           <div className="student-record-hero-card">
             <span>最近停在</span>
-            <strong>
-              {recordsData.overview.lastVisitedRoute.split("/").slice(-1)[0] || "home"}
-            </strong>
+            <strong>{lastVisitedLabel}</strong>
             <p>{recordsData.overview.themeTitle}</p>
           </div>
         }
@@ -182,11 +189,11 @@ export function StudentRecordPage() {
           <div className="student-checklist">
             <div className="student-checklist__item">
               <span className="student-checklist__dot" />
-              <span>最近学习位置：{recordsData.overview.lastVisitedRoute}</span>
+              <span>最近学习位置：{lastVisitedLabel}</span>
             </div>
             <div className="student-checklist__item">
               <span className="student-checklist__dot" />
-              <span>继续入口：{recordsData.overview.continueRoute}</span>
+              <span>继续入口：{continueRouteLabel}</span>
             </div>
             <div className="student-checklist__item">
               <span className="student-checklist__dot" />

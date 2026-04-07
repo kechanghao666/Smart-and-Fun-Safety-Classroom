@@ -5,6 +5,16 @@ import { useAppState } from "../../state/AppState";
 import type { LevelId } from "../../types";
 
 const levelSequence: LevelId[] = ["level-1", "level-2", "level-3"];
+const levelLabels: Record<LevelId, string> = {
+  "level-1": "第一关",
+  "level-2": "第二关",
+  "level-3": "第三关",
+};
+const levelCelebrationTitles: Record<LevelId, string> = {
+  "level-1": "城市交通观察员",
+  "level-2": "放学回家路线挑战",
+  "level-3": "安全出行守护任务",
+};
 
 function isLevelId(value: string | undefined): value is LevelId {
   return value === "level-1" || value === "level-2" || value === "level-3";
@@ -47,6 +57,9 @@ export function StudentLevelResultPage() {
       : nextLevel && nextLevel.status !== "locked"
         ? `/student/theme/road-safety/level/${nextLevel.id}`
         : null;
+  const currentLevelId = isLevelId(levelId) ? levelId : "level-1";
+  const currentLevelIndex = levelSequence.indexOf(currentLevelId);
+  const completedLevelsCount = state.progress.levels.filter((level) => level.status === "completed").length;
 
   if (!isLevelId(levelId) || !result) {
     return (
@@ -64,6 +77,18 @@ export function StudentLevelResultPage() {
       </section>
     );
   }
+
+  const rewardSummary = [
+    `通关分数 ${result.score} 分`,
+    `点亮 ${result.stars} 颗星`,
+    `徽章收集 ${state.progress.badges.length} 枚`,
+  ];
+  const nextActionSummary =
+    levelId === "level-3"
+      ? state.progress.exam.status === "available"
+        ? "三关已经走完，现在最适合去打开主题考试宝箱。"
+        : "三关已经走完，可以回到主题地图看看还想复习哪一站。"
+      : `继续走向${nextLevel ? levelLabels[nextLevel.id] : "下一站"}，把这轮冒险完整点亮。`;
 
   return (
     <div className="page-stack student-page student-page--result">
@@ -120,6 +145,50 @@ export function StudentLevelResultPage() {
         }
       />
 
+      <section className="surface-card student-result-storyboard">
+        <div className="student-section-heading">
+          <span className="section-block__eyebrow">冒险进度带</span>
+          <h2>这一站已经点亮，看看整张地图走到哪了</h2>
+        </div>
+        <div className="student-result-storyboard__stats">
+          <article className="student-result-stat-chip student-result-stat-chip--mint">
+            <span>刚完成</span>
+            <strong>{levelLabels[currentLevelId]}</strong>
+          </article>
+          <article className="student-result-stat-chip student-result-stat-chip--sky">
+            <span>完成进度</span>
+            <strong>{completedLevelsCount} / 3 关</strong>
+          </article>
+          <article className="student-result-stat-chip student-result-stat-chip--orange">
+            <span>下一目标</span>
+            <strong>{levelId === "level-3" ? "主题考试" : nextLevel ? levelLabels[nextLevel.id] : "主题地图"}</strong>
+          </article>
+        </div>
+        <div className="student-result-track">
+          {levelSequence.map((item, index) => {
+            const isDone = index <= currentLevelIndex;
+            const isCurrent = item === currentLevelId;
+
+            return (
+              <article
+                key={item}
+                className={
+                  isCurrent
+                    ? "student-result-track__node student-result-track__node--current"
+                    : isDone
+                      ? "student-result-track__node student-result-track__node--done"
+                      : "student-result-track__node"
+                }
+              >
+                <span className="student-result-track__index">{index + 1}</span>
+                <strong>{levelLabels[item]}</strong>
+                <p>{levelCelebrationTitles[item]}</p>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
       <section className="student-card-grid student-card-grid--three">
         <article className="surface-card student-celebration-card student-celebration-card--sky">
           <span className="student-celebration-card__eyebrow">通关星级</span>
@@ -159,6 +228,13 @@ export function StudentLevelResultPage() {
             <span className="section-block__eyebrow">奖励到帐</span>
             <h2>这次点亮了什么？</h2>
           </div>
+          <div className="student-reward-summary">
+            {rewardSummary.map((item) => (
+              <span key={item} className="student-reward-summary__chip">
+                {item}
+              </span>
+            ))}
+          </div>
           <div className="student-checklist">
             <div className="student-checklist__item">
               <span className="student-checklist__dot" />
@@ -177,6 +253,10 @@ export function StudentLevelResultPage() {
               </span>
             </div>
           </div>
+          <article className="student-result-note">
+            <strong>下一步建议</strong>
+            <p>{nextActionSummary}</p>
+          </article>
         </article>
 
         <article className="surface-card student-link-board">

@@ -4,6 +4,11 @@ import { StudentAdventureHero } from "../../components/student/StudentAdventureH
 import { StudentMascotBubble } from "../../components/student/StudentMascotBubble";
 import levelOneStreetScene from "../../assets/levels/level-1-city-street.svg";
 import { levelOneObservationConfig } from "../../data/levelOneObservation";
+import {
+  levelTwoRouteSteps,
+  type LevelTwoRoutePhotoStep,
+} from "../../data/levelTwoRouteChallenge";
+import { guardianSceneVisuals } from "../../data/levelThreeGuardianScenes";
 import { levelBlueprints } from "../../data/mockData";
 import { ApiError } from "../../services/http";
 import { completeStudentLevel, startStudentLevel } from "../../services/student";
@@ -134,6 +139,8 @@ const guardianScenes: GuardianSceneConfig[] = [
   },
 ];
 
+const routePhotoSteps: LevelTwoRoutePhotoStep[] = levelTwoRouteSteps;
+
 function isLevelId(value: string | undefined): value is LevelId {
   return value === "level-1" || value === "level-2" || value === "level-3";
 }
@@ -242,6 +249,7 @@ export function StudentLevelPage() {
   );
   const [guardianFeedback, setGuardianFeedback] = useState<string | null>(null);
   const [draggedGuardianTaskId, setDraggedGuardianTaskId] = useState<string | null>(null);
+  const [recentGuardianSuccessId, setRecentGuardianSuccessId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLevelId(levelId) || currentProgressLevel?.status !== "available") {
@@ -297,15 +305,34 @@ export function StudentLevelPage() {
     setSelectedGuardianTasks([]);
     setGuardianFeedback(null);
     setDraggedGuardianTaskId(null);
+    setRecentGuardianSuccessId(null);
     setActiveGuardianSceneId(guardianScenes[0]?.id ?? "bus-line");
   }, [resolvedLevelId]);
+
+  useEffect(() => {
+    if (!recentGuardianSuccessId) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setRecentGuardianSuccessId(null);
+    }, 2200);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [recentGuardianSuccessId]);
 
   const activeObservationStep =
     observationSteps[Math.min(observationStepIndex, observationSteps.length - 1)] ??
     observationSteps[0];
   const activeGuardianScene =
     guardianScenes.find((scene) => scene.id === activeGuardianSceneId) ?? guardianScenes[0];
-  const routeStep = routeStepCards[routeIndex] ?? routeStepCards[0];
+  const activeGuardianVisual =
+    guardianSceneVisuals[activeGuardianScene.id] ?? guardianSceneVisuals["bus-line"];
+  const routeStep = routePhotoSteps[routeIndex] ?? routePhotoSteps[0];
+  const lastRouteChoice = routeChoices[routeChoices.length - 1] ?? null;
+  const routeShieldStates = [0, 1, 2].map((index) => index < routeSafety);
+  const recentGuardianSuccess =
+    guardianScenes.find((scene) => scene.id === recentGuardianSuccessId) ?? null;
 
   const observationMistakes = countObservationMistakes(observationAttempts);
   const previewStars =
@@ -328,13 +355,13 @@ export function StudentLevelPage() {
     resolvedLevelId === "level-1"
       ? Math.min(completedObservationSteps.length + 1, observationSteps.length)
       : resolvedLevelId === "level-2"
-        ? Math.min(routeChoices.length + 1, routeStepCards.length)
+        ? Math.min(routeChoices.length + 1, routePhotoSteps.length)
         : Math.min(selectedGuardianTasks.length + 1, guardianScenes.length);
   const totalTaskCount =
     resolvedLevelId === "level-1"
       ? observationSteps.length
       : resolvedLevelId === "level-2"
-        ? routeStepCards.length
+        ? routePhotoSteps.length
         : guardianScenes.length;
   const progressWidth =
     resolvedLevelId === "level-1"
@@ -342,7 +369,7 @@ export function StudentLevelPage() {
       : resolvedLevelId === "level-2"
         ? routeCompleted
           ? 100
-          : buildProgressValue(routeChoices.length, routeStepCards.length)
+          : buildProgressValue(routeChoices.length, routePhotoSteps.length)
         : buildProgressValue(selectedGuardianTasks.length, guardianScenes.length);
 
   const levelGuide = useMemo(() => {
@@ -359,7 +386,7 @@ export function StudentLevelPage() {
     if (resolvedLevelId === "level-2") {
       return {
         title: "沿着回家路线，一站一站做判断",
-        summary: `安全护盾 ${routeSafety} / 3，已通过 ${routeChoices.length} / ${routeStepCards.length} 站`,
+        summary: `安全护盾 ${routeSafety} / 3，已通过 ${routeChoices.length} / ${routePhotoSteps.length} 站`,
         rule: "过马路时不能只看绿灯，还要同时看车、看路、看盲区。",
         reminder: routeCompleted
           ? "路线挑战已经完成，检查一下刚才的判断，再提交本关。"
@@ -425,7 +452,7 @@ export function StudentLevelPage() {
     }
 
     if (resolvedLevelId === "level-2") {
-      return routeStepCards.map((step, index) => {
+      return routePhotoSteps.map((step, index) => {
         const choice = routeChoices.find((item) => item.stepId === step.id);
 
         return {
@@ -621,7 +648,7 @@ export function StudentLevelPage() {
     ]);
     setRouteFeedback(option.feedback);
 
-    if (routeIndex === routeStepCards.length - 1) {
+    if (routeIndex === routePhotoSteps.length - 1) {
       setRouteCompleted(true);
     } else {
       setRouteIndex((current) => current + 1);
@@ -641,23 +668,35 @@ export function StudentLevelPage() {
       return;
     }
 
+    const currentScene = guardianScenes.find((item) => item.id === sceneId);
+
     if (taskId === sceneId) {
-      const scene = guardianScenes.find((item) => item.id === sceneId);
       const nextSelected = [...selectedGuardianTasks, taskId];
       const nextScene = guardianScenes.find((item) => !nextSelected.includes(item.id));
 
       setSelectedGuardianTasks(nextSelected);
-      setGuardianFeedback(scene?.successText ?? "安全装备已经放到正确位置。");
+      setRecentGuardianSuccessId(taskId);
+      setGuardianFeedback(currentScene?.successText ?? "安全装备已经放到正确位置。");
       setDraggedGuardianTaskId(null);
 
       if (nextScene) {
         setActiveGuardianSceneId(nextScene.id);
       }
 
+      setGuardianFeedback(
+        nextScene
+          ? `${currentScene?.successText ?? "安全装备已经放到正确位置。"} 下一步去完成“${nextScene.toolLabel}”。`
+          : `${currentScene?.successText ?? "安全装备已经放到正确位置。"} 三项守护都准备好了，可以完成本关。`,
+      );
+
       return;
     }
 
-    setGuardianFeedback("这件装备和当前场景不匹配，换一个再试试。");
+    setGuardianFeedback(
+      currentScene
+        ? `当前是${currentScene.title}，先完成“${currentScene.toolLabel}”。${currentScene.toolHint}`
+        : "这件装备和当前场景不匹配，换一个再试试。",
+    );
     setDraggedGuardianTaskId(null);
   }
 
@@ -935,7 +974,6 @@ export function StudentLevelPage() {
                     onClick={() => handleObservationChoiceSelect(choice)}
                   >
                     <strong>{choice.label}</strong>
-                    <span>{choice.safe ? "稳妥做法" : "危险做法"}</span>
                   </button>
                 ))}
               </div>
@@ -1035,38 +1073,113 @@ export function StudentLevelPage() {
                   <span className="surface-tag">安全护盾 {routeSafety} / 3</span>
                 </div>
 
-                <div className="student-route-track">
-                  {routeStepCards.map((step, index) => {
-                    const choice = routeChoices.find((item) => item.stepId === step.id);
-                    const cardClass = choice
-                      ? choice.safe
-                        ? "student-route-node student-route-node--done"
-                        : "student-route-node student-route-node--risk"
-                      : index === routeIndex && !routeCompleted
-                        ? "student-route-node student-route-node--current"
-                        : "student-route-node";
+                <div className="student-route-map-board">
+                  <div className="student-route-map-board__copy">
+                    <strong>今天的放学路线一共有 6 站</strong>
+                    <p>每到一站先看图，再做选择，沿着安全路线一步一步走回家。</p>
+                  </div>
 
-                    return (
-                      <article key={step.id} className={cardClass}>
-                        <span className="student-route-node__index">{index + 1}</span>
-                        <div>
-                          <strong>{step.title}</strong>
-                          <p>{choice ? choice.selectedLabel : step.hint}</p>
-                        </div>
-                      </article>
-                    );
-                  })}
+                  <div className="student-route-map-board__stats">
+                    <article className="student-route-map-stat">
+                      <span>当前进度</span>
+                      <strong>{routeCompleted ? "到家啦" : `第 ${routeIndex + 1} 站`}</strong>
+                    </article>
+                    <article className="student-route-map-stat">
+                      <span>已完成站点</span>
+                      <strong>
+                        {routeChoices.length} / {routePhotoSteps.length}
+                      </strong>
+                    </article>
+                    <article className="student-route-map-stat student-route-map-stat--shield">
+                      <span>安全护盾</span>
+                      <div className="student-route-shields" aria-label={`安全护盾 ${routeSafety} / 3`}>
+                        {routeShieldStates.map((active, index) => (
+                          <span
+                            key={index}
+                            className={active ? "student-route-shield student-route-shield--active" : "student-route-shield"}
+                          >
+                            ◇
+                          </span>
+                        ))}
+                      </div>
+                    </article>
+                  </div>
+
+                  <div className="student-route-track">
+                    {routePhotoSteps.map((step, index) => {
+                      const choice = routeChoices.find((item) => item.stepId === step.id);
+                      const cardClass = choice
+                        ? choice.safe
+                          ? "student-route-node student-route-node--done"
+                          : "student-route-node student-route-node--risk"
+                        : index === routeIndex && !routeCompleted
+                          ? "student-route-node student-route-node--current"
+                          : "student-route-node";
+                      const statusLabel = choice
+                        ? choice.safe
+                          ? "稳稳通过"
+                          : "需要再练"
+                        : index === routeIndex && !routeCompleted
+                          ? "正在这里"
+                          : "下一站";
+
+                      return (
+                        <article
+                          key={step.id}
+                          className={`${cardClass} ${index % 2 === 0 ? "student-route-node--north" : "student-route-node--south"}`}
+                        >
+                          <div className="student-route-node__thumb">
+                            <img src={step.imageUrl} alt={step.title} />
+                          </div>
+                          <div className="student-route-node__body">
+                            <div className="student-route-node__meta">
+                              <span className="student-route-node__index">{index + 1}</span>
+                              <span className="student-route-node__status">{statusLabel}</span>
+                            </div>
+                            <strong>{step.title}</strong>
+                            <p>{choice ? choice.selectedLabel : step.hint}</p>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
                 </div>
               </article>
 
               <article className="surface-card student-route-choice-card">
                 <span className="section-block__eyebrow">当前挑战</span>
+                <div className="student-route-choice-card__meta">
+                  <span className="student-route-choice-card__station">
+                    {routeCompleted ? "路线全部完成" : `第 ${routeIndex + 1} 站 / ${routePhotoSteps.length}`}
+                  </span>
+                  {!routeCompleted ? (
+                    <span className="student-route-choice-card__goal">先看图，再选最稳妥的做法</span>
+                  ) : null}
+                </div>
                 <h2>{routeCompleted ? "路线挑战完成" : routeStep.title}</h2>
                 <p className="student-route-choice-card__scenario">
                   {routeCompleted
                     ? "你已经走完整条路线，可以提交本关了。"
                     : routeStep.scenario}
                 </p>
+
+                <div className="student-route-photo-stage">
+                  <div className="student-route-photo-stage__frame">
+                    <img
+                      src={routeStep.imageUrl}
+                      alt={routeStep.title}
+                      className="student-route-photo-stage__image"
+                    />
+                  </div>
+                  <div className="student-route-photo-stage__copy">
+                    <span>{routeCompleted ? "路线总结" : "真实道路现场"}</span>
+                    <p>
+                      {routeCompleted
+                        ? "你已经把放学回家的 6 个关键节点都判断过一遍了，提交前再回想一下每次都是怎么做选择的。"
+                        : routeStep.helperText}
+                    </p>
+                  </div>
+                </div>
 
                 {!routeCompleted ? (
                   <div className="student-route-choice-grid">
@@ -1084,8 +1197,20 @@ export function StudentLevelPage() {
                 ) : null}
 
                 {routeFeedback ? (
-                  <article className="student-level-scene-tip student-level-scene-tip--mint">
-                    <strong>刚才的反馈</strong>
+                  <article
+                    className={
+                      lastRouteChoice?.safe
+                        ? "student-level-scene-tip student-level-scene-tip--mint"
+                        : "student-level-scene-tip student-level-scene-tip--orange"
+                    }
+                  >
+                    <div className="student-level-scene-tip__meta">
+                      <span className="student-level-scene-tip__label">路线反馈</span>
+                      <span className="student-level-scene-tip__status">
+                        {lastRouteChoice?.safe ? "这一站通过了" : "这一站要再想想"}
+                      </span>
+                    </div>
+                    <strong>{lastRouteChoice?.safe ? "这一站做对了" : "这一站要再想一想"}</strong>
                     <p>{routeFeedback}</p>
                   </article>
                 ) : null}
@@ -1126,6 +1251,8 @@ export function StudentLevelPage() {
                   {guardianScenes.map((scene) => {
                     const isDone = selectedGuardianTasks.includes(scene.id);
                     const isActive = activeGuardianSceneId === scene.id;
+                    const isCelebrating = recentGuardianSuccessId === scene.id;
+                    const visual = guardianSceneVisuals[scene.id] ?? activeGuardianVisual;
 
                     return (
                       <button
@@ -1133,13 +1260,18 @@ export function StudentLevelPage() {
                         type="button"
                         className={
                           isDone
-                            ? "student-guardian-step student-guardian-step--done"
+                            ? isCelebrating
+                              ? "student-guardian-step student-guardian-step--done student-guardian-step--celebrating"
+                              : "student-guardian-step student-guardian-step--done"
                             : isActive
                               ? "student-guardian-step student-guardian-step--active"
                               : "student-guardian-step"
                         }
                         onClick={() => setActiveGuardianSceneId(scene.id)}
                       >
+                        <div className="student-guardian-step__thumb">
+                          <img src={visual.sceneImageUrl} alt={scene.title} />
+                        </div>
                         <strong>{scene.title}</strong>
                         <span>{isDone ? "已完成" : isActive ? "进行中" : "等待中"}</span>
                       </button>
@@ -1147,11 +1279,56 @@ export function StudentLevelPage() {
                   })}
                 </div>
 
+                {recentGuardianSuccess ? (
+                  <article className="student-guardian-celebration">
+                    <strong>刚刚完成：{recentGuardianSuccess.title}</strong>
+                    <span>
+                      {selectedGuardianTasks.length === guardianScenes.length
+                        ? "三项守护已经全部点亮，可以完成这一关。"
+                        : `继续前往下一步：${activeGuardianScene.title}`}
+                    </span>
+                  </article>
+                ) : null}
+
                 <div className="student-guardian-stage">
                   <div className="student-guardian-stage__scene">
                     <span className="surface-tag">当前场景</span>
                     <h3>{activeGuardianScene.title}</h3>
+                    <div className="student-guardian-stage__photo">
+                      <img src={activeGuardianVisual.sceneImageUrl} alt={activeGuardianScene.title} />
+                      <div
+                        className={
+                          selectedGuardianTasks.includes(activeGuardianScene.id)
+                            ? "student-guardian-photo-target student-guardian-photo-target--done"
+                            : draggedGuardianTaskId
+                              ? "student-guardian-photo-target student-guardian-photo-target--ready"
+                              : "student-guardian-photo-target"
+                        }
+                        style={{
+                          top: `${activeGuardianVisual.targetZone.top}%`,
+                          left: `${activeGuardianVisual.targetZone.left}%`,
+                          width: `${activeGuardianVisual.targetZone.width}%`,
+                          height: `${activeGuardianVisual.targetZone.height}%`,
+                        }}
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                        }}
+                        onDrop={(event) => {
+                          event.preventDefault();
+
+                          if (draggedGuardianTaskId) {
+                            handleGuardianPlacement(draggedGuardianTaskId, activeGuardianScene.id);
+                          }
+                        }}
+                      >
+                        <span>{activeGuardianVisual.targetZone.label}</span>
+                      </div>
+                    </div>
+                    <div className="student-guardian-stage__task-chip">
+                      当前要放：{activeGuardianScene.toolLabel}
+                    </div>
                     <p>{activeGuardianScene.detail}</p>
+                    <p>{activeGuardianVisual.sceneCaption}</p>
                   </div>
                   <div
                     className={
@@ -1172,12 +1349,18 @@ export function StudentLevelPage() {
                       }
                     }}
                   >
+                    <span className="student-guardian-dropzone__eyebrow">真实照片任务区</span>
                     <strong>{activeGuardianScene.stageLabel}</strong>
                     <span>
                       {selectedGuardianTasks.includes(activeGuardianScene.id)
                         ? "装备已经放好了"
                         : "把合适的装备拖进来，或点击下方道具卡"}
                     </span>
+                    {!selectedGuardianTasks.includes(activeGuardianScene.id) ? (
+                      <span className="student-guardian-dropzone__hint">
+                        {activeGuardianVisual.actionHint}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               </article>
@@ -1185,10 +1368,16 @@ export function StudentLevelPage() {
               <article className="surface-card student-guardian-tool-card-board">
                 <span className="section-block__eyebrow">装备栏</span>
                 <h2>选择合适的安全装备</h2>
+                <div className="student-guardian-tool-board__hint">
+                  现在请先放：{activeGuardianScene.toolLabel}
+                </div>
                 <div className="student-guardian-tool-grid">
                   {guardianScenes.map((scene) => {
                     const isDone = selectedGuardianTasks.includes(scene.id);
                     const isDragging = draggedGuardianTaskId === scene.id;
+                    const isFocus = activeGuardianScene.id === scene.id && !isDone;
+                    const isCelebrating = recentGuardianSuccessId === scene.id;
+                    const visual = guardianSceneVisuals[scene.id] ?? activeGuardianVisual;
 
                     return (
                       <button
@@ -1197,25 +1386,49 @@ export function StudentLevelPage() {
                         draggable={!isDone}
                         className={
                           isDone
-                            ? "student-guardian-tool student-guardian-tool--done"
+                            ? isCelebrating
+                              ? "student-guardian-tool student-guardian-tool--done student-guardian-tool--celebrating"
+                              : "student-guardian-tool student-guardian-tool--done"
                             : isDragging
                               ? "student-guardian-tool student-guardian-tool--dragging"
-                              : "student-guardian-tool"
+                              : isFocus
+                                ? "student-guardian-tool student-guardian-tool--focus"
+                                : isCelebrating
+                                  ? "student-guardian-tool student-guardian-tool--celebrating"
+                                  : "student-guardian-tool"
                         }
                         onDragStart={() => setDraggedGuardianTaskId(scene.id)}
                         onDragEnd={() => setDraggedGuardianTaskId(null)}
                         onClick={() => handleGuardianPlacement(scene.id, activeGuardianScene.id)}
                         disabled={isDone}
                       >
+                        <div className="student-guardian-tool__thumb">
+                          <img src={visual.toolImageUrl} alt={scene.toolLabel} />
+                        </div>
+                        <span className="student-guardian-tool__status">
+                          {isDone ? "已就位" : isFocus ? "当前要放" : "待选择"}
+                        </span>
                         <strong>{scene.toolLabel}</strong>
-                        <span>{scene.toolHint}</span>
+                        <span>{visual.toolCaption}</span>
                       </button>
                     );
                   })}
                 </div>
 
                 {guardianFeedback ? (
-                  <article className="student-level-scene-tip student-level-scene-tip--orange">
+                  <article
+                    className={
+                      recentGuardianSuccess
+                        ? "student-level-scene-tip student-level-scene-tip--mint"
+                        : "student-level-scene-tip student-level-scene-tip--orange"
+                    }
+                  >
+                    <div className="student-level-scene-tip__meta">
+                      <span className="student-level-scene-tip__label">场景反馈</span>
+                      <span className="student-level-scene-tip__status">
+                        {recentGuardianSuccess ? "刚完成一个守护动作" : "换一个再试试"}
+                      </span>
+                    </div>
                     <strong>场景反馈</strong>
                     <p>{guardianFeedback}</p>
                   </article>
