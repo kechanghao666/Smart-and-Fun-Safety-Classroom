@@ -1,12 +1,20 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { StudentAdventureHero } from "../../components/student/StudentAdventureHero";
 import { StudentMascotBubble } from "../../components/student/StudentMascotBubble";
 import { StatusBadge } from "../../components/StatusBadge";
 import { themeCards } from "../../data/mockData";
-import { fetchStudentGrowth } from "../../services/student";
+import {
+  applyStudentClassMembership,
+  fetchStudentClassMembership,
+  fetchStudentGrowth,
+} from "../../services/student";
 import { useAppState } from "../../state/AppState";
-import type { LevelId, StudentGrowthResponse } from "../../types";
+import type {
+  LevelId,
+  StudentClassMembershipResponse,
+  StudentGrowthResponse,
+} from "../../types";
 import { buildGrowthSnapshot } from "../../utils/studentGrowth";
 import { useApiResource } from "../../utils/useApiResource";
 import { getStudentRouteLabel } from "../../utils/studentRouteLabels";
@@ -35,6 +43,12 @@ export function StudentHomePage() {
     (level) => level.status === "available",
   );
   const [unavailableThemeNotice, setUnavailableThemeNotice] = useState("");
+  const [classCodeInput, setClassCodeInput] = useState("");
+  const [classMembership, setClassMembership] =
+    useState<StudentClassMembershipResponse | null>(null);
+  const [classMembershipError, setClassMembershipError] = useState("");
+  const [isClassMembershipLoading, setIsClassMembershipLoading] = useState(apiEnabled);
+  const [isApplyingClass, setIsApplyingClass] = useState(false);
   const examStatusLabel =
     state.progress.exam.status === "completed"
       ? "已完成"
@@ -103,6 +117,47 @@ export function StudentHomePage() {
     fallbackMessage: "首页成长数据暂时无法更新，先展示已经保存的成长结果。",
   });
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadClassMembership() {
+      if (!apiEnabled || !state.authToken) {
+        setClassMembership(null);
+        setIsClassMembershipLoading(false);
+        return;
+      }
+
+      setIsClassMembershipLoading(true);
+      setClassMembershipError("");
+
+      try {
+        const result = await fetchStudentClassMembership(state.authToken);
+
+        if (!cancelled) {
+          setClassMembership(result);
+        }
+      } catch (requestError) {
+        if (!cancelled) {
+          setClassMembershipError(
+            requestError instanceof Error
+              ? requestError.message
+              : "班级状态暂时无法同步。",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setIsClassMembershipLoading(false);
+        }
+      }
+    }
+
+    void loadClassMembership();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiEnabled, state.authToken]);
+
   const homeAiPrompt = useMemo(
     () =>
       `请用儿童友好的语气欢迎我继续学习道路安全。当前已完成 ${completedLevels} / 3 关，考试状态是 ${examStatusLabel}，连续学习 ${growthData.streakDays} 天，请告诉我今天最适合先做什么。`,
@@ -120,6 +175,32 @@ export function StudentHomePage() {
     levelId: nextLevel?.id as LevelId | undefined,
     fallbackText: "欢迎回来，先回到你上次停留的位置，把今天的安全冒险继续走完吧。",
   });
+
+  async function handleApplyClassMembership() {
+    const normalizedCode = classCodeInput.trim().toUpperCase();
+
+    if (!normalizedCode || !state.authToken) {
+      setClassMembershipError("请输入班级号后再提交申请。");
+      return;
+    }
+
+    setIsApplyingClass(true);
+    setClassMembershipError("");
+
+    try {
+      const result = await applyStudentClassMembership(state.authToken, normalizedCode);
+      setClassMembership(result);
+      setClassCodeInput("");
+    } catch (requestError) {
+      setClassMembershipError(
+        requestError instanceof Error
+          ? requestError.message
+          : "入班申请提交失败，请稍后重试。",
+      );
+    } finally {
+      setIsApplyingClass(false);
+    }
+  }
 
   return (
     <div className="page-stack student-page student-page--home">
@@ -278,6 +359,122 @@ export function StudentHomePage() {
             </>
           }
         />
+      </section>
+
+      <section className="student-card-grid student-card-grid--two">
+        <article className="surface-card student-reward-board">
+          <div className="student-section-heading">
+            <span className="section-block__eyebrow">班级身份</span>
+            <h2>确认学号，并加入班级</h2>
+          </div>
+
+          <div className="student-mini-card-grid">
+            <article className="student-mini-card student-mini-card--sky">
+              <span>我的学号</span>
+              <strong>
+                {classMembership?.studentNo ??
+                  state.studentProfile?.studentNo ??
+                  "加载中"}
+              </strong>
+            </article>
+            <article className="student-mini-card student-mini-card--mint">
+              <span>当前班级</span>
+              <strong>{classMembership?.currentClass?.name ?? "暂未加入"}</strong>
+            </article>
+            <article className="student-mini-card student-mini-card--orange">
+              <span>申请状态</span>
+              <strong>
+                {classMembership?.pendingRequest
+                  ? "待审批"
+                  : classMembership?.currentClass
+                    ? "已加入"
+                    : "可申请"}
+              </strong>
+            </article>
+          </div>
+
+          <div className="student-checklist">
+            <div className="student-checklist__item">
+              <span className="student-checklist__dot" />
+              <span>
+                老师可以通过学号
+                {classMembership?.studentNo ?? state.studentProfile?.studentNo ?? "--"}
+                直接邀请你入班。
+              </span>
+            </div>
+            <div className="student-checklist__item">
+              <span className="student-checklist__dot" />
+              <span>
+                {classMembership?.currentClass
+                  ? `当前班级号：${classMembership.currentClass.classCode}`
+                  : classMembership?.pendingRequest
+                    ? `申请加入 ${classMembership.pendingRequest.className}，等待老师审批。`
+                    : "输入班级号后，可以主动向老师提交入班申请。"}
+              </span>
+            </div>
+          </div>
+
+          <div className="button-row">
+            <input
+              className="text-input"
+              value={classCodeInput}
+              onChange={(event) => setClassCodeInput(event.target.value.toUpperCase())}
+              placeholder="输入班级号"
+              disabled={Boolean(classMembership?.currentClass) || isApplyingClass}
+            />
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => void handleApplyClassMembership()}
+              disabled={
+                Boolean(classMembership?.currentClass) ||
+                isApplyingClass ||
+                classCodeInput.trim().length === 0
+              }
+            >
+              {isApplyingClass ? "提交中..." : "申请加入班级"}
+            </button>
+          </div>
+
+          {isClassMembershipLoading ? (
+            <p className="inline-note">正在同步班级状态...</p>
+          ) : null}
+          {classMembershipError ? <p className="form-error">{classMembershipError}</p> : null}
+        </article>
+
+        <article className="surface-card student-link-board">
+          <div className="student-section-heading">
+            <span className="section-block__eyebrow">三关说明</span>
+            <h2>现在的关卡分成这三种玩法</h2>
+          </div>
+
+          <div className="student-mini-links">
+            <button
+              type="button"
+              className="student-mini-link"
+              onClick={() => navigate("/student/theme/road-safety")}
+            >
+              <strong>第一关：观察识别</strong>
+              <span>在路口大场景里找安全线索和危险行为</span>
+            </button>
+            <button
+              type="button"
+              className="student-mini-link"
+              onClick={() => navigate("/student/theme/road-safety")}
+            >
+              <strong>第二关：路线判断</strong>
+              <span>沿着回家地图逐站做出更安全的选择</span>
+            </button>
+            <button
+              type="button"
+              className="student-mini-link"
+              onClick={() => navigate("/student/theme/road-safety")}
+            >
+              <strong>第三关：操作守护</strong>
+              <span>完成公交、私家车、电动车三段守护任务</span>
+            </button>
+          </div>
+        </article>
       </section>
 
       <section className="student-card-grid student-card-grid--two">

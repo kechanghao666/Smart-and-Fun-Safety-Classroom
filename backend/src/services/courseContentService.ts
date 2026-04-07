@@ -6,14 +6,18 @@ import {
   THEME_TITLE,
 } from "../constants/content";
 import { levelOneObservationConfig } from "../constants/levelOneObservation";
+import { levelThreeGuardianConfig } from "../constants/levelThreeGuardian";
+import { levelTwoRouteConfig } from "../constants/levelTwoRoute";
 import { getDb } from "../db/connection";
 import type {
   AiCopyTemplateRow,
   ExamQuestion,
+  GuardianChallengeConfig,
   LevelBlueprint,
   LevelManagementRow,
   ObservationLevelConfig,
   QuestionBankRow,
+  RouteChallengeConfig,
   ThemeManagementRow,
 } from "../types/contracts";
 
@@ -75,6 +79,94 @@ function parseObservationConfigFromRow(row: LevelManagementRow): ObservationLeve
   }
 }
 
+function hasStructuredJson(value: string | null | undefined) {
+  return Boolean(value && value !== "{}" && value !== "[]" && value !== "null");
+}
+
+function resolveGameplayModeFromRow(row: LevelManagementRow, fallback: LevelBlueprint) {
+  if (row.id === "level-2" && row.gameplay_mode === "observation" && hasStructuredJson(row.route_challenge_json)) {
+    return "route";
+  }
+
+  if (
+    row.id === "level-3" &&
+    row.gameplay_mode === "observation" &&
+    hasStructuredJson(row.guardian_challenge_json)
+  ) {
+    return "guardian";
+  }
+
+  return row.gameplay_mode || fallback.gameplayMode;
+}
+
+function parseRouteChallengeConfigFromRow(
+  row: LevelManagementRow,
+): RouteChallengeConfig | null {
+  if (row.id !== "level-2") {
+    return null;
+  }
+
+  try {
+    const parsed = row.route_challenge_json
+      ? (JSON.parse(row.route_challenge_json) as Partial<RouteChallengeConfig>)
+      : levelTwoRouteConfig;
+
+    return {
+      ...levelTwoRouteConfig,
+      ...parsed,
+      nodes:
+        Array.isArray(parsed.nodes) && parsed.nodes.length > 0
+          ? parsed.nodes.map((node, index) => ({
+              ...levelTwoRouteConfig.nodes[index],
+              ...node,
+              options:
+                Array.isArray(node.options) && node.options.length > 0
+                  ? node.options
+                  : levelTwoRouteConfig.nodes[index]?.options ?? [],
+            }))
+          : levelTwoRouteConfig.nodes,
+    };
+  } catch {
+    return levelTwoRouteConfig;
+  }
+}
+
+function parseGuardianChallengeConfigFromRow(
+  row: LevelManagementRow,
+): GuardianChallengeConfig | null {
+  if (row.id !== "level-3") {
+    return null;
+  }
+
+  try {
+    const parsed = row.guardian_challenge_json
+      ? (JSON.parse(row.guardian_challenge_json) as Partial<GuardianChallengeConfig>)
+      : levelThreeGuardianConfig;
+
+    return {
+      ...levelThreeGuardianConfig,
+      ...parsed,
+      stages:
+        Array.isArray(parsed.stages) && parsed.stages.length > 0
+          ? parsed.stages.map((stage, index) => ({
+              ...levelThreeGuardianConfig.stages[index],
+              ...stage,
+              tapTargets:
+                Array.isArray(stage.tapTargets) && stage.tapTargets.length > 0
+                  ? stage.tapTargets
+                  : levelThreeGuardianConfig.stages[index]?.tapTargets ?? [],
+              sequenceItems:
+                Array.isArray(stage.sequenceItems) && stage.sequenceItems.length > 0
+                  ? stage.sequenceItems
+                  : levelThreeGuardianConfig.stages[index]?.sequenceItems ?? [],
+            }))
+          : levelThreeGuardianConfig.stages,
+    };
+  } catch {
+    return levelThreeGuardianConfig;
+  }
+}
+
 export async function getThemeTitle() {
   const db = await getDb();
   const row = await db.get<ThemeManagementRow>(
@@ -94,9 +186,9 @@ export async function getLevelBlueprintsFromDb(): Promise<LevelBlueprint[]> {
   const rows = await db.all<LevelManagementRow[]>(
     `
       SELECT
-        id, title, focus, duration, reward_label, feedback_style,
+        id, title, focus, duration, gameplay_mode, reward_label, feedback_style,
         scene_reference_label, observation_scene_json, task_steps_json,
-        midpoint_copy, completion_copy, updated_at
+        midpoint_copy, completion_copy, route_challenge_json, guardian_challenge_json, updated_at
       FROM admin_levels
       ORDER BY id ASC
     `,
@@ -115,10 +207,19 @@ export async function getLevelBlueprintsFromDb(): Promise<LevelBlueprint[]> {
       title: override.title,
       focus: override.focus,
       duration: override.duration,
+      gameplayMode: resolveGameplayModeFromRow(override, level),
       observationConfig:
         override.id === "level-1"
           ? parseObservationConfigFromRow(override)
           : level.observationConfig ?? null,
+      routeChallengeConfig:
+        override.id === "level-2"
+          ? parseRouteChallengeConfigFromRow(override)
+          : level.routeChallengeConfig ?? null,
+      guardianChallengeConfig:
+        override.id === "level-3"
+          ? parseGuardianChallengeConfigFromRow(override)
+          : level.guardianChallengeConfig ?? null,
     };
   });
 }

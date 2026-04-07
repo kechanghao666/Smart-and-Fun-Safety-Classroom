@@ -294,7 +294,9 @@ export function TeacherStudentsPage() {
                     <div className="teacher-student-row__identity">
                       <div>
                         <strong>{student.name}</strong>
-                        <p className="teacher-analysis-card__meta">{student.className}</p>
+                        <p className="teacher-analysis-card__meta">
+                          {student.className} · 学号 {student.studentNo ?? "--"}
+                        </p>
                       </div>
                     </div>
 

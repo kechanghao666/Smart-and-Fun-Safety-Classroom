@@ -4,16 +4,27 @@ import {
   levelOneManagementDefaults,
   levelOneObservationConfig,
 } from "../constants/levelOneObservation";
+import {
+  levelThreeGuardianConfig,
+  levelThreeManagementDefaults,
+} from "../constants/levelThreeGuardian";
+import {
+  levelTwoManagementDefaults,
+  levelTwoRouteConfig,
+} from "../constants/levelTwoRoute";
 import { getDb } from "../db/connection";
 import type {
   AiCopyTemplateItem,
   ExamQuestion,
+  GuardianChallengeConfig,
   GrowthConfigItem,
+  LevelGameplayMode,
   LevelId,
   LevelManagementItem,
   ObservationSceneConfig,
   ObservationTaskStep,
   QuestionBankManagementItem,
+  RouteChallengeConfig,
   ThemeManagementItem,
 } from "../types/contracts";
 import { HttpError } from "../utils/httpError";
@@ -38,6 +49,7 @@ type LevelRow = {
   focus: string;
   duration: string;
   display_order: number;
+  gameplay_mode: LevelGameplayMode;
   scene_asset_label: string;
   task_outline_json: string;
   reward_label: string;
@@ -49,6 +61,8 @@ type LevelRow = {
   scene_reference_label: string;
   observation_scene_json: string;
   task_steps_json: string;
+  route_challenge_json: string;
+  guardian_challenge_json: string;
   midpoint_copy: string;
   completion_copy: string;
   updated_at: string;
@@ -93,6 +107,7 @@ type ThemePayload = Partial<ThemeManagementItem> & {
 
 type LevelPayload = Partial<LevelManagementItem> & {
   displayOrder?: number;
+  gameplayMode?: LevelGameplayMode;
   sceneAssetLabel?: string;
   taskOutline?: string[];
   feedbackCopy?: string;
@@ -101,6 +116,8 @@ type LevelPayload = Partial<LevelManagementItem> & {
   targetAreaNotes?: string[];
   observationScene?: ObservationSceneConfig | null;
   taskSteps?: ObservationTaskStep[];
+  routeChallengeConfig?: RouteChallengeConfig | null;
+  guardianChallengeConfig?: GuardianChallengeConfig | null;
   midpointCopy?: string;
   completionCopy?: string;
 };
@@ -127,6 +144,7 @@ const levelFieldFallbacks: Record<
   LevelId,
   {
     displayOrder: number;
+    gameplayMode: LevelGameplayMode;
     sceneAssetLabel: string;
     taskOutline: string[];
     feedbackCopy: string;
@@ -135,12 +153,15 @@ const levelFieldFallbacks: Record<
     targetAreaNotes: string[];
     observationScene: ObservationSceneConfig | null;
     taskSteps: ObservationTaskStep[];
+    routeChallengeConfig: RouteChallengeConfig | null;
+    guardianChallengeConfig: GuardianChallengeConfig | null;
     midpointCopy: string;
     completionCopy: string;
   }
 > = {
   "level-1": {
     displayOrder: levelOneManagementDefaults.displayOrder ?? 1,
+    gameplayMode: "observation",
     sceneAssetLabel: levelOneManagementDefaults.sceneAssetLabel ?? "level-1-city-street",
     taskOutline: levelOneManagementDefaults.taskOutline ?? [],
     feedbackCopy: levelOneManagementDefaults.feedbackCopy ?? "",
@@ -149,32 +170,43 @@ const levelFieldFallbacks: Record<
     targetAreaNotes: levelOneManagementDefaults.targetAreaNotes ?? [],
     observationScene: levelOneManagementDefaults.observationScene ?? null,
     taskSteps: levelOneManagementDefaults.taskSteps ?? [],
+    routeChallengeConfig: null,
+    guardianChallengeConfig: null,
     midpointCopy: levelOneManagementDefaults.midpointCopy ?? "",
     completionCopy: levelOneManagementDefaults.completionCopy ?? "",
   },
   "level-2": {
-    displayOrder: 2,
-    sceneAssetLabel: "放学路线地图插画 B",
-    taskOutline: ["校门口是否抄近路", "十字路口是否立即通过", "公交站是否避开盲区"],
-    feedbackCopy: "节点选择后展示事件卡结果，错误选择仅扣减安全值并说明风险后果。",
-    hotspotItems: ["校门口近路节点", "十字路口观察节点", "公交站候车节点"],
-    propItems: [],
-    targetAreaNotes: ["路线图上每个节点都要给出风险说明与安全建议。"],
+    displayOrder: levelTwoManagementDefaults.displayOrder ?? 2,
+    gameplayMode: "route",
+    sceneAssetLabel: levelTwoManagementDefaults.sceneAssetLabel ?? "放学路线地图插画 B",
+    taskOutline: levelTwoManagementDefaults.taskOutline ?? [],
+    feedbackCopy: levelTwoManagementDefaults.feedbackCopy ?? "",
+    hotspotItems: levelTwoManagementDefaults.hotspotItems ?? [],
+    propItems: levelTwoManagementDefaults.propItems ?? [],
+    targetAreaNotes: levelTwoManagementDefaults.targetAreaNotes ?? [],
     observationScene: null,
     taskSteps: [],
+    routeChallengeConfig:
+      levelTwoManagementDefaults.routeChallengeConfig ?? levelTwoRouteConfig,
+    guardianChallengeConfig: null,
     midpointCopy: "",
     completionCopy: "",
   },
   "level-3": {
-    displayOrder: 3,
-    sceneAssetLabel: "安全出行守护插画 C",
-    taskOutline: ["出发前佩戴头盔", "上车后系好安全带", "候车时保持安全距离"],
-    feedbackCopy: "完成每一步后即时反馈原因，把防护动作和实际出行场景关联起来。",
-    hotspotItems: ["头盔佩戴区域", "安全带卡扣区域", "候车安全线区域"],
-    propItems: ["儿童安全头盔", "安全带插扣", "候车安全线提示牌"],
-    targetAreaNotes: ["拖拽道具需要吸附到目标区域，并在成功后给出鼓励反馈。"],
+    displayOrder: levelThreeManagementDefaults.displayOrder ?? 3,
+    gameplayMode: "guardian",
+    sceneAssetLabel: levelThreeManagementDefaults.sceneAssetLabel ?? "安全出行守护插画 C",
+    taskOutline: levelThreeManagementDefaults.taskOutline ?? [],
+    feedbackCopy: levelThreeManagementDefaults.feedbackCopy ?? "",
+    hotspotItems: levelThreeManagementDefaults.hotspotItems ?? [],
+    propItems: levelThreeManagementDefaults.propItems ?? [],
+    targetAreaNotes: levelThreeManagementDefaults.targetAreaNotes ?? [],
     observationScene: null,
     taskSteps: [],
+    routeChallengeConfig: null,
+    guardianChallengeConfig:
+      levelThreeManagementDefaults.guardianChallengeConfig ??
+      levelThreeGuardianConfig,
     midpointCopy: "",
     completionCopy: "",
   },
@@ -238,6 +270,76 @@ function parseObservationTaskSteps(
   try {
     const parsed = JSON.parse(value);
     return Array.isArray(parsed) ? (parsed as ObservationTaskStep[]) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function parseGameplayMode(
+  value: string | null | undefined,
+  fallback: LevelGameplayMode,
+): LevelGameplayMode {
+  return value === "observation" || value === "route" || value === "guardian"
+    ? value
+    : fallback;
+}
+
+function hasStructuredJson(value: string | null | undefined) {
+  return Boolean(value && value !== "{}" && value !== "[]" && value !== "null");
+}
+
+function resolveGameplayModeFromLevelRow(
+  row: Pick<LevelRow, "id" | "gameplay_mode" | "route_challenge_json" | "guardian_challenge_json">,
+  fallback: LevelGameplayMode,
+) {
+  const parsedMode = parseGameplayMode(row.gameplay_mode, fallback);
+
+  if (row.id === "level-2" && parsedMode === "observation" && hasStructuredJson(row.route_challenge_json)) {
+    return "route";
+  }
+
+  if (
+    row.id === "level-3" &&
+    parsedMode === "observation" &&
+    hasStructuredJson(row.guardian_challenge_json)
+  ) {
+    return "guardian";
+  }
+
+  return parsedMode;
+}
+
+function parseRouteChallengeConfig(
+  value: string | null | undefined,
+  fallback: RouteChallengeConfig | null,
+) {
+  if (!value || !fallback) {
+    return fallback;
+  }
+
+  try {
+    const parsed = JSON.parse(value) as RouteChallengeConfig;
+    return parsed && typeof parsed === "object" && Array.isArray(parsed.nodes)
+      ? parsed
+      : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function parseGuardianChallengeConfig(
+  value: string | null | undefined,
+  fallback: GuardianChallengeConfig | null,
+) {
+  if (!value || !fallback) {
+    return fallback;
+  }
+
+  try {
+    const parsed = JSON.parse(value) as GuardianChallengeConfig;
+    return parsed && typeof parsed === "object" && Array.isArray(parsed.stages)
+      ? parsed
+      : fallback;
   } catch {
     return fallback;
   }
@@ -344,6 +446,7 @@ function mapThemeRow(row: ThemeRow) {
 
 function mapLevelRow(row: LevelRow) {
   const fallback = levelFieldFallbacks[row.id];
+  const gameplayMode = resolveGameplayModeFromLevelRow(row, fallback.gameplayMode);
 
   return {
     id: row.id,
@@ -351,6 +454,7 @@ function mapLevelRow(row: LevelRow) {
     focus: row.focus,
     duration: row.duration,
     displayOrder: row.display_order || fallback.displayOrder,
+    gameplayMode,
     sceneAssetLabel: row.scene_asset_label || fallback.sceneAssetLabel,
     taskOutline: parseStringArray(row.task_outline_json, fallback.taskOutline),
     rewardLabel: row.reward_label,
@@ -370,6 +474,20 @@ function mapLevelRow(row: LevelRow) {
       row.id === "level-1"
         ? parseObservationTaskSteps(row.task_steps_json, fallback.taskSteps)
         : [],
+    routeChallengeConfig:
+      gameplayMode === "route"
+        ? parseRouteChallengeConfig(
+            row.route_challenge_json,
+            fallback.routeChallengeConfig,
+          )
+        : null,
+    guardianChallengeConfig:
+      gameplayMode === "guardian"
+        ? parseGuardianChallengeConfig(
+            row.guardian_challenge_json,
+            fallback.guardianChallengeConfig,
+          )
+        : null,
     midpointCopy: row.midpoint_copy || fallback.midpointCopy,
     completionCopy: row.completion_copy || fallback.completionCopy,
   };
@@ -664,6 +782,7 @@ export async function getAdminLevelsFromDb() {
       focus,
       duration,
       display_order,
+      gameplay_mode,
       scene_asset_label,
       task_outline_json,
       reward_label,
@@ -675,6 +794,8 @@ export async function getAdminLevelsFromDb() {
       scene_reference_label,
       observation_scene_json,
       task_steps_json,
+      route_challenge_json,
+      guardian_challenge_json,
       midpoint_copy,
       completion_copy,
       updated_at
@@ -685,7 +806,7 @@ export async function getAdminLevelsFromDb() {
   return rows.map(mapLevelRow);
 }
 
-export async function updateAdminLevel(id: string, input: LevelPayload) {
+export async function updateAdminLevel(id: LevelId, input: LevelPayload) {
   const db = await getDb();
   const existing = await db.get<LevelRow>(
     `
@@ -695,6 +816,7 @@ export async function updateAdminLevel(id: string, input: LevelPayload) {
         focus,
         duration,
         display_order,
+        gameplay_mode,
         scene_asset_label,
         task_outline_json,
         reward_label,
@@ -706,6 +828,8 @@ export async function updateAdminLevel(id: string, input: LevelPayload) {
         scene_reference_label,
         observation_scene_json,
         task_steps_json,
+        route_challenge_json,
+        guardian_challenge_json,
         midpoint_copy,
         completion_copy,
         updated_at
@@ -732,6 +856,10 @@ export async function updateAdminLevel(id: string, input: LevelPayload) {
       typeof input.duration === "string" && input.duration.trim()
         ? input.duration.trim()
         : existing.duration,
+    gameplayMode:
+      input.gameplayMode !== undefined
+        ? parseGameplayMode(input.gameplayMode, levelFieldFallbacks[id].gameplayMode)
+        : parseGameplayMode(existing.gameplay_mode, levelFieldFallbacks[id].gameplayMode),
     displayOrder:
       input.displayOrder === undefined
         ? existing.display_order
@@ -776,6 +904,22 @@ export async function updateAdminLevel(id: string, input: LevelPayload) {
       id === "level-1"
         ? input.taskSteps ?? parseObservationTaskSteps(existing.task_steps_json, levelOneManagementDefaults.taskSteps ?? [])
         : [],
+    routeChallengeConfig:
+      id === "level-2"
+        ? input.routeChallengeConfig ??
+          parseRouteChallengeConfig(
+            existing.route_challenge_json,
+            levelFieldFallbacks[id].routeChallengeConfig,
+          )
+        : null,
+    guardianChallengeConfig:
+      id === "level-3"
+        ? input.guardianChallengeConfig ??
+          parseGuardianChallengeConfig(
+            existing.guardian_challenge_json,
+            levelFieldFallbacks[id].guardianChallengeConfig,
+          )
+        : null,
     midpointCopy:
       id === "level-1"
         ? typeof input.midpointCopy === "string" && input.midpointCopy.trim()
@@ -798,6 +942,7 @@ export async function updateAdminLevel(id: string, input: LevelPayload) {
         focus = ?,
         duration = ?,
         display_order = ?,
+        gameplay_mode = ?,
         scene_asset_label = ?,
         task_outline_json = ?,
         reward_label = ?,
@@ -809,6 +954,8 @@ export async function updateAdminLevel(id: string, input: LevelPayload) {
         scene_reference_label = ?,
         observation_scene_json = ?,
         task_steps_json = ?,
+        route_challenge_json = ?,
+        guardian_challenge_json = ?,
         midpoint_copy = ?,
         completion_copy = ?,
         updated_at = ?
@@ -818,6 +965,7 @@ export async function updateAdminLevel(id: string, input: LevelPayload) {
     next.focus,
     next.duration,
     next.displayOrder,
+    next.gameplayMode,
     next.sceneAssetLabel,
     JSON.stringify(next.taskOutline),
     next.rewardLabel,
@@ -829,6 +977,8 @@ export async function updateAdminLevel(id: string, input: LevelPayload) {
     next.observationScene?.referenceLabel ?? "",
     JSON.stringify(next.observationScene ?? {}),
     JSON.stringify(next.taskSteps ?? []),
+    JSON.stringify(next.routeChallengeConfig ?? {}),
+    JSON.stringify(next.guardianChallengeConfig ?? {}),
     next.midpointCopy,
     next.completionCopy,
     new Date().toISOString(),

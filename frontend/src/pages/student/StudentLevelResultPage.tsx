@@ -10,10 +10,10 @@ const levelLabels: Record<LevelId, string> = {
   "level-2": "第二关",
   "level-3": "第三关",
 };
-const levelCelebrationTitles: Record<LevelId, string> = {
-  "level-1": "城市交通观察员",
-  "level-2": "放学回家路线挑战",
-  "level-3": "安全出行守护任务",
+const levelThemes: Record<LevelId, string> = {
+  "level-1": "观察识别",
+  "level-2": "路线判断",
+  "level-3": "操作守护",
 };
 
 function isLevelId(value: string | undefined): value is LevelId {
@@ -24,24 +24,14 @@ export function StudentLevelResultPage() {
   const { levelId } = useParams();
   const navigate = useNavigate();
   const { state } = useAppState();
+  const resolvedLevelId: LevelId = isLevelId(levelId) ? levelId : "level-1";
+  const result = state.progress.levelResults[resolvedLevelId];
   const [showExamUnlock, setShowExamUnlock] = useState(
-    levelId === "level-3" && state.progress.exam.status === "available",
+    resolvedLevelId === "level-3" && state.progress.exam.status === "available",
   );
 
-  const result = useMemo(() => {
-    if (!isLevelId(levelId)) {
-      return null;
-    }
-
-    return state.progress.levelResults[levelId];
-  }, [levelId, state.progress.levelResults]);
-
   const nextLevel = useMemo(() => {
-    if (!isLevelId(levelId)) {
-      return null;
-    }
-
-    const currentIndex = levelSequence.indexOf(levelId);
+    const currentIndex = levelSequence.indexOf(resolvedLevelId);
     const nextLevelId = levelSequence[currentIndex + 1];
 
     if (!nextLevelId) {
@@ -49,73 +39,57 @@ export function StudentLevelResultPage() {
     }
 
     return state.progress.levels.find((level) => level.id === nextLevelId) ?? null;
-  }, [levelId, state.progress.levels]);
+  }, [resolvedLevelId, state.progress.levels]);
 
-  const nextLevelRoute =
-    nextLevel?.status === "completed" && state.progress.levelResults[nextLevel.id]
-      ? `/student/theme/road-safety/level/${nextLevel.id}/result`
-      : nextLevel && nextLevel.status !== "locked"
-        ? `/student/theme/road-safety/level/${nextLevel.id}`
-        : null;
-  const currentLevelId = isLevelId(levelId) ? levelId : "level-1";
-  const currentLevelIndex = levelSequence.indexOf(currentLevelId);
-  const completedLevelsCount = state.progress.levels.filter((level) => level.status === "completed").length;
-
-  if (!isLevelId(levelId) || !result) {
+  if (!result) {
     return (
       <section className="surface-card empty-state-card">
-        <span className="section-block__eyebrow">关卡庆祝页</span>
-        <h2>这关还没有通关记录</h2>
-        <p>先完成关卡挑战，再回来领取这张通关卡。</p>
+        <span className="section-block__eyebrow">关卡结算</span>
+        <h2>这关还没有完成记录</h2>
         <button
           type="button"
           className="primary-button"
-          onClick={() => navigate("/student/theme/road-safety")}
+          onClick={() => navigate(`/student/theme/road-safety/level/${resolvedLevelId}`)}
         >
-          返回主题地图
+          进入当前关卡
         </button>
       </section>
     );
   }
 
-  const rewardSummary = [
-    `通关分数 ${result.score} 分`,
-    `点亮 ${result.stars} 颗星`,
-    `徽章收集 ${state.progress.badges.length} 枚`,
-  ];
-  const nextActionSummary =
-    levelId === "level-3"
-      ? state.progress.exam.status === "available"
-        ? "三关已经走完，现在最适合去打开主题考试宝箱。"
-        : "三关已经走完，可以回到主题地图看看还想复习哪一站。"
-      : `继续走向${nextLevel ? levelLabels[nextLevel.id] : "下一站"}，把这轮冒险完整点亮。`;
+  const nextRoute =
+    nextLevel?.status === "completed"
+      ? `/student/theme/road-safety/level/${nextLevel.id}/result`
+      : nextLevel?.status && nextLevel.status !== "locked"
+        ? `/student/theme/road-safety/level/${nextLevel.id}`
+        : null;
 
   return (
     <div className="page-stack student-page student-page--result">
       <StudentAdventureHero
-        eyebrow="通关庆祝"
-        title={result.levelId === "level-3" ? "第三关挑战完成" : "恭喜你成功通关"}
-        description="这一关已经顺利完成，快来看看你拿到了几颗星。"
-        bubbleTitle="通关小结"
-        bubbleText={result.highlight}
+        eyebrow={`${levelLabels[resolvedLevelId]} · 独立结算页`}
+        title={`${levelThemes[resolvedLevelId]}完成啦`}
+        description="这一关的表现已经单独结算好了，你可以继续下一关，也可以马上重新挑战本关。"
+        bubbleTitle="AI 鼓励"
+        bubbleText={result.aiSummary}
         mascotLabel={`${result.stars}★`}
-        mascotHint={result.caution}
+        mascotHint={result.highlight}
         variant="result"
-        accent={result.levelId === "level-3" ? "orange" : "mint"}
+        accent={resolvedLevelId === "level-3" ? "orange" : resolvedLevelId === "level-2" ? "mint" : "sky"}
         stats={[
-          { label: "通关分数", value: `${result.score} 分`, accent: "sky" },
-          { label: "获得星星", value: `${result.stars} 颗`, accent: "orange" },
-          { label: "当前积分", value: `${state.progress.points}`, accent: "mint" },
+          { label: "通关得分", value: `${result.score} 分`, accent: "sky" },
+          { label: "星级", value: `${result.stars} 星`, accent: "orange" },
+          { label: "奖励", value: result.rewardLabel ?? "本关奖励", accent: "mint" },
         ]}
         actions={
           <>
-            {levelId !== "level-3" && nextLevelRoute ? (
+            {nextRoute ? (
               <button
                 type="button"
                 className="primary-button primary-button--playful"
-                onClick={() => navigate(nextLevelRoute)}
+                onClick={() => navigate(nextRoute)}
               >
-                去下一关
+                继续下一关
               </button>
             ) : (
               <button
@@ -129,17 +103,15 @@ export function StudentLevelResultPage() {
                   )
                 }
               >
-                {state.progress.exam.status === "available"
-                  ? "去打开考试宝箱"
-                  : "回到主题地图"}
+                {state.progress.exam.status === "available" ? "进入主题考试" : "返回主题页"}
               </button>
             )}
             <button
               type="button"
               className="ghost-button"
-              onClick={() => navigate("/student/records")}
+              onClick={() => navigate(`/student/theme/road-safety/level/${resolvedLevelId}`)}
             >
-              收进学习记录
+              重新挑战本关
             </button>
           </>
         }
@@ -147,27 +119,13 @@ export function StudentLevelResultPage() {
 
       <section className="surface-card student-result-storyboard">
         <div className="student-section-heading">
-          <span className="section-block__eyebrow">冒险进度带</span>
-          <h2>这一站已经点亮，看看整张地图走到哪了</h2>
-        </div>
-        <div className="student-result-storyboard__stats">
-          <article className="student-result-stat-chip student-result-stat-chip--mint">
-            <span>刚完成</span>
-            <strong>{levelLabels[currentLevelId]}</strong>
-          </article>
-          <article className="student-result-stat-chip student-result-stat-chip--sky">
-            <span>完成进度</span>
-            <strong>{completedLevelsCount} / 3 关</strong>
-          </article>
-          <article className="student-result-stat-chip student-result-stat-chip--orange">
-            <span>下一目标</span>
-            <strong>{levelId === "level-3" ? "主题考试" : nextLevel ? levelLabels[nextLevel.id] : "主题地图"}</strong>
-          </article>
+          <span className="section-block__eyebrow">关卡进度</span>
+          <h2>三关闯关学习现在走到哪里了</h2>
         </div>
         <div className="student-result-track">
           {levelSequence.map((item, index) => {
-            const isDone = index <= currentLevelIndex;
-            const isCurrent = item === currentLevelId;
+            const isCurrent = item === resolvedLevelId;
+            const isDone = Boolean(state.progress.levelResults[item]);
 
             return (
               <article
@@ -182,7 +140,7 @@ export function StudentLevelResultPage() {
               >
                 <span className="student-result-track__index">{index + 1}</span>
                 <strong>{levelLabels[item]}</strong>
-                <p>{levelCelebrationTitles[item]}</p>
+                <p>{levelThemes[item]}</p>
               </article>
             );
           })}
@@ -191,128 +149,109 @@ export function StudentLevelResultPage() {
 
       <section className="student-card-grid student-card-grid--three">
         <article className="surface-card student-celebration-card student-celebration-card--sky">
-          <span className="student-celebration-card__eyebrow">通关星级</span>
-          <div className="student-result-stars">
-            {[1, 2, 3].map((star) => (
-              <span
-                key={star}
-                className={
-                  star <= result.stars
-                    ? "student-result-stars__item student-result-stars__item--on"
-                    : "student-result-stars__item"
-                }
-              >
-                ★
-              </span>
-            ))}
-          </div>
-          <p>{result.completedAt}</p>
+          <span className="student-celebration-card__eyebrow">奖励图标</span>
+          <strong className="student-result-reward-icon">{result.rewardIcon ?? "🎁"}</strong>
+          <p>{result.rewardLabel ?? "本关奖励"}</p>
         </article>
-
         <article className="surface-card student-celebration-card student-celebration-card--mint">
-          <span className="student-celebration-card__eyebrow">做得真棒</span>
+          <span className="student-celebration-card__eyebrow">这次做得好</span>
           <strong>{result.highlight}</strong>
-          <p>这一关的安全要点已经被你牢牢记住了。</p>
+          <p>把这几个安全点继续保持下去，就能更稳地推进后续挑战。</p>
         </article>
-
         <article className="surface-card student-celebration-card student-celebration-card--orange">
-          <span className="student-celebration-card__eyebrow">下一次再注意</span>
+          <span className="student-celebration-card__eyebrow">下次要注意</span>
           <strong>{result.caution}</strong>
-          <p>带着这句提醒继续往前走，会更稳。</p>
+          <p>重新挑战时可以重点盯住这些地方，把表现再往上提一档。</p>
         </article>
       </section>
 
       <section className="student-card-grid student-card-grid--two">
         <article className="surface-card student-reward-board">
           <div className="student-section-heading">
-            <span className="section-block__eyebrow">奖励到帐</span>
-            <h2>这次点亮了什么？</h2>
-          </div>
-          <div className="student-reward-summary">
-            {rewardSummary.map((item) => (
-              <span key={item} className="student-reward-summary__chip">
-                {item}
-              </span>
-            ))}
+            <span className="section-block__eyebrow">关键安全点</span>
+            <h2>这关真正学会了什么</h2>
           </div>
           <div className="student-checklist">
-            <div className="student-checklist__item">
-              <span className="student-checklist__dot" />
-              <span>当前积分：{state.progress.points}</span>
-            </div>
-            <div className="student-checklist__item">
-              <span className="student-checklist__dot" />
-              <span>徽章收藏：{state.progress.badges.join(" / ")}</span>
-            </div>
-            <div className="student-checklist__item">
-              <span className="student-checklist__dot" />
-              <span>
-                {result.levelId === "level-3"
-                  ? "三关通关后，考试宝箱也会一起点亮。"
-                  : "继续往前闯，下一关还会带来新的奖励。"}
-              </span>
-            </div>
+            {(result.keySafetyPoints ?? []).map((item) => (
+              <div key={item} className="student-checklist__item">
+                <span className="student-checklist__dot" />
+                <span>{item}</span>
+              </div>
+            ))}
           </div>
-          <article className="student-result-note">
-            <strong>下一步建议</strong>
-            <p>{nextActionSummary}</p>
-          </article>
         </article>
 
-        <article className="surface-card student-link-board">
+        <article className="surface-card student-reward-board">
           <div className="student-section-heading">
-            <span className="section-block__eyebrow">下一站</span>
-            <h2>现在最适合做什么？</h2>
+            <span className="section-block__eyebrow">需要注意</span>
+            <h2>下次重玩先盯住这些点</h2>
           </div>
-          <div className="student-mini-links">
-            {levelId !== "level-3" && nextLevelRoute ? (
-              <button
-                type="button"
-                className="student-mini-link"
-                onClick={() => navigate(nextLevelRoute)}
-              >
-                <strong>继续下一关</strong>
-                <span>把地图继续往前点亮</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="student-mini-link"
-                onClick={() =>
-                  navigate(
-                    state.progress.exam.status === "available"
-                      ? "/student/theme/road-safety/exam"
-                      : "/student/theme/road-safety",
-                  )
-                }
-              >
-                <strong>
-                  {state.progress.exam.status === "available"
-                    ? "进入主题考试"
-                    : "回到主题地图"}
-                </strong>
-                <span>继续完成这轮学习闭环</span>
-              </button>
-            )}
-            <button
-              type="button"
-              className="student-mini-link"
-              onClick={() => navigate("/student/records")}
-            >
-              <strong>查看学习记录</strong>
-              <span>把这张通关卡收藏起来</span>
-            </button>
+          <div className="student-checklist">
+            {(result.cautionPoints ?? [result.caution]).map((item) => (
+              <div key={item} className="student-checklist__item">
+                <span className="student-checklist__dot" />
+                <span>{item}</span>
+              </div>
+            ))}
           </div>
         </article>
       </section>
 
+      <section className="surface-card student-level-replay-card">
+        <div className="section-block__header">
+          <div>
+            <span className="section-block__eyebrow">结算后的操作</span>
+            <h2>继续下一关、回主题页，或者直接重玩</h2>
+          </div>
+          <span className="surface-tag">积分 {state.progress.points}</span>
+        </div>
+        <div className="button-row">
+          {nextRoute ? (
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => navigate(nextRoute)}
+            >
+              继续下一关
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() =>
+                navigate(
+                  state.progress.exam.status === "available"
+                    ? "/student/theme/road-safety/exam"
+                    : "/student/theme/road-safety",
+                )
+              }
+            >
+              {state.progress.exam.status === "available" ? "进入主题考试" : "返回主题页"}
+            </button>
+          )}
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => navigate("/student/theme/road-safety")}
+          >
+            返回主题页
+          </button>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => navigate(`/student/theme/road-safety/level/${resolvedLevelId}`)}
+          >
+            重新挑战本关
+          </button>
+        </div>
+      </section>
+
       {showExamUnlock ? (
-        <section className="result-modal-backdrop">
+        <section className="overlay-modal-backdrop">
           <article className="surface-card student-treasure-modal">
-            <span className="section-block__eyebrow">宝箱已解锁</span>
-            <h2>三关学习全部完成啦</h2>
-            <p>现在可以打开考试宝箱，完成这一轮道路安全冒险。</p>
-            <div className="student-treasure-modal__badge">考试宝箱</div>
+            <span className="section-block__eyebrow">主题考试已解锁</span>
+            <h2>三关闯关学习已经全部完成</h2>
+            <p>现在你可以直接进入主题考试，也可以稍后从主题页继续。</p>
             <div className="button-row">
               <button
                 type="button"
@@ -322,14 +261,14 @@ export function StudentLevelResultPage() {
                   navigate("/student/theme/road-safety");
                 }}
               >
-                先回地图
+                稍后去完成
               </button>
               <button
                 type="button"
                 className="primary-button primary-button--playful"
                 onClick={() => navigate("/student/theme/road-safety/exam")}
               >
-                立刻挑战
+                立即进入
               </button>
             </div>
           </article>

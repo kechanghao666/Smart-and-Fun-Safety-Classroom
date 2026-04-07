@@ -1,6 +1,12 @@
 import { Router } from "express";
 import { requireRole } from "../middleware/auth";
 import {
+  approveTeacherClassApplication,
+  getTeacherClassApplications,
+  inviteStudentToClassByStudentNo,
+  rejectTeacherClassApplication,
+} from "../services/classMembershipService";
+import {
   createTeacherClass,
   getTeacherClasses,
   getTeacherDashboard,
@@ -8,6 +14,7 @@ import {
   getTeacherStudents,
   updateTeacherClass,
 } from "../services/reportingService";
+import { HttpError } from "../utils/httpError";
 
 export const teacherRouter = Router();
 
@@ -40,6 +47,70 @@ teacherRouter.put("/classes/:id", async (request, response, next) => {
     next(error);
   }
 });
+
+teacherRouter.post("/classes/:classId/invite-student", async (request, response, next) => {
+  try {
+    const studentNo = String(request.body?.studentNo ?? "").trim();
+
+    if (!studentNo) {
+      throw new HttpError(400, "学号不能为空。");
+    }
+
+    response.json(
+      await inviteStudentToClassByStudentNo(
+        request.authUser!.id,
+        request.params.classId,
+        studentNo,
+      ),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+teacherRouter.get("/classes/:classId/applications", async (request, response, next) => {
+  try {
+    response.json(
+      await getTeacherClassApplications(request.authUser!.id, request.params.classId),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+teacherRouter.post(
+  "/classes/:classId/applications/:applicationId/approve",
+  async (request, response, next) => {
+    try {
+      response.json(
+        await approveTeacherClassApplication(
+          request.authUser!.id,
+          request.params.classId,
+          request.params.applicationId,
+        ),
+      );
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+teacherRouter.post(
+  "/classes/:classId/applications/:applicationId/reject",
+  async (request, response, next) => {
+    try {
+      response.json(
+        await rejectTeacherClassApplication(
+          request.authUser!.id,
+          request.params.classId,
+          request.params.applicationId,
+        ),
+      );
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 teacherRouter.get("/dashboard", async (request, response, next) => {
   try {

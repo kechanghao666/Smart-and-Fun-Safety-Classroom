@@ -14,6 +14,12 @@ import type {
   TeacherStudentSummary,
   ThemeManagementItem,
 } from "../types/contracts";
+import {
+  levelOneManagementDefaults,
+  levelOneObservationConfig,
+} from "./levelOneObservation";
+import { levelThreeGuardianConfig, levelThreeManagementDefaults } from "./levelThreeGuardian";
+import { levelTwoManagementDefaults, levelTwoRouteConfig } from "./levelTwoRoute";
 
 export const THEME_ID = "road-safety";
 export const THEME_TITLE = "道路安全教育";
@@ -30,6 +36,8 @@ export const levelBlueprints: LevelBlueprint[] = [
     focus: "观察与识别",
     description: "在街道路口场景里找到安全通行位置、交通标志和危险行为。",
     duration: "约 15 分钟",
+    gameplayMode: "observation",
+    observationConfig: levelOneObservationConfig,
   },
   {
     id: "level-2",
@@ -37,6 +45,8 @@ export const levelBlueprints: LevelBlueprint[] = [
     focus: "路线判断",
     description: "沿着放学路线逐步前进，在关键节点做出安全选择。",
     duration: "约 15 分钟",
+    gameplayMode: "route",
+    routeChallengeConfig: levelTwoRouteConfig,
   },
   {
     id: "level-3",
@@ -44,6 +54,8 @@ export const levelBlueprints: LevelBlueprint[] = [
     focus: "乘车防护",
     description: "在公交车、私家车和电动车场景中完成安全出行准备。",
     duration: "约 15 分钟",
+    gameplayMode: "guardian",
+    guardianChallengeConfig: levelThreeGuardianConfig,
   },
 ];
 
@@ -63,6 +75,10 @@ export const levelResultTemplates: Record<
     highlight: "你能主动寻找斑马线、信号灯和危险行为，基础观察力很稳定。",
     caution: "继续记住“先看灯、再看车、最后再行动”，不要只盯着一个信号。",
     aiSummary: "第一关顺利通关，你已经具备道路观察员的基本判断力了。",
+    keySafetyPoints: ["先找斑马线", "再看信号灯和车辆", "主动识别危险行为"],
+    cautionPoints: ["不要只盯着绿灯", "发现护栏和红灯抢跑要及时避开"],
+    rewardIcon: "🧭",
+    rewardLabel: "观察员徽章 + 40 积分",
   },
   "level-2": {
     score: 92,
@@ -70,6 +86,10 @@ export const levelResultTemplates: Record<
     highlight: "你在路线节点里能逐步规避护栏近路、盲区和抢行风险。",
     caution: "下次遇到大型车辆或复杂路口时，先停一下确认周围环境更稳妥。",
     aiSummary: "第二关完成得不错，路线判断已经越来越像真正的安全小队员。",
+    keySafetyPoints: ["每到节点先停一停", "绿灯也要继续看车", "主动绕开公交车盲区"],
+    cautionPoints: ["不要从停放车辆缝隙钻出", "越接近终点越不能放松"],
+    rewardIcon: "🗺️",
+    rewardLabel: "路线先锋徽章 + 40 积分",
   },
   "level-3": {
     score: 98,
@@ -77,6 +97,10 @@ export const levelResultTemplates: Record<
     highlight: "你已经掌握候车距离、安全带和头盔这些关键防护动作。",
     caution: "继续把“准备好再出发”记牢，别让着急出门打乱安全步骤。",
     aiSummary: "第三关也完成了，道路安全主题的三关闯关学习已经全部达成。",
+    keySafetyPoints: ["候车站在安全线后", "上车先系安全带", "乘坐电动车先戴头盔"],
+    cautionPoints: ["首次进入场景别急着点答案", "先准备好再出发才是安全习惯"],
+    rewardIcon: "🛡️",
+    rewardLabel: "守护达人徽章 + 40 积分",
   },
 };
 
@@ -119,24 +143,30 @@ export const levelManagementItems: LevelManagementItem[] = [
     title: "第一关：城市交通观察员",
     focus: "观察与识别",
     duration: "约 15 分钟",
+    gameplayMode: "observation",
     rewardLabel: "观察员徽章 + 40 积分",
     feedbackStyle: "强调先观察再行动",
+    ...levelOneManagementDefaults,
   },
   {
     id: "level-2",
     title: "第二关：放学回家路线挑战",
     focus: "路线判断",
     duration: "约 15 分钟",
+    gameplayMode: "route",
     rewardLabel: "路线先锋徽章 + 40 积分",
     feedbackStyle: "强调关键节点风险判断",
+    ...levelTwoManagementDefaults,
   },
   {
     id: "level-3",
     title: "第三关：安全出行守护任务",
     focus: "乘车防护",
     duration: "约 15 分钟",
+    gameplayMode: "guardian",
     rewardLabel: "守护达人徽章 + 40 积分",
     feedbackStyle: "强调头盔、安全带和候车距离",
+    ...levelThreeManagementDefaults,
   },
 ];
 
@@ -173,6 +203,7 @@ export const teacherStaticStudents: TeacherStudentSummary[] = [
   {
     id: "stu-2",
     name: "周乐乐",
+    studentNo: "S00000002",
     className: "三年级（2）班",
     completedLevels: 2,
     examStatus: "已解锁未考试",
@@ -183,6 +214,7 @@ export const teacherStaticStudents: TeacherStudentSummary[] = [
   {
     id: "stu-3",
     name: "陈晓雨",
+    studentNo: "S00000003",
     className: "三年级（2）班",
     completedLevels: 1,
     examStatus: "未解锁考试",
@@ -196,6 +228,7 @@ export const teacherStaticDetails: TeacherStudentDetail[] = [
   {
     id: "stu-2",
     name: "周乐乐",
+    studentNo: "S00000002",
     className: "三年级（2）班",
     completedLevels: 2,
     examStatus: "已解锁未考试",
@@ -234,6 +267,7 @@ export const teacherStaticDetails: TeacherStudentDetail[] = [
   {
     id: "stu-3",
     name: "陈晓雨",
+    studentNo: "S00000003",
     className: "三年级（2）班",
     completedLevels: 1,
     examStatus: "未解锁考试",

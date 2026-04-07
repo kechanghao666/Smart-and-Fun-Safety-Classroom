@@ -1,10 +1,13 @@
-﻿export type UserRole = "student" | "teacher" | "admin";
+export type UserRole = "student" | "teacher" | "admin";
 export type ThemeAccent = "sky" | "mint" | "orange";
 export type StudentStage = "小学低段" | "小学中段" | "小学高段";
 export type AuthSource = "mock" | "api";
 export type LearningStatus = "locked" | "available" | "in_progress" | "completed";
 export type LevelId = "level-1" | "level-2" | "level-3";
 export type GrowthDimensionId = "appearance" | "safety" | "scene";
+export type LevelGameplayMode = "observation" | "route" | "guardian";
+export type GuardianTaskType = "drag" | "tap" | "sequence";
+export type ClassJoinRequestStatus = "pending" | "approved" | "rejected";
 export type ObservationInteractionType =
   | "hotspot"
   | "danger_mark"
@@ -17,6 +20,7 @@ export type LearningRecordType =
   | "profile_updated"
   | "level_started"
   | "level_completed"
+  | "level_replayed"
   | "exam_unlocked"
   | "exam_completed"
   | "wrong_question_reviewed"
@@ -35,6 +39,55 @@ export interface ThemeCard {
   progressLabel: string;
   cta: string;
   accent: ThemeAccent;
+}
+
+export interface DemoAccount {
+  account: string;
+  password: string;
+  role: UserRole;
+  roleLabel: string;
+  displayName: string;
+}
+
+export interface AvatarOption {
+  id: string;
+  label: string;
+  shortLabel: string;
+  accent: ThemeAccent;
+}
+
+export interface AiKnowledgeItem {
+  id: string;
+  label: string;
+  question: string;
+  keywords: string[];
+  answer: string;
+}
+
+export interface AiQuickPrompt {
+  id: string;
+  label: string;
+  question: string;
+  topic: string;
+}
+
+export interface StudentProfile {
+  nickname: string;
+  avatarId: string;
+  avatarLabel: string;
+  stage: StudentStage;
+  studentNo?: string;
+}
+
+export interface StudentGrowthPreferences {
+  appearance: string | null;
+  scene: string | null;
+}
+
+export interface StudentRewardProgress {
+  studyDates: string[];
+  claimedStreakDays: number[];
+  reviewedWrongQuestionIds: string[];
 }
 
 export interface ObservationTaskChoice {
@@ -94,25 +147,109 @@ export interface ObservationLevelConfig {
   completionCopy: string;
 }
 
+export interface RouteChallengeChoice {
+  id?: string;
+  label: string;
+  safe: boolean;
+  feedback: string;
+  safetyDelta?: number;
+}
+
+export interface RouteChallengeNode {
+  id: string;
+  title: string;
+  mapLabel: string;
+  scenario: string;
+  hint: string;
+  helperText: string;
+  position: {
+    top: number;
+    left: number;
+  };
+  imageUrl?: string | null;
+  sourcePageUrl?: string | null;
+  options: RouteChallengeChoice[];
+}
+
+export interface RouteChallengeConfig {
+  mapTitle: string;
+  mapDescription: string;
+  routeLabel: string;
+  safetyLabel: string;
+  currentRoleLabel: string;
+  nodes: RouteChallengeNode[];
+  completionCopy: string;
+}
+
+export interface GuardianTargetZone {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  label: string;
+}
+
+export interface GuardianTapTarget {
+  id: string;
+  label: string;
+  hint: string;
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  correct: boolean;
+  feedback: string;
+}
+
+export interface GuardianSequenceItem {
+  id: string;
+  label: string;
+  expectedOrder: number;
+}
+
+export interface GuardianChallengeStage {
+  id: string;
+  title: string;
+  detail: string;
+  toolLabel: string;
+  toolHint: string;
+  stageLabel: string;
+  successText: string;
+  taskType: GuardianTaskType;
+  sceneImageUrl: string;
+  sceneSourcePageUrl: string;
+  sceneCaption: string;
+  toolImageUrl?: string | null;
+  toolSourcePageUrl?: string | null;
+  toolCaption?: string | null;
+  actionHint: string;
+  targetZone?: GuardianTargetZone | null;
+  tapTargets?: GuardianTapTarget[];
+  sequenceItems?: GuardianSequenceItem[];
+}
+
+export interface GuardianChallengeConfig {
+  stages: GuardianChallengeStage[];
+  completionCopy: string;
+}
+
 export interface LevelBlueprint {
   id: LevelId;
   title: string;
   focus: string;
   description: string;
   duration: string;
+  gameplayMode?: LevelGameplayMode;
   observationConfig?: ObservationLevelConfig | null;
+  routeChallengeConfig?: RouteChallengeConfig | null;
+  guardianChallengeConfig?: GuardianChallengeConfig | null;
 }
 
 export interface LevelProgress extends LevelBlueprint {
   status: LearningStatus;
 }
 
-export interface RouteChallengeOption {
-  label: string;
-  safe: boolean;
-  feedback: string;
-}
-
+export interface RouteChallengeOption extends RouteChallengeChoice {}
 export interface RouteChallengeStep {
   id: string;
   scenario: string;
@@ -134,54 +271,6 @@ export interface ExamQuestion {
   reviewLevelId: LevelId;
   reviewLabel: string;
   reviewSuggestion: string;
-}
-
-export interface AiKnowledgeItem {
-  id: string;
-  label: string;
-  question: string;
-  keywords: string[];
-  answer: string;
-}
-
-export interface AiQuickPrompt {
-  id: string;
-  label: string;
-  question: string;
-  topic: string;
-}
-
-export interface DemoAccount {
-  account: string;
-  password: string;
-  role: UserRole;
-  roleLabel: string;
-  displayName: string;
-}
-
-export interface AvatarOption {
-  id: string;
-  label: string;
-  shortLabel: string;
-  accent: ThemeAccent;
-}
-
-export interface StudentProfile {
-  nickname: string;
-  avatarId: string;
-  avatarLabel: string;
-  stage: StudentStage;
-}
-
-export interface StudentGrowthPreferences {
-  appearance: string | null;
-  scene: string | null;
-}
-
-export interface StudentRewardProgress {
-  studyDates: string[];
-  claimedStreakDays: number[];
-  reviewedWrongQuestionIds: string[];
 }
 
 export interface LearningRecordItem {
@@ -320,6 +409,7 @@ export interface StudentAiReportResponse {
 export interface TeacherStudentSummary {
   id: string;
   name: string;
+  studentNo?: string;
   className: string;
   completedLevels: number;
   examStatus: string;
@@ -340,6 +430,8 @@ export interface TeacherClassSummary {
 export interface TeacherClassManagementItem extends TeacherClassSummary {
   description: string;
   createdAt: string;
+  classCode?: string;
+  pendingApplications?: number;
 }
 
 export interface TeacherStudentLevelStatus {
@@ -350,15 +442,7 @@ export interface TeacherStudentLevelStatus {
   note: string;
 }
 
-export interface TeacherStudentDetail {
-  id: string;
-  name: string;
-  className: string;
-  completedLevels: number;
-  examStatus: string;
-  score: number | null;
-  lastActiveAt: string;
-  weakSpot: string;
+export interface TeacherStudentDetail extends TeacherStudentSummary {
   growthStage: string;
   growthSummary: string;
   motivationLabel: string;
@@ -371,6 +455,16 @@ export interface TeacherStudentDetail {
   recommendations: string[];
   growthPoints?: number;
   unlockedScenes?: string[];
+}
+
+export interface TeacherClassApplicationItem {
+  id: string;
+  studentId: string;
+  studentNo?: string;
+  studentName: string;
+  requestedAt: string;
+  currentClassName: string | null;
+  status: ClassJoinRequestStatus;
 }
 
 export interface AdminModuleCard {
@@ -397,6 +491,7 @@ export interface LevelManagementItem {
   title: string;
   focus: string;
   duration: string;
+  gameplayMode?: LevelGameplayMode;
   displayOrder: number;
   sceneAssetLabel: string;
   taskOutline: string[];
@@ -410,6 +505,8 @@ export interface LevelManagementItem {
   taskSteps?: ObservationTaskStep[];
   midpointCopy?: string;
   completionCopy?: string;
+  routeChallengeConfig?: RouteChallengeConfig | null;
+  guardianChallengeConfig?: GuardianChallengeConfig | null;
 }
 
 export interface QuestionBankManagementItem {
@@ -422,6 +519,8 @@ export interface QuestionBankManagementItem {
   correctLabel: string;
   explanation: string;
   reviewLevelId: LevelId;
+  reviewLabel?: string;
+  reviewSuggestion?: string;
   status: "enabled" | "draft";
 }
 
@@ -467,6 +566,22 @@ export interface LevelResult {
   highlight: string;
   caution: string;
   aiSummary: string;
+  keySafetyPoints?: string[];
+  cautionPoints?: string[];
+  rewardIcon?: string;
+  rewardLabel?: string;
+}
+
+export interface LevelCompletionPayload {
+  score: number;
+  stars: number;
+  highlight: string;
+  caution: string;
+  aiSummary: string;
+  keySafetyPoints: string[];
+  cautionPoints: string[];
+  rewardIcon: string;
+  rewardLabel: string;
 }
 
 export interface StudentProgress {
@@ -479,6 +594,23 @@ export interface StudentProgress {
   levelResults: Partial<Record<LevelId, LevelResult>>;
   exam: ExamProgress;
   rewardProgress: StudentRewardProgress;
+}
+
+export interface StudentClassMembershipResponse {
+  studentNo: string;
+  currentClass: {
+    id: string;
+    name: string;
+    classCode: string;
+  } | null;
+  pendingRequest: {
+    id: string;
+    classId: string;
+    className: string;
+    classCode: string;
+    status: ClassJoinRequestStatus;
+    requestedAt: string;
+  } | null;
 }
 
 export interface AppState {

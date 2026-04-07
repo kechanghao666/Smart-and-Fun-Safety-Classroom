@@ -14,6 +14,10 @@ import {
 import { defaultGrowthConfig } from "../constants/growth";
 import { levelOneManagementDefaults } from "../constants/levelOneObservation";
 import type { LevelId, StudentStage } from "../types/contracts";
+import {
+  ensureUniqueClassCode,
+  ensureUniqueStudentNo,
+} from "../utils/identityCodes";
 
 function hashPassword(password: string, salt: string) {
   return scryptSync(password, salt, 64).toString("hex");
@@ -82,12 +86,25 @@ async function seedTeacherClass(
     description: string;
   },
 ) {
-  const existing = await db.get<{ id: string }>(
-    "SELECT id FROM teacher_classes WHERE id = ?",
+  const existing = await db.get<{ id: string; class_code: string | null }>(
+    "SELECT id, class_code FROM teacher_classes WHERE id = ?",
     input.id,
   );
+  const classCode = await ensureUniqueClassCode(db, input.id, input.id);
 
   if (existing) {
+    if (!existing.class_code) {
+      await db.run(
+        `
+          UPDATE teacher_classes
+          SET class_code = ?, updated_at = ?
+          WHERE id = ?
+        `,
+        classCode,
+        new Date().toISOString(),
+        input.id,
+      );
+    }
     return;
   }
 
@@ -95,14 +112,15 @@ async function seedTeacherClass(
   await db.run(
     `
       INSERT INTO teacher_classes (
-        id, teacher_user_id, name, description, created_at, updated_at
+        id, teacher_user_id, name, description, class_code, created_at, updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
     input.id,
     input.teacherUserId,
     input.name,
     input.description,
+    classCode,
     now,
     now,
   );
@@ -125,15 +143,26 @@ async function seedStudentProfile(
     input.userId,
   );
   const now = new Date().toISOString();
+  const classRow = await db.get<{ id: string }>(
+    `
+      SELECT id
+      FROM teacher_classes
+      WHERE name = ?
+      LIMIT 1
+    `,
+    input.className,
+  );
+  const studentNo = await ensureUniqueStudentNo(db, input.userId, input.userId);
 
   if (!existing) {
     await db.run(
       `
         INSERT INTO student_profiles (
           user_id, nickname, avatar_id, avatar_label, stage, class_name,
-          base_points, starter_badges_json, last_visited_route, created_at, updated_at
+          class_id, student_no, base_points, starter_badges_json, last_visited_route,
+          created_at, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       input.userId,
       input.nickname ?? null,
@@ -141,6 +170,8 @@ async function seedStudentProfile(
       input.avatarLabel ?? null,
       input.stage ?? null,
       input.className,
+      classRow?.id ?? null,
+      studentNo,
       BASE_POINTS,
       JSON.stringify(BASE_BADGES),
       input.lastVisitedRoute ?? "/student/home",
@@ -153,10 +184,15 @@ async function seedStudentProfile(
   await db.run(
     `
       UPDATE student_profiles
-      SET class_name = COALESCE(class_name, ?), updated_at = updated_at
+      SET
+        class_name = COALESCE(NULLIF(class_name, ''), ?),
+        class_id = COALESCE(class_id, ?),
+        student_no = COALESCE(student_no, ?)
       WHERE user_id = ?
     `,
     input.className,
+    classRow?.id ?? null,
+    studentNo,
     input.userId,
   );
 }
@@ -174,9 +210,9 @@ async function ensureLevelRows(db: Database, userId: string) {
         `
           INSERT INTO level_progress (
             user_id, level_id, status, score, stars, highlight, caution, ai_summary,
-            started_at, completed_at, updated_at
+            result_payload_json, started_at, completed_at, updated_at
           )
-          VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, ?)
+          VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, ?)
         `,
         userId,
         level.id,
@@ -222,6 +258,7 @@ async function seedStudentScenario(
           highlight = ?,
           caution = ?,
           ai_summary = ?,
+          result_payload_json = ?,
           started_at = COALESCE(started_at, ?),
           completed_at = COALESCE(completed_at, ?),
           updated_at = ?
@@ -232,6 +269,7 @@ async function seedStudentScenario(
       template.highlight,
       template.caution,
       template.aiSummary,
+      JSON.stringify(template),
       level.completedAt,
       level.completedAt,
       level.completedAt,
@@ -325,8 +363,17 @@ async function seedAdminLevels(db: Database) {
             ...levelOneManagementDefaults,
           }
         : item;
-    const existing = await db.get<{ id: string }>(
-      "SELECT id FROM admin_levels WHERE id = ?",
+    const existing = await db.get<{
+      id: string;
+      gameplay_mode: string | null;
+      route_challenge_json: string | null;
+      guardian_challenge_json: string | null;
+    }>(
+      `
+        SELECT id, gameplay_mode, route_challenge_json, guardian_challenge_json
+        FROM admin_levels
+        WHERE id = ?
+      `,
       enrichedItem.id,
     );
 
@@ -335,12 +382,14 @@ async function seedAdminLevels(db: Database) {
         `
           INSERT INTO admin_levels (
             id, title, focus, duration, display_order, scene_asset_label,
+            gameplay_mode,
             task_outline_json, reward_label, feedback_style, feedback_copy,
             hotspot_items_json, prop_items_json, target_area_notes_json,
             scene_reference_label, observation_scene_json, task_steps_json,
+            route_challenge_json, guardian_challenge_json,
             midpoint_copy, completion_copy, updated_at
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
         enrichedItem.id,
         enrichedItem.title,
@@ -348,6 +397,7 @@ async function seedAdminLevels(db: Database) {
         enrichedItem.duration,
         enrichedItem.displayOrder ?? 1,
         enrichedItem.sceneAssetLabel ?? "",
+        enrichedItem.gameplayMode ?? "observation",
         JSON.stringify(enrichedItem.taskOutline ?? []),
         enrichedItem.rewardLabel,
         enrichedItem.feedbackStyle,
@@ -358,11 +408,43 @@ async function seedAdminLevels(db: Database) {
         enrichedItem.observationScene?.referenceLabel ?? "",
         JSON.stringify(enrichedItem.observationScene ?? {}),
         JSON.stringify(enrichedItem.taskSteps ?? []),
+        JSON.stringify(enrichedItem.routeChallengeConfig ?? {}),
+        JSON.stringify(enrichedItem.guardianChallengeConfig ?? {}),
         enrichedItem.midpointCopy ?? "",
         enrichedItem.completionCopy ?? "",
         new Date().toISOString(),
       );
+      continue;
     }
+
+    const expectedGameplayMode = enrichedItem.gameplayMode ?? "observation";
+    const shouldBackfillGameplayMode =
+      !existing.gameplay_mode ||
+      (enrichedItem.id !== "level-1" && existing.gameplay_mode !== expectedGameplayMode);
+
+    await db.run(
+      `
+        UPDATE admin_levels
+        SET
+          gameplay_mode = ?,
+          route_challenge_json = CASE
+            WHEN route_challenge_json IS NULL OR route_challenge_json = '' OR route_challenge_json = '{}'
+            THEN ?
+            ELSE route_challenge_json
+          END,
+          guardian_challenge_json = CASE
+            WHEN guardian_challenge_json IS NULL OR guardian_challenge_json = '' OR guardian_challenge_json = '{}'
+            THEN ?
+            ELSE guardian_challenge_json
+          END,
+          updated_at = updated_at
+        WHERE id = ?
+      `,
+      shouldBackfillGameplayMode ? expectedGameplayMode : existing.gameplay_mode,
+      JSON.stringify(enrichedItem.routeChallengeConfig ?? {}),
+      JSON.stringify(enrichedItem.guardianChallengeConfig ?? {}),
+      enrichedItem.id,
+    );
   }
 }
 
