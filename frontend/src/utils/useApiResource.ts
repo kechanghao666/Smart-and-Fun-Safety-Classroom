@@ -14,12 +14,12 @@ export function useApiResource<T>({
   fallbackData,
   fetcher,
   dependencies = [],
-  fallbackMessage = "暂时无法获取最新内容，当前已切换为示例内容。",
+  fallbackMessage = "暂时无法获取最新内容，请稍后重试。",
 }: UseApiResourceOptions<T>) {
   const [data, setData] = useState<T>(fallbackData);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [source, setSource] = useState<"mock" | "api">(enabled ? "api" : "mock");
+  const [source, setSource] = useState<"mock" | "api">("api");
   const fetcherRef = useRef(fetcher);
 
   fetcherRef.current = fetcher;
@@ -30,8 +30,8 @@ export function useApiResource<T>({
     if (!enabled) {
       setData(fallbackData);
       setIsLoading(false);
-      setError("");
-      setSource("mock");
+      setError("当前会话未准备好，暂时不能同步后端数据。");
+      setSource("api");
       return () => {
         cancelled = true;
       };
@@ -48,15 +48,12 @@ export function useApiResource<T>({
         }
 
         setData(result);
-        setSource("api");
       })
       .catch((requestError) => {
         if (cancelled) {
           return;
         }
 
-        setData(fallbackData);
-        setSource("mock");
         setError(
           requestError instanceof ApiError ? requestError.message : fallbackMessage,
         );

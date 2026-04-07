@@ -1,4 +1,3 @@
-import { examQuestions } from "../data/mockData";
 import type { AppState, LevelId } from "../types";
 import { buildGrowthSnapshot } from "./studentGrowth";
 
@@ -60,7 +59,7 @@ function buildHeadline(state: AppState, wrongQuestionCount: number, completedLev
     return "三关已经全部完成，最后一步是完成主题考试，把这轮学习真正收口。";
   }
 
-  return `你已经完成 ${completedLevels} / 3 关，继续把道路安全主题稳稳推进下去。`;
+  return `你已经完成 ${completedLevels} / 3 关，继续把道路安全主题稳步推进下去。`;
 }
 
 function buildStrengths(state: AppState) {
@@ -81,43 +80,20 @@ function buildStrengths(state: AppState) {
 }
 
 function buildFocusAreas(state: AppState): ReportFocusArea[] {
-  const wrongQuestionDetails = examQuestions.filter((question) =>
-    state.progress.exam.wrongQuestionIds.includes(question.id),
-  );
-
-  if (wrongQuestionDetails.length > 0) {
-    const focusAreaMap = new Map<
-      LevelId,
+  if (state.progress.exam.wrongQuestionIds.length > 0) {
+    return [
       {
-        prompts: string[];
-        label: string;
-        suggestion: string;
-      }
-    >();
-
-    wrongQuestionDetails.forEach((question) => {
-      const current = focusAreaMap.get(question.reviewLevelId);
-
-      if (current) {
-        current.prompts.push(question.prompt);
-        return;
-      }
-
-      focusAreaMap.set(question.reviewLevelId, {
-        prompts: [question.prompt],
-        label: question.reviewLabel,
-        suggestion: question.reviewSuggestion,
-      });
-    });
-
-    return Array.from(focusAreaMap.entries()).map(([levelId, item]) => ({
-      id: levelId,
-      title: item.label,
-      suggestion: item.suggestion,
-      prompts: item.prompts,
-      href: `/student/theme/road-safety/level/${levelId}`,
-      ctaLabel: "去复习本关",
-    }));
+        id: "wrong-questions",
+        title: "错题回看",
+        suggestion: "先进入错题回看页逐题复盘，再回到对应关卡完成重学。",
+        prompts: [
+          "优先查看错题解析、正确答案和建议回看的关卡入口。",
+          "完成错题重学后，成长值和学习记录也会同步刷新。",
+        ],
+        href: "/student/theme/road-safety/wrong-questions",
+        ctaLabel: "打开错题回看",
+      },
+    ];
   }
 
   const nextLevel = state.progress.levels.find(
@@ -143,7 +119,7 @@ function buildFocusAreas(state: AppState): ReportFocusArea[] {
         id: "exam",
         title: "主题考试",
         suggestion: "三关已经完成，现在最重要的是完成主题考试，把这节课真正闭环。",
-        prompts: ["进入考试前，先回想斑马线、盲区、安全带和头盔这几个重点。"],
+        prompts: ["进入考试前，先回想斑马线、盲区、安全带和头盔这些重点。"],
         href: "/student/theme/road-safety/exam",
         ctaLabel: "进入考试",
       },

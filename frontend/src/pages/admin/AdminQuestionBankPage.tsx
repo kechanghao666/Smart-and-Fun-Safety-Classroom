@@ -1,23 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminEditorStatusBar } from "../../components/AdminEditorStatusBar";
-import { questionBankManagementItems } from "../../data/mockData";
-import { fetchAdminQuestionBank, saveAdminQuestionBank } from "../../services/admin";
+import { PaginationControls } from "../../components/PaginationControls";
+import {
+  fetchAdminQuestionBank,
+  saveAdminQuestionBank,
+} from "../../services/admin";
 import { useAppState } from "../../state/AppState";
 import type { LevelId, QuestionBankManagementItem } from "../../types";
 import { useEditableAdminResource } from "../../utils/useEditableAdminResource";
+
+const QUESTIONS_PER_PAGE = 10;
 
 export function AdminQuestionBankPage() {
   const { state } = useAppState();
   const canUseApi = state.authSource === "api" && Boolean(state.authToken);
   const editor = useEditableAdminResource<QuestionBankManagementItem[]>({
     storageKey: "admin-question-bank",
-    fallbackData: questionBankManagementItems,
+    fallbackData: [],
     enabled: canUseApi,
     fetcher: () => fetchAdminQuestionBank(state.authToken ?? ""),
     saveHandler: (draftData, savedData) =>
       saveAdminQuestionBank(state.authToken ?? "", draftData, savedData),
     dependencies: [state.authToken],
-    fallbackMessage: "暂时无法获取题库数据，当前继续使用预置内容。",
+    fallbackMessage: "暂时无法获取题库数据，请稍后重试。",
   });
   const questions = editor.draftData;
   const themeOptions = useMemo(
@@ -30,6 +35,9 @@ export function AdminQuestionBankPage() {
     [questions],
   );
   const [selectedThemeId, setSelectedThemeId] = useState<string>("all");
+  const [page, setPage] = useState(1);
+  const [selectedId, setSelectedId] = useState("");
+
   const filteredQuestions = useMemo(
     () =>
       selectedThemeId === "all"
@@ -37,16 +45,22 @@ export function AdminQuestionBankPage() {
         : questions.filter((item) => item.themeId === selectedThemeId),
     [questions, selectedThemeId],
   );
-  const [selectedId, setSelectedId] = useState(filteredQuestions[0]?.id ?? "");
+
+  const totalPages = Math.max(1, Math.ceil(filteredQuestions.length / QUESTIONS_PER_PAGE));
+  const pagedQuestions = useMemo(() => {
+    const start = (page - 1) * QUESTIONS_PER_PAGE;
+    return filteredQuestions.slice(start, start + QUESTIONS_PER_PAGE);
+  }, [filteredQuestions, page]);
 
   useEffect(() => {
-    if (
-      selectedThemeId !== "all" &&
-      !themeOptions.some((item) => item.id === selectedThemeId)
-    ) {
+    if (selectedThemeId !== "all" && !themeOptions.some((item) => item.id === selectedThemeId)) {
       setSelectedThemeId("all");
     }
   }, [selectedThemeId, themeOptions]);
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
 
   useEffect(() => {
     setSelectedId((current) =>
@@ -55,6 +69,21 @@ export function AdminQuestionBankPage() {
         : filteredQuestions[0]?.id ?? "",
     );
   }, [filteredQuestions]);
+
+  useEffect(() => {
+    if (!selectedId) {
+      return;
+    }
+
+    const currentIndex = filteredQuestions.findIndex((item) => item.id === selectedId);
+
+    if (currentIndex === -1) {
+      return;
+    }
+
+    const targetPage = Math.floor(currentIndex / QUESTIONS_PER_PAGE) + 1;
+    setPage((current) => (current === targetPage ? current : targetPage));
+  }, [filteredQuestions, selectedId]);
 
   const selectedQuestion = useMemo(
     () =>
@@ -85,8 +114,7 @@ export function AdminQuestionBankPage() {
       const nextItem = { ...current, [field]: value };
       return {
         ...nextItem,
-        correctLabel:
-          nextItem.options[nextItem.correctOptionIndex] ?? nextItem.correctLabel,
+        correctLabel: nextItem.options[nextItem.correctOptionIndex] ?? nextItem.correctLabel,
       };
     });
   }
@@ -100,8 +128,7 @@ export function AdminQuestionBankPage() {
       return {
         ...current,
         options: nextOptions,
-        correctLabel:
-          nextOptions[current.correctOptionIndex] ?? current.correctLabel,
+        correctLabel: nextOptions[current.correctOptionIndex] ?? current.correctLabel,
       };
     });
   }
@@ -113,8 +140,8 @@ export function AdminQuestionBankPage() {
           <span className="hero-banner__eyebrow">题库管理</span>
           <h1>按主题筛选题目，并在右侧维护选项与解析</h1>
           <p>
-            这一页严格对应说明书中的“题目列表 + 编辑面板”结构，补齐主题筛选、
-            选项编辑、正确答案、解析和启用状态。
+            这一页继续保持“题目列表 + 编辑面板”的结构，但左侧改成固定尺寸分页列表，
+            便于在统一版块下浏览更多题目。
           </p>
         </div>
       </section>
@@ -133,26 +160,26 @@ export function AdminQuestionBankPage() {
       />
 
       <section className="card-grid card-grid--three">
-        <article className="surface-card stat-card admin-summary-card">
+        <article className="surface-card stat-card stat-card--compact admin-summary-card">
           <span>题目总数</span>
           <strong>{questions.length}</strong>
-          <p>当前题库围绕道路安全主题客观题，同时预留后续主题的草稿题目。</p>
+          <p>当前题库围绕道路安全主题组织，后续可继续在此基础上扩展更多题目。</p>
         </article>
-        <article className="surface-card stat-card admin-summary-card">
-          <span>启用中</span>
+        <article className="surface-card stat-card stat-card--compact admin-summary-card">
+          <span>启用题目</span>
           <strong>{enabledCount}</strong>
           <p>启用状态决定题目是否进入学生端正式考试流程。</p>
         </article>
-        <article className="surface-card stat-card admin-summary-card">
+        <article className="surface-card stat-card stat-card--compact admin-summary-card">
           <span>草稿 / 回看联动</span>
           <strong>
             {draftCount} / {linkedReviewCount}
           </strong>
-          <p>每道题都应指向一个明确的复习关卡，避免错题没有回看入口。</p>
+          <p>每道题都应指向明确的回看关卡，避免错题无对应复习入口。</p>
         </article>
       </section>
 
-      <section className="surface-card">
+      <section className="surface-card surface-card--compact-section">
         <div className="section-block__header">
           <div>
             <span className="section-block__eyebrow">筛选区</span>
@@ -164,7 +191,10 @@ export function AdminQuestionBankPage() {
             <span>主题筛选</span>
             <select
               value={selectedThemeId}
-              onChange={(event) => setSelectedThemeId(event.target.value)}
+              onChange={(event) => {
+                setSelectedThemeId(event.target.value);
+                setPage(1);
+              }}
             >
               <option value="all">全部主题</option>
               {themeOptions.map((theme) => (
@@ -174,9 +204,13 @@ export function AdminQuestionBankPage() {
               ))}
             </select>
           </label>
-          <article className="surface-card inline-summary-card">
-            <strong>{selectedThemeId === "all" ? "全部主题" : selectedQuestion?.themeTitle ?? "当前主题"}</strong>
-            <p>当前筛选后共有 {filteredQuestions.length} 道题。</p>
+          <article className="surface-card inline-summary-card inline-summary-card--compact">
+            <strong>
+              {selectedThemeId === "all" ? "全部主题" : selectedQuestion?.themeTitle ?? "当前主题"}
+            </strong>
+            <p>
+              当前筛选后共有 {filteredQuestions.length} 题，本页显示 {QUESTIONS_PER_PAGE} 题。
+            </p>
           </article>
         </div>
       </section>
@@ -184,29 +218,46 @@ export function AdminQuestionBankPage() {
       <section className="management-layout">
         <div className="page-stack">
           {filteredQuestions.length > 0 ? (
-            filteredQuestions.map((question) => (
-              <button
-                key={question.id}
-                type="button"
-                className={
-                  question.id === selectedQuestion?.id
-                    ? "management-list-card management-list-card--active"
-                    : "management-list-card"
-                }
-                onClick={() => setSelectedId(question.id)}
-              >
-                <div className="row-between">
-                  <strong>{question.id}</strong>
-                  <span className="surface-tag">
-                    {question.status === "enabled" ? "启用中" : "草稿"}
-                  </span>
-                </div>
-                <p>{question.prompt}</p>
-                <span className="inline-note">
-                  {question.themeTitle} · 回看关卡：{question.reviewLevelId}
-                </span>
-              </button>
-            ))
+            <>
+              <div className="management-list-panel management-list-panel--question-bank">
+                {pagedQuestions.map((question) => (
+                  <button
+                    key={question.id}
+                    type="button"
+                    className={
+                      question.id === selectedQuestion?.id
+                        ? "management-list-card management-list-card--compact management-list-card--active"
+                        : "management-list-card management-list-card--compact"
+                    }
+                    onClick={() => setSelectedId(question.id)}
+                  >
+                    <div className="row-between">
+                      <strong className="management-list-card__title">{question.id}</strong>
+                      <span className="surface-tag">
+                        {question.status === "enabled" ? "启用中" : "草稿"}
+                      </span>
+                    </div>
+                    <p
+                      className="management-list-card__excerpt compact-copy compact-copy--two-line"
+                      title={question.prompt}
+                    >
+                      {question.prompt}
+                    </p>
+                    <div className="management-list-card__meta">
+                      <span>{question.themeTitle}</span>
+                      <span>回看 {question.reviewLevelId}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <PaginationControls
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                label={`共 ${filteredQuestions.length} 道题`}
+              />
+            </>
           ) : (
             <article className="surface-card empty-state-card">
               <strong>当前筛选下没有题目</strong>
@@ -217,7 +268,7 @@ export function AdminQuestionBankPage() {
 
         {selectedQuestion ? (
           <div className="page-stack">
-            <article className="surface-card editor-panel">
+            <article className="surface-card editor-panel editor-panel--compact">
               <span className="section-block__eyebrow">编辑面板</span>
               <h2>{selectedQuestion.id}</h2>
               <div className="chip-row">
@@ -353,7 +404,7 @@ export function AdminQuestionBankPage() {
             </article>
 
             <section className="card-grid card-grid--two">
-              <article className="surface-card admin-preview-card admin-preview-card--question">
+              <article className="surface-card admin-preview-card admin-preview-card--question admin-preview-card--compact">
                 <span className="section-block__eyebrow">学生端题面预览</span>
                 <h3>{selectedQuestion.prompt}</h3>
                 <div className="page-stack page-stack--compact">
@@ -374,17 +425,17 @@ export function AdminQuestionBankPage() {
               </article>
 
               <div className="page-stack">
-                <article className="surface-card admin-preview-card">
+                <article className="surface-card admin-preview-card admin-preview-card--compact">
                   <span className="section-block__eyebrow">错题回看预览</span>
                   <p>{selectedQuestion.explanation}</p>
                   <span className="surface-tag">建议回看：{selectedQuestion.reviewLevelId}</span>
                 </article>
 
-                <article className="surface-card admin-preview-card">
+                <article className="surface-card admin-preview-card admin-preview-card--compact">
                   <span className="section-block__eyebrow">出题提醒</span>
                   <ul className="plain-list">
                     <li>确保解析和回看关卡保持一致。</li>
-                    <li>如果题目改成草稿，建议同步准备替代题。</li>
+                    <li>如果题目改成草稿，建议同步准备替代题目。</li>
                     <li>考试结果页和错题页会直接消费这里的选项与解析内容。</li>
                   </ul>
                 </article>

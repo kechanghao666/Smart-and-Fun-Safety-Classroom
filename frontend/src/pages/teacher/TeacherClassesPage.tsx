@@ -1,6 +1,5 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { teacherClassSummaries, teacherStudents } from "../../data/mockData";
 import {
   createTeacherClass,
   fetchTeacherClasses,
@@ -11,17 +10,11 @@ import { useAppState } from "../../state/AppState";
 import type { TeacherClassManagementItem, TeacherStudentSummary } from "../../types";
 import { getTeacherAttentionLabel } from "../../utils/teacherInsights";
 
-const fallbackClasses: TeacherClassManagementItem[] = teacherClassSummaries.map((item) => ({
-  ...item,
-  description: `${item.name} 当前重点：${item.focusLabel}`,
-  createdAt: new Date().toISOString(),
-}));
-
 export function TeacherClassesPage() {
   const { state } = useAppState();
-  const canUseApi = state.authSource === "api" && Boolean(state.authToken);
-  const [classes, setClasses] = useState<TeacherClassManagementItem[]>(fallbackClasses);
-  const [students, setStudents] = useState<TeacherStudentSummary[]>(teacherStudents);
+  const canUseApi = Boolean(state.authToken);
+  const [classes, setClasses] = useState<TeacherClassManagementItem[]>([]);
+  const [students, setStudents] = useState<TeacherStudentSummary[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(canUseApi);
   const [isSaving, setIsSaving] = useState(false);
@@ -47,6 +40,8 @@ export function TeacherClassesPage() {
     async function loadTeacherClasses() {
       if (!canUseApi || !state.authToken) {
         setIsLoading(false);
+        setClasses([]);
+        setStudents([]);
         return;
       }
 
@@ -68,7 +63,7 @@ export function TeacherClassesPage() {
           setError(
             requestError instanceof Error
               ? requestError.message
-              : "班级数据暂时无法更新，当前展示示例内容。",
+              : "班级数据暂时无法更新。",
           );
         }
       } finally {
@@ -125,33 +120,21 @@ export function TeacherClassesPage() {
     setIsSaving(true);
 
     try {
-      if (canUseApi && state.authToken) {
-        const created = await createTeacherClass(state.authToken, {
-          name: trimmedName,
-          description: trimmedDescription,
-        });
-        const [nextClasses, dashboard] = await Promise.all([
-          fetchTeacherClasses(state.authToken),
-          fetchTeacherDashboard(state.authToken),
-        ]);
-        setClasses(nextClasses);
-        setStudents(dashboard.students);
-        setSelectedClassId(created.id);
-      } else {
-        const nextClass: TeacherClassManagementItem = {
-          id: `custom-class-${Date.now()}`,
-          name: trimmedName,
-          description: trimmedDescription,
-          createdAt: new Date().toISOString(),
-          studentCount: 0,
-          completedRate: 0,
-          examCompletionRate: 0,
-          focusLabel: "新建班级待同步真实学生数据",
-        };
-        setClasses((current) => [...current, nextClass]);
-        setSelectedClassId(nextClass.id);
+      if (!canUseApi || !state.authToken) {
+        throw new Error("当前无法连接后端，不能创建班级。");
       }
 
+      const created = await createTeacherClass(state.authToken, {
+        name: trimmedName,
+        description: trimmedDescription,
+      });
+      const [nextClasses, dashboard] = await Promise.all([
+        fetchTeacherClasses(state.authToken),
+        fetchTeacherDashboard(state.authToken),
+      ]);
+      setClasses(nextClasses);
+      setStudents(dashboard.students);
+      setSelectedClassId(created.id);
       setDraftName("");
       setDraftDescription("");
       setShowCreateDialog(false);
@@ -173,20 +156,20 @@ export function TeacherClassesPage() {
     setIsSaving(true);
 
     try {
-      if (canUseApi && state.authToken) {
-        await updateTeacherClass(state.authToken, selectedClass.id, {
-          name: selectedClass.name,
-          description: selectedClass.description,
-        });
-        const [nextClasses, dashboard] = await Promise.all([
-          fetchTeacherClasses(state.authToken),
-          fetchTeacherDashboard(state.authToken),
-        ]);
-        setClasses(nextClasses);
-        setStudents(dashboard.students);
-      } else {
-        setClasses((current) => [...current]);
+      if (!canUseApi || !state.authToken) {
+        throw new Error("当前无法连接后端，不能保存班级。");
       }
+
+      await updateTeacherClass(state.authToken, selectedClass.id, {
+        name: selectedClass.name,
+        description: selectedClass.description,
+      });
+      const [nextClasses, dashboard] = await Promise.all([
+        fetchTeacherClasses(state.authToken),
+        fetchTeacherDashboard(state.authToken),
+      ]);
+      setClasses(nextClasses);
+      setStudents(dashboard.students);
     } catch (requestError) {
       setError(
         requestError instanceof Error ? requestError.message : "班级保存失败，请稍后重试。",
@@ -220,28 +203,28 @@ export function TeacherClassesPage() {
         </div>
       </section>
 
-      <article className="feedback-box">
-        <strong>{canUseApi ? "班级数据已同步更新" : "班级数据当前展示示例内容"}</strong>
+      <article className="feedback-box feedback-box--compact">
+        <strong>{error ? "班级数据同步失败" : "班级数据已从后端加载"}</strong>
         <p>{isLoading ? "正在同步班级概览..." : error || "你可以在这里继续查看班级表现、重点关注项和班级说明。"}</p>
       </article>
 
       <section className="card-grid card-grid--four">
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>班级数量</span>
           <strong>{classes.length}</strong>
           <p>当前教师账号下可管理的班级范围。</p>
         </article>
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>班级总人数</span>
           <strong>{totalStudents}</strong>
           <p>围绕当前主题学习闭环统计班级覆盖人数。</p>
         </article>
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>平均完成率</span>
           <strong>{averageCompletion}%</strong>
           <p>帮助教师快速判断班级整体推进是否均衡。</p>
         </article>
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>优先关注班级</span>
           <strong>{priorityClass?.name ?? "--"}</strong>
           <p>{priorityClass?.focusLabel ?? "当前暂无班级数据。"}</p>
@@ -262,8 +245,8 @@ export function TeacherClassesPage() {
                 type="button"
                 className={
                   classroom.id === selectedClass?.id
-                    ? "management-list-card management-list-card--active"
-                    : "management-list-card"
+                    ? "management-list-card management-list-card--compact management-list-card--active"
+                    : "management-list-card management-list-card--compact"
                 }
                 onClick={() => setSelectedClassId(classroom.id)}
               >
@@ -278,13 +261,15 @@ export function TeacherClassesPage() {
                     {getTeacherAttentionLabel(attentionLevel)}
                   </span>
                 </div>
-                <p>{classroom.focusLabel}</p>
+                <p className="compact-copy compact-copy--two-line" title={classroom.focusLabel}>
+                  {classroom.focusLabel}
+                </p>
               </button>
             );
           })}
         </div>
 
-        <article className="surface-card management-detail-card">
+        <article className="surface-card management-detail-card management-detail-card--compact">
           {selectedClass ? (
             <div className="page-stack">
               <div className="row-between">
@@ -315,15 +300,15 @@ export function TeacherClassesPage() {
               </label>
 
               <div className="card-grid card-grid--three">
-                <article className="surface-card stat-card">
+                <article className="surface-card stat-card stat-card--compact">
                   <span>学生人数</span>
                   <strong>{selectedClass.studentCount}</strong>
                 </article>
-                <article className="surface-card stat-card">
+                <article className="surface-card stat-card stat-card--compact">
                   <span>三关完成率</span>
                   <strong>{selectedClass.completedRate}%</strong>
                 </article>
-                <article className="surface-card stat-card">
+                <article className="surface-card stat-card stat-card--compact">
                   <span>考试完成率</span>
                   <strong>{selectedClass.examCompletionRate}%</strong>
                 </article>
@@ -334,11 +319,13 @@ export function TeacherClassesPage() {
                 <div className="page-stack page-stack--compact">
                   {selectedClassStudents.length > 0 ? (
                     selectedClassStudents.slice(0, 5).map((student) => (
-                      <article key={student.id} className="teacher-analysis-card">
+                      <article key={student.id} className="teacher-analysis-card teacher-analysis-card--compact">
                         <div className="row-between">
                           <div>
                             <strong>{student.name}</strong>
-                            <p>{student.weakSpot}</p>
+                            <p className="compact-copy compact-copy--two-line" title={student.weakSpot}>
+                              {student.weakSpot}
+                            </p>
                           </div>
                           <Link className="ghost-button link-button" to={`/teacher/students/${student.id}`}>
                             查看详情
@@ -349,7 +336,7 @@ export function TeacherClassesPage() {
                   ) : (
                     <article className="feedback-box">
                       <strong>当前没有班级学生预览</strong>
-                      <p>接入真实班级后，这里会自动展示本班学生的当前学习状态。</p>
+                      <p>班级与学生同步完成后，这里会自动展示本班学生的学习状态。</p>
                     </article>
                   )}
                 </div>

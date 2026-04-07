@@ -1,14 +1,7 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../services/http";
 
 export type EditorStatus = "clean" | "dirty" | "saved" | "reset" | "sync_error";
-
-interface PersistedEditableState<T> {
-  savedData: T;
-  baselineData: T;
-  lastSavedAt: string;
-  hasStoredState: boolean;
-}
 
 interface UseEditableAdminResourceOptions<T> {
   storageKey: string;
@@ -24,73 +17,6 @@ function cloneData<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
-function loadPersistedEditableState<T>(
-  storageKey: string,
-  fallbackData: T,
-): PersistedEditableState<T> {
-  const fallbackClone = cloneData(fallbackData);
-
-  if (typeof window === "undefined") {
-    return {
-      savedData: fallbackClone,
-      baselineData: cloneData(fallbackData),
-      lastSavedAt: "",
-      hasStoredState: false,
-    };
-  }
-
-  try {
-    const raw = window.localStorage.getItem(storageKey);
-
-    if (!raw) {
-      return {
-        savedData: fallbackClone,
-        baselineData: cloneData(fallbackData),
-        lastSavedAt: "",
-        hasStoredState: false,
-      };
-    }
-
-    const parsed = JSON.parse(raw) as {
-      savedData?: T;
-      baselineData?: T;
-      lastSavedAt?: string;
-    };
-
-    return {
-      savedData: cloneData(parsed.savedData ?? fallbackData),
-      baselineData: cloneData(parsed.baselineData ?? fallbackData),
-      lastSavedAt: parsed.lastSavedAt ?? "",
-      hasStoredState: true,
-    };
-  } catch {
-    return {
-      savedData: fallbackClone,
-      baselineData: cloneData(fallbackData),
-      lastSavedAt: "",
-      hasStoredState: false,
-    };
-  }
-}
-
-function persistEditableState<T>(
-  storageKey: string,
-  payload: Omit<PersistedEditableState<T>, "hasStoredState">,
-) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(
-    storageKey,
-    JSON.stringify({
-      savedData: payload.savedData,
-      baselineData: payload.baselineData,
-      lastSavedAt: payload.lastSavedAt,
-    }),
-  );
-}
-
 function formatSavedAt() {
   return new Intl.DateTimeFormat("zh-CN", {
     month: "2-digit",
@@ -101,25 +27,21 @@ function formatSavedAt() {
 }
 
 export function useEditableAdminResource<T>({
-  storageKey,
+  storageKey: _storageKey,
   fallbackData,
   enabled,
   fetcher,
   saveHandler,
   dependencies = [],
-  fallbackMessage = "暂时无法获取最新配置，当前继续使用示例内容。",
+  fallbackMessage = "暂时无法获取最新配置，请稍后重试。",
 }: UseEditableAdminResourceOptions<T>) {
-  const initialStateRef = useRef(loadPersistedEditableState(storageKey, fallbackData));
-  const [draftData, setDraftData] = useState<T>(initialStateRef.current.savedData);
-  const [savedData, setSavedData] = useState<T>(initialStateRef.current.savedData);
-  const [baselineData, setBaselineData] = useState<T>(initialStateRef.current.baselineData);
-  const [lastSavedAt, setLastSavedAt] = useState(initialStateRef.current.lastSavedAt);
-  const [status, setStatus] = useState<EditorStatus>(
-    initialStateRef.current.hasStoredState && initialStateRef.current.lastSavedAt
-      ? "saved"
-      : "clean",
-  );
-  const [source, setSource] = useState<"api" | "mock">(enabled ? "api" : "mock");
+  const initialDataRef = useRef(cloneData(fallbackData));
+  const [draftData, setDraftData] = useState<T>(initialDataRef.current);
+  const [savedData, setSavedData] = useState<T>(initialDataRef.current);
+  const [baselineData, setBaselineData] = useState<T>(initialDataRef.current);
+  const [lastSavedAt, setLastSavedAt] = useState("");
+  const [status, setStatus] = useState<EditorStatus>("clean");
+  const [source, setSource] = useState<"api" | "mock">("api");
   const [syncError, setSyncError] = useState("");
   const [isHydrating, setIsHydrating] = useState(false);
   const fetcherRef = useRef(fetcher);
@@ -127,15 +49,12 @@ export function useEditableAdminResource<T>({
   const draftDataRef = useRef(draftData);
   const savedDataRef = useRef(savedData);
   const baselineDataRef = useRef(baselineData);
-  const lastSavedAtRef = useRef(lastSavedAt);
-  const hasStoredStateRef = useRef(initialStateRef.current.hasStoredState);
 
   fetcherRef.current = fetcher;
   saveHandlerRef.current = saveHandler;
   draftDataRef.current = draftData;
   savedDataRef.current = savedData;
   baselineDataRef.current = baselineData;
-  lastSavedAtRef.current = lastSavedAt;
 
   const draftSignature = useMemo(() => JSON.stringify(draftData), [draftData]);
   const savedSignature = useMemo(() => JSON.stringify(savedData), [savedData]);
@@ -154,8 +73,8 @@ export function useEditableAdminResource<T>({
     let cancelled = false;
 
     if (!enabled) {
-      setSource("mock");
-      setSyncError("");
+      setSource("api");
+      setSyncError("当前会话未准备好，暂时不能同步后端配置。");
       setIsHydrating(false);
       return () => {
         cancelled = true;
@@ -175,20 +94,9 @@ export function useEditableAdminResource<T>({
         const clonedResult = cloneData(result);
         setBaselineData(clonedResult);
 
-        if (!hasStoredStateRef.current) {
+        if (!hasUnsavedChanges) {
           setDraftData(clonedResult);
           setSavedData(clonedResult);
-        }
-
-        persistEditableState(storageKey, {
-          savedData: hasStoredStateRef.current ? savedDataRef.current : clonedResult,
-          baselineData: clonedResult,
-          lastSavedAt: lastSavedAtRef.current,
-        });
-        hasStoredStateRef.current = true;
-        setSource("api");
-
-        if (!hasUnsavedChanges) {
           setStatus("clean");
         }
       })
@@ -197,7 +105,6 @@ export function useEditableAdminResource<T>({
           return;
         }
 
-        setSource("mock");
         setSyncError(
           requestError instanceof ApiError ? requestError.message : fallbackMessage,
         );
@@ -215,7 +122,7 @@ export function useEditableAdminResource<T>({
     return () => {
       cancelled = true;
     };
-  }, [enabled, fallbackMessage, hasUnsavedChanges, storageKey, ...dependencies]);
+  }, [enabled, fallbackMessage, hasUnsavedChanges, ...dependencies]);
 
   const updateDraft = useCallback(
     (updater: T | ((current: T) => T)) => {
@@ -248,13 +155,6 @@ export function useEditableAdminResource<T>({
         setBaselineData(nextRemoteData);
         setLastSavedAt(savedAt);
         setStatus("saved");
-        setSource("api");
-        persistEditableState(storageKey, {
-          savedData: nextRemoteData,
-          baselineData: nextRemoteData,
-          lastSavedAt: savedAt,
-        });
-        hasStoredStateRef.current = true;
       } catch (requestError) {
         setStatus("sync_error");
         setSyncError(
@@ -272,16 +172,12 @@ export function useEditableAdminResource<T>({
     const nextSavedData = cloneData(draftDataRef.current);
     const savedAt = formatSavedAt();
 
+    setDraftData(nextSavedData);
     setSavedData(nextSavedData);
+    setBaselineData(nextSavedData);
     setLastSavedAt(savedAt);
     setStatus("saved");
-    persistEditableState(storageKey, {
-      savedData: nextSavedData,
-      baselineData: baselineDataRef.current,
-      lastSavedAt: savedAt,
-    });
-    hasStoredStateRef.current = true;
-  }, [storageKey]);
+  }, []);
 
   const resetChanges = useCallback(() => {
     setDraftData(cloneData(savedDataRef.current));
@@ -296,13 +192,7 @@ export function useEditableAdminResource<T>({
     setSavedData(nextBaseline);
     setStatus("reset");
     setSyncError("");
-    persistEditableState(storageKey, {
-      savedData: nextBaseline,
-      baselineData: baselineDataRef.current,
-      lastSavedAt: lastSavedAtRef.current,
-    });
-    hasStoredStateRef.current = true;
-  }, [storageKey]);
+  }, []);
 
   return {
     draftData,

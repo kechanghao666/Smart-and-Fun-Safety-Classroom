@@ -1,5 +1,6 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import { requireRole } from "../middleware/auth";
+import { getExamQuestionsFromDb } from "../services/courseContentService";
 import {
   buildStudentProgress,
   completeLevel,
@@ -26,6 +27,14 @@ studentRouter.use(requireRole("student"));
 studentRouter.get("/progress", async (request, response, next) => {
   try {
     response.json(await buildStudentProgress(request.authUser!.id));
+  } catch (error) {
+    next(error);
+  }
+});
+
+studentRouter.get("/exam/questions", async (_request, response, next) => {
+  try {
+    response.json(await getExamQuestionsFromDb());
   } catch (error) {
     next(error);
   }

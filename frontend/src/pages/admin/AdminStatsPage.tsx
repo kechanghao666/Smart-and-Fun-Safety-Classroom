@@ -1,5 +1,4 @@
 ﻿import { AdminEditorStatusBar } from "../../components/AdminEditorStatusBar";
-import { adminStatMetrics, teacherClassSummaries } from "../../data/mockData";
 import {
   adminGrowthConfigFallback,
   fetchAdminGrowthConfig,
@@ -16,8 +15,8 @@ import { useEditableAdminResource } from "../../utils/useEditableAdminResource";
 import { useApiResource } from "../../utils/useApiResource";
 
 const fallbackStats = {
-  metrics: adminStatMetrics,
-  classSummaries: teacherClassSummaries,
+  metrics: [],
+  classSummaries: [],
 };
 
 function toNumber(value: string, fallback: number) {
@@ -119,8 +118,8 @@ export function AdminStatsPage() {
         </div>
       </section>
 
-      <article className="feedback-box">
-        <strong>{source === "api" ? "统计数据已同步更新" : "统计数据当前展示示例内容"}</strong>
+      <article className="feedback-box feedback-box--compact">
+        <strong>{error ? "统计数据同步失败" : "统计数据已从后端加载"}</strong>
         <p>
           {isLoading
             ? "正在同步统计数据..."
@@ -132,14 +131,14 @@ export function AdminStatsPage() {
         {data.metrics.map((metric) => (
           <article
             key={metric.id}
-            className={`surface-card report-card report-card--${metric.accent}`}
+            className={`surface-card report-card report-card--${metric.accent} report-card--compact`}
           >
             <span className="section-block__eyebrow">{metric.label}</span>
             <h2>{metric.value}</h2>
             <p>{metric.trend}</p>
           </article>
         ))}
-        <article className="surface-card stat-card admin-summary-card">
+        <article className="surface-card stat-card stat-card--compact admin-summary-card">
           <span>跟踪班级</span>
           <strong>{trackedClassCount}</strong>
           <p>{topMetric ? `当前优先关注：${topMetric.label}` : "当前暂无统计指标。"}</p>
@@ -147,15 +146,15 @@ export function AdminStatsPage() {
       </section>
 
       <section className="card-grid card-grid--two">
-        <article className="surface-card admin-preview-card">
+        <article className="surface-card admin-preview-card admin-preview-card--compact">
           <span className="section-block__eyebrow">运营观察</span>
           <h2>当前最值得跟进的两个点</h2>
           <div className="page-stack page-stack--compact">
-            <article className="feedback-box">
+            <article className="feedback-box feedback-box--compact">
               <strong>完成率最高班级</strong>
               <p>{topClass ? `${topClass.name}，三关完成率 ${topClass.completedRate}%。` : "当前暂无班级统计数据。"}</p>
             </article>
-            <article className="feedback-box">
+            <article className="feedback-box feedback-box--compact">
               <strong>考试完成率偏低班级</strong>
               <p>
                 {watchClass
@@ -166,7 +165,7 @@ export function AdminStatsPage() {
           </div>
         </article>
 
-        <article className="surface-card admin-preview-card">
+        <article className="surface-card admin-preview-card admin-preview-card--compact">
           <span className="section-block__eyebrow">指标说明</span>
           <h2>当前统计页展示口径</h2>
           <ul className="plain-list">
@@ -187,7 +186,7 @@ export function AdminStatsPage() {
         </div>
         <div className="card-grid card-grid--three">
           {reminderItems.map((item) => (
-            <article key={item.id} className="surface-card admin-reminder-card">
+            <article key={item.id} className="surface-card admin-reminder-card admin-reminder-card--compact">
               <strong>{item.title}</strong>
               <p>{item.detail}</p>
             </article>
@@ -206,7 +205,7 @@ export function AdminStatsPage() {
         {data.classSummaries.length > 0 ? (
           <div className="trend-bars">
             {data.classSummaries.map((classroom) => (
-              <article key={classroom.id} className="trend-bars__item">
+              <article key={classroom.id} className="trend-bars__item trend-bars__item--compact">
                 <div className="row-between">
                   <div>
                     <strong>{classroom.name}</strong>

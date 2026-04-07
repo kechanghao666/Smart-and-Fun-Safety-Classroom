@@ -1,4 +1,5 @@
-﻿import type {
+import type {
+  ExamQuestion,
   LevelId,
   LevelResult,
   StudentAiReportResponse,
@@ -47,6 +48,12 @@ export function saveStudentProfile(token: string, payload: StudentProfile) {
 
 export function fetchStudentProgress(token: string) {
   return requestJson<StudentProgress>("/api/student/progress", {
+    token,
+  });
+}
+
+export function fetchStudentExamQuestions(token: string) {
+  return requestJson<ExamQuestion[]>("/api/student/exam/questions", {
     token,
   });
 }

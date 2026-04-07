@@ -320,7 +320,7 @@ function WorkspaceHeader({
 
       <div className="workspace-header__actions">
         <span className="surface-tag">
-          {state.authSource === "api" ? "在线同步" : "演示体验"}
+          在线同步
         </span>
         <button type="button" className="ghost-button" onClick={onSignOut}>
           退出登录
@@ -339,10 +339,10 @@ export function AppShell({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { replaceProgress, resetDemo, signOut, state } = useAppState();
+  const { replaceProgress, signOut, state } = useAppState();
   const navItems = navByRole[role];
   const canSyncStudentProgress =
-    role === "student" && state.authSource === "api" && Boolean(state.authToken);
+    role === "student" && Boolean(state.authToken);
   const syncRequestRef = useRef(0);
   const lastVisitedRouteRef = useRef(state.progress.lastVisitedRoute);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -537,7 +537,7 @@ export function AppShell({
             <div className="student-shell__status">
               <div className="student-shell__status-card">
                 <span className="surface-tag">
-                  {state.authSource === "api" ? "在线同步" : "演示体验"}
+                  在线同步
                 </span>
                 <strong>{state.studentProfile?.nickname ?? "待完善学生资料"}</strong>
                 <p>
@@ -557,12 +557,6 @@ export function AppShell({
                     disabled={isSyncing}
                   >
                     {isSyncing ? "同步中..." : "刷新进度"}
-                  </button>
-                ) : null}
-
-                {state.authSource === "mock" ? (
-                  <button type="button" className="ghost-button" onClick={resetDemo}>
-                    重新开始学习
                   </button>
                 ) : null}
 
@@ -686,7 +680,7 @@ export function AppShell({
           <div className="sidebar-role-card">
             <span>当前身份</span>
             <strong>{roleNameMap[role]}</strong>
-            <p>{state.authSource === "api" ? "当前为在线同步" : "当前为演示体验"}</p>
+            <p>当前为在线同步</p>
           </div>
 
           <button type="button" className="ghost-button" onClick={handleSignOut}>

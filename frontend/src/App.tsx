@@ -32,7 +32,7 @@ import type { UserRole } from "./types";
 function RootRedirect() {
   const { state } = useAppState();
 
-  if (!state.role) {
+  if (!state.role || !state.authToken) {
     return <Navigate to="/login" replace />;
   }
 
@@ -52,7 +52,7 @@ function RoleGate({
 }) {
   const { state } = useAppState();
 
-  if (!state.role) {
+  if (!state.role || !state.authToken) {
     return <Navigate to="/login" replace />;
   }
 
@@ -66,7 +66,7 @@ function RoleGate({
 function StudentSetupGate({ children }: { children: ReactNode }) {
   const { state } = useAppState();
 
-  if (!state.role) {
+  if (!state.role || !state.authToken) {
     return <Navigate to="/login" replace />;
   }
 
@@ -84,7 +84,7 @@ function StudentSetupGate({ children }: { children: ReactNode }) {
 function StudentReadyGate({ children }: { children: ReactNode }) {
   const { state } = useAppState();
 
-  if (!state.role) {
+  if (!state.role || !state.authToken) {
     return <Navigate to="/login" replace />;
   }
 

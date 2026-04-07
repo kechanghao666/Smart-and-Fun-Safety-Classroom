@@ -1,5 +1,4 @@
 ﻿import { Link } from "react-router-dom";
-import { adminModules } from "../../data/mockData";
 import { fetchAdminModules } from "../../services/admin";
 import { useAppState } from "../../state/AppState";
 import { useApiResource } from "../../utils/useApiResource";
@@ -18,7 +17,7 @@ export function AdminDashboardPage() {
   const canUseApi = state.authSource === "api" && Boolean(state.authToken);
   const { data, error, isLoading, source } = useApiResource({
     enabled: canUseApi,
-    fallbackData: adminModules,
+    fallbackData: [],
     fetcher: () => fetchAdminModules(state.authToken ?? ""),
     dependencies: [state.authToken],
   });
@@ -39,8 +38,8 @@ export function AdminDashboardPage() {
         </div>
       </section>
 
-      <article className="feedback-box">
-        <strong>{source === "api" ? "后台模块概览已同步更新" : "后台模块概览当前展示示例内容"}</strong>
+      <article className="feedback-box feedback-box--compact">
+        <strong>{error ? "后台模块同步失败" : "后台模块已从后端加载"}</strong>
         <p>
           {isLoading
             ? "正在同步后台模块..."
@@ -49,22 +48,22 @@ export function AdminDashboardPage() {
       </article>
 
       <section className="card-grid card-grid--four">
-        <article className="surface-card stat-card admin-summary-card">
+        <article className="surface-card stat-card stat-card--compact admin-summary-card">
           <span>模块总数</span>
           <strong>{data.length}</strong>
           <p>当前后台统一承接主题、关卡、题库、AI 文案、用户和统计六个模块。</p>
         </article>
-        <article className="surface-card stat-card admin-summary-card">
+        <article className="surface-card stat-card stat-card--compact admin-summary-card">
           <span>内容配置模块</span>
           <strong>{contentModuleCount}</strong>
           <p>主题、关卡、题库和 AI 文案都集中在这一组模块里。</p>
         </article>
-        <article className="surface-card stat-card admin-summary-card">
+        <article className="surface-card stat-card stat-card--compact admin-summary-card">
           <span>运营管理模块</span>
           <strong>{operationModuleCount}</strong>
           <p>用户管理与数据统计共同支撑平台运营观察与账号维护。</p>
         </article>
-        <article className="surface-card stat-card admin-summary-card">
+        <article className="surface-card stat-card stat-card--compact admin-summary-card">
           <span>当前优先模块</span>
           <strong>{topPriorityModule?.title ?? "--"}</strong>
           <p>{topPriorityModule?.description ?? "当前暂无模块数据。"}</p>
@@ -73,7 +72,7 @@ export function AdminDashboardPage() {
 
       <section className="card-grid card-grid--three">
         {data.map((module) => (
-          <article key={module.id} className="surface-card module-link-card">
+          <article key={module.id} className="surface-card module-link-card module-link-card--compact">
             <span className="surface-tag">{module.status}</span>
             <h2>{module.title}</h2>
             <p>{module.description}</p>
@@ -86,11 +85,11 @@ export function AdminDashboardPage() {
       </section>
 
       <section className="card-grid card-grid--two">
-        <article className="surface-card admin-preview-card">
+        <article className="surface-card admin-preview-card admin-preview-card--compact">
           <span className="section-block__eyebrow">当前优先级</span>
           <h2>先把最影响学生闭环的后台模块收稳</h2>
           <div className="page-stack page-stack--compact">
-            <article className="feedback-box">
+            <article className="feedback-box feedback-box--compact">
               <strong>当前最高优先：{topPriorityModule?.title ?? "--"}</strong>
               <p>
                 {topPriorityModule
@@ -98,7 +97,7 @@ export function AdminDashboardPage() {
                   : "当前暂无模块数据。"}
               </p>
             </article>
-            <article className="inline-summary-card">
+            <article className="inline-summary-card inline-summary-card--compact">
               <strong>工作台状态</strong>
               <p>
                 后台首页不仅是入口页，也承担“先看哪里、先做什么、先关注什么”的总览作用。
@@ -136,7 +135,7 @@ export function AdminDashboardPage() {
 
         <div className="module-status-grid">
           {data.map((module, index) => (
-            <article key={`${module.id}-status`} className="module-status-card">
+            <article key={`${module.id}-status`} className="module-status-card module-status-card--compact">
               <div className="row-between">
                 <strong>{module.title}</strong>
                 <span className="surface-tag">步骤 {index + 1}</span>

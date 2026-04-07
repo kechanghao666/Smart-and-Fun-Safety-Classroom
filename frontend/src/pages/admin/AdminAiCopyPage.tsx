@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminEditorStatusBar } from "../../components/AdminEditorStatusBar";
-import { aiCopyTemplateItems } from "../../data/mockData";
 import { fetchAdminAiCopy, saveAdminAiCopy } from "../../services/admin";
 import { useAppState } from "../../state/AppState";
 import type { AiCopyTemplateItem } from "../../types";
@@ -17,7 +16,7 @@ export function AdminAiCopyPage() {
   const canUseApi = state.authSource === "api" && Boolean(state.authToken);
   const editor = useEditableAdminResource<AiCopyTemplateItem[]>({
     storageKey: "admin-ai-copy",
-    fallbackData: aiCopyTemplateItems,
+    fallbackData: [],
     enabled: canUseApi,
     fetcher: () => fetchAdminAiCopy(state.authToken ?? ""),
     saveHandler: (draftData, savedData) =>
@@ -96,17 +95,17 @@ export function AdminAiCopyPage() {
       />
 
       <section className="card-grid card-grid--three">
-        <article className="surface-card stat-card admin-summary-card">
+        <article className="surface-card stat-card stat-card--compact admin-summary-card">
           <span>模板总数</span>
           <strong>{templates.length}</strong>
           <p>欢迎语、关卡提示和结果卡模板都从这里统一维护。</p>
         </article>
-        <article className="surface-card stat-card admin-summary-card">
+        <article className="surface-card stat-card stat-card--compact admin-summary-card">
           <span>分类数量</span>
           <strong>{categories.length}</strong>
           <p>建议分类保持精简，避免同一场景拆成过多模板。</p>
         </article>
-        <article className="surface-card stat-card admin-summary-card">
+        <article className="surface-card stat-card stat-card--compact admin-summary-card">
           <span>欢迎 / 提示 / 总结</span>
           <strong>
             {welcomeCount} / {hintCount} / {reportCount}
@@ -132,24 +131,28 @@ export function AdminAiCopyPage() {
       </section>
 
       <section className="management-layout">
-        <div className="page-stack">
+        <div className="page-stack page-stack--compact-density">
           {filteredTemplates.length > 0 ? (
-            filteredTemplates.map((template) => (
-              <button
-                key={template.id}
-                type="button"
-                className={
-                  template.id === selectedTemplate?.id
-                    ? "management-list-card management-list-card--active"
-                    : "management-list-card"
-                }
-                onClick={() => setSelectedId(template.id)}
-              >
-                <span className="surface-tag">{template.scene}</span>
-                <h3>{template.title}</h3>
-                <p>{template.category}</p>
-              </button>
-            ))
+            <div className="management-list-panel management-list-panel--compact">
+              {filteredTemplates.map((template) => (
+                <button
+                  key={template.id}
+                  type="button"
+                  className={
+                    template.id === selectedTemplate?.id
+                      ? "management-list-card management-list-card--compact management-list-card--active"
+                      : "management-list-card management-list-card--compact"
+                  }
+                  onClick={() => setSelectedId(template.id)}
+                >
+                  <span className="surface-tag">{template.scene}</span>
+                  <h3>{template.title}</h3>
+                  <p className="compact-copy compact-copy--one-line" title={template.category}>
+                    {template.category}
+                  </p>
+                </button>
+              ))}
+            </div>
           ) : (
             <article className="surface-card empty-state-card">
               <strong>当前分类下没有模板</strong>
@@ -160,7 +163,7 @@ export function AdminAiCopyPage() {
 
         {selectedTemplate ? (
           <div className="page-stack">
-            <article className="surface-card editor-panel">
+            <article className="surface-card editor-panel editor-panel--compact">
               <span className="section-block__eyebrow">编辑文案模板</span>
               <h2>{selectedTemplate.title}</h2>
               <div className="chip-row">
@@ -213,7 +216,7 @@ export function AdminAiCopyPage() {
             </article>
 
             <section className="card-grid card-grid--two">
-              <article className="surface-card admin-preview-card admin-preview-card--ai">
+              <article className="surface-card admin-preview-card admin-preview-card--ai admin-preview-card--compact">
                 <span className="section-block__eyebrow">预览区</span>
                 <h3>{previewTitleMap[selectedTemplate.scene] ?? "AI 文案预览"}</h3>
                 <article className="chat-bubble chat-bubble--assistant">
@@ -222,7 +225,7 @@ export function AdminAiCopyPage() {
               </article>
 
               <div className="page-stack">
-                <article className="surface-card admin-preview-card">
+                <article className="surface-card admin-preview-card admin-preview-card--compact">
                   <span className="section-block__eyebrow">模板策略提醒</span>
                   <ul className="plain-list">
                     <li>欢迎语要短、友好、明确告诉学生先做什么。</li>
@@ -231,7 +234,7 @@ export function AdminAiCopyPage() {
                   </ul>
                 </article>
 
-                <article className="surface-card admin-preview-card">
+                <article className="surface-card admin-preview-card admin-preview-card--compact">
                   <span className="section-block__eyebrow">数据说明</span>
                   <p>当前保存会先写入本地配置版本，后续接入服务端后可直接切换为统一模板管理。</p>
                 </article>

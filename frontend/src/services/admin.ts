@@ -1,4 +1,3 @@
-﻿import { adminUserSummaries, aiCopyTemplateItems, levelManagementItems, questionBankManagementItems, themeManagementItems } from "../data/mockData";
 import type {
   AdminModuleCard,
   AdminStatMetric,
@@ -305,9 +304,3 @@ export const adminGrowthConfigFallback: GrowthConfigItem = {
     },
   ],
 };
-
-export const adminThemeFallback = themeManagementItems;
-export const adminLevelFallback = levelManagementItems;
-export const adminQuestionBankFallback = questionBankManagementItems;
-export const adminAiCopyFallback = aiCopyTemplateItems;
-export const adminUsersFallback = adminUserSummaries;

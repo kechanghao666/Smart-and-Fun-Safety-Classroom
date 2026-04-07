@@ -1,11 +1,9 @@
 import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
-  demoAccounts,
-  teacherClassSummaries,
-  teacherStudents,
-} from "../../data/mockData";
-import { fetchTeacherDashboard } from "../../services/teacher";
+  fetchTeacherDashboard,
+  type TeacherDashboardResponse,
+} from "../../services/teacher";
 import { useAppState } from "../../state/AppState";
 import { useApiResource } from "../../utils/useApiResource";
 import { usePersistedState } from "../../utils/usePersistedState";
@@ -15,19 +13,20 @@ import {
   getTeacherAttentionLevel,
 } from "../../utils/teacherInsights";
 
-const fallbackDashboard = {
-  classSummaries: teacherClassSummaries,
-  students: teacherStudents,
+const fallbackDashboard: TeacherDashboardResponse = {
+  classSummaries: [],
+  students: [],
 };
 
 export function TeacherDashboardPage() {
   const { state } = useAppState();
-  const canUseApi = state.authSource === "api" && Boolean(state.authToken);
-  const { data, error, isLoading, source } = useApiResource({
+  const canUseApi = Boolean(state.authToken);
+  const { data, error, isLoading } = useApiResource({
     enabled: canUseApi,
     fallbackData: fallbackDashboard,
     fetcher: () => fetchTeacherDashboard(state.authToken ?? ""),
     dependencies: [state.authToken],
+    fallbackMessage: "教师端总览暂时无法同步，请稍后重试。",
   });
   const [selectedClassId, setSelectedClassId] = usePersistedState<string>(
     "teacher-dashboard-current-class",
@@ -73,11 +72,7 @@ export function TeacherDashboardPage() {
     filteredStudents,
     filteredClassSummaries,
   );
-  const teacherDisplayName =
-    demoAccounts.find(
-      (account) =>
-        account.account === state.sessionAccount && account.role === "teacher",
-    )?.displayName ?? "当前授课教师";
+  const teacherDisplayName = state.sessionAccount ?? "当前教师账号";
   const classLabel = selectedClass ? selectedClass.name : "全部班级";
   const completedRate =
     filteredStudents.length > 0
@@ -106,8 +101,8 @@ export function TeacherDashboardPage() {
           <h1>班级学习总览与近期关注提醒</h1>
           <p>优先展示班级学习概览、三关完成率、考试完成率和近期异常提醒。</p>
           <div className="chip-row">
-            <span className="surface-tag">教师姓名：{teacherDisplayName}</span>
-            <span className="surface-tag">当前班级：{classLabel}</span>
+            <span className="surface-tag">教师账号：{teacherDisplayName}</span>
+            <span className="surface-tag">当前范围：{classLabel}</span>
           </div>
         </div>
         <div className="hero-banner__actions hero-banner__actions--stacked">
@@ -136,35 +131,35 @@ export function TeacherDashboardPage() {
         </div>
       </section>
 
-      <article className="feedback-box">
-        <strong>{source === "api" ? "当前数据已同步更新" : "当前展示示例内容"}</strong>
+      <article className="feedback-box feedback-box--compact">
+        <strong>{error ? "教师端数据同步失败" : "教师端数据已从后端加载"}</strong>
         <p>
           {isLoading
             ? "正在同步教师端数据..."
-            : error || "教师首页会根据当前数据来源自动更新班级总览。"}
+            : error || "教师首页会根据真实后端数据更新班级总览和关注提醒。"}
         </p>
       </article>
 
       <section className="card-grid card-grid--four">
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>当前查看</span>
           <strong>{classLabel}</strong>
           <p>用班级选择器快速切换范围，查看不同班级的学习推进情况。</p>
         </article>
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>三关完成率</span>
           <strong>{completedRate}%</strong>
           <p>帮助教师快速判断学生是否已经完成主题主链路学习。</p>
         </article>
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>考试完成率</span>
           <strong>{examRate}%</strong>
           <p>用于观察学生是否已经进入考试和结果反馈阶段。</p>
         </article>
-        <article className="surface-card stat-card">
+        <article className="surface-card stat-card stat-card--compact">
           <span>需重点跟进</span>
           <strong>{urgentCount}</strong>
-          <p>优先关注未形成完整闭环或薄弱点仍较高的学生。</p>
+          <p>优先关注尚未形成完整闭环或弱项仍较高的学生。</p>
         </article>
       </section>
 
@@ -195,7 +190,7 @@ export function TeacherDashboardPage() {
           ) : (
             <article className="feedback-box empty-state-card">
               <strong>当前没有班级概览数据</strong>
-              <p>等待班级统计更新后再继续查看，当前也可先参考总览结构。</p>
+              <p>等待班级统计同步完成后再继续查看。</p>
             </article>
           )}
         </article>
@@ -209,7 +204,7 @@ export function TeacherDashboardPage() {
                 const attentionLevel = getTeacherAttentionLevel(student);
 
                 return (
-                  <article key={student.id} className="teacher-analysis-card">
+                  <article key={student.id} className="teacher-analysis-card teacher-analysis-card--compact">
                     <div className="row-between">
                       <div>
                         <strong>{student.name}</strong>
@@ -221,7 +216,9 @@ export function TeacherDashboardPage() {
                         {getTeacherAttentionLabel(attentionLevel)}
                       </span>
                     </div>
-                    <p>{student.weakSpot}</p>
+                    <p className="compact-copy compact-copy--two-line" title={student.weakSpot}>
+                      {student.weakSpot}
+                    </p>
                     <div className="row-between">
                       <span className="inline-note">
                         三关 {student.completedLevels} / 3 · 考试 {student.examStatus}
@@ -240,7 +237,7 @@ export function TeacherDashboardPage() {
           ) : (
             <article className="feedback-box empty-state-card">
               <strong>当前没有异常学生</strong>
-              <p>可以优先查看班级整体趋势，安排下一轮课堂复习重点。</p>
+              <p>可以先查看班级整体趋势，安排下一轮课堂复盘重点。</p>
             </article>
           )}
         </article>
@@ -250,12 +247,12 @@ export function TeacherDashboardPage() {
         <article className="surface-card">
           <span className="section-block__eyebrow">风险概览</span>
           <h2>当前最需要补课支持的班级</h2>
-          <article className="feedback-box">
+          <article className="feedback-box feedback-box--compact">
             <strong>{classRiskSummary?.name ?? "暂无班级数据"}</strong>
             <p>
               {classRiskSummary
                 ? `${classRiskSummary.focusLabel}，建议优先围绕三关未完成和考试未完成学生安排课后复习。`
-                    : "等待班级数据更新后，这里会自动汇总重点支持对象。"}
+                : "等待班级数据更新后，这里会自动汇总重点支持对象。"}
             </p>
           </article>
         </article>
@@ -265,7 +262,7 @@ export function TeacherDashboardPage() {
           <h2>本轮最适合立刻展开的三件事</h2>
           <div className="card-grid card-grid--three">
             {dashboardActions.map((item) => (
-              <article key={item.id} className="teacher-action-card">
+              <article key={item.id} className="teacher-action-card teacher-action-card--compact">
                 <strong>{item.title}</strong>
                 <p>{item.detail}</p>
               </article>
