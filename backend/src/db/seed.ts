@@ -325,8 +325,13 @@ async function seedAdminLevels(db: Database) {
             ...levelOneManagementDefaults,
           }
         : item;
-    const existing = await db.get<{ id: string }>(
-      "SELECT id FROM admin_levels WHERE id = ?",
+    const existing = await db.get<{
+      id: string;
+      scene_reference_label: string | null;
+      observation_scene_json: string | null;
+      task_steps_json: string | null;
+    }>(
+      "SELECT id, scene_reference_label, observation_scene_json, task_steps_json FROM admin_levels WHERE id = ?",
       enrichedItem.id,
     );
 
@@ -361,6 +366,36 @@ async function seedAdminLevels(db: Database) {
         enrichedItem.midpointCopy ?? "",
         enrichedItem.completionCopy ?? "",
         new Date().toISOString(),
+      );
+      continue;
+    }
+
+    if (
+      enrichedItem.id === "level-1" &&
+      (!existing.observation_scene_json ||
+        existing.observation_scene_json === "{}" ||
+        !existing.task_steps_json ||
+        existing.task_steps_json === "[]")
+    ) {
+      await db.run(
+        `
+          UPDATE admin_levels
+          SET
+            scene_reference_label = ?,
+            observation_scene_json = ?,
+            task_steps_json = ?,
+            midpoint_copy = ?,
+            completion_copy = ?,
+            updated_at = ?
+          WHERE id = ?
+        `,
+        enrichedItem.observationScene?.referenceLabel ?? "",
+        JSON.stringify(enrichedItem.observationScene ?? {}),
+        JSON.stringify(enrichedItem.taskSteps ?? []),
+        enrichedItem.midpointCopy ?? "",
+        enrichedItem.completionCopy ?? "",
+        new Date().toISOString(),
+        enrichedItem.id,
       );
     }
   }

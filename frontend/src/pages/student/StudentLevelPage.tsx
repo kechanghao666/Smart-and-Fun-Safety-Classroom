@@ -2,8 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { StudentAdventureHero } from "../../components/student/StudentAdventureHero";
 import { StudentMascotBubble } from "../../components/student/StudentMascotBubble";
-import levelOneStreetScene from "../../assets/levels/level-1-city-street.svg";
 import { levelOneObservationConfig } from "../../data/levelOneObservation";
+import {
+  levelOneDecisionScene,
+  levelOnePhotoCards,
+  levelOneStickerScene,
+} from "../../data/levelOnePhotoChallenge";
 import {
   levelTwoRouteSteps,
   type LevelTwoRoutePhotoStep,
@@ -217,11 +221,6 @@ export function StudentLevelPage() {
   const observationConfig = currentLevel?.observationConfig ?? levelOneObservationConfig;
   const observationScene = observationConfig.observationScene;
   const observationSteps = observationConfig.taskSteps;
-  const observationTargets = [
-    ...observationScene.targets,
-    ...observationScene.dangerMarkers,
-  ] as ObservationSceneTarget[];
-
   const [syncError, setSyncError] = useState("");
   const [isFinishing, setIsFinishing] = useState(false);
   const [observationStepIndex, setObservationStepIndex] = useState(0);
@@ -331,6 +330,16 @@ export function StudentLevelPage() {
   const routeStep = routePhotoSteps[routeIndex] ?? routePhotoSteps[0];
   const lastRouteChoice = routeChoices[routeChoices.length - 1] ?? null;
   const routeShieldStates = [0, 1, 2].map((index) => index < routeSafety);
+  const shuffledLevelOnePhotoCards = useMemo(() => {
+    const cards = [...levelOnePhotoCards];
+
+    for (let index = cards.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(Math.random() * (index + 1));
+      [cards[index], cards[swapIndex]] = [cards[swapIndex], cards[index]];
+    }
+
+    return cards;
+  }, []);
   const recentGuardianSuccess =
     guardianScenes.find((scene) => scene.id === recentGuardianSuccessId) ?? null;
 
@@ -485,6 +494,7 @@ export function StudentLevelPage() {
     setObservationStepIndex((current) => Math.min(current + 1, observationSteps.length - 1));
     setSelectedObservationChoiceId(null);
     setSelectedStickerId(null);
+    setActiveObservationTargetId(null);
   }
 
   function recordObservationError(step: ObservationTaskStep) {
@@ -541,6 +551,26 @@ export function StudentLevelPage() {
 
     if (activeObservationStep.targetIds.includes(targetId)) {
       completeObservationStep(activeObservationStep, targetId);
+      return;
+    }
+
+    recordObservationError(activeObservationStep);
+  }
+
+  function handleObservationPhotoCardSelect(taskId: string) {
+    if (
+      resolvedLevelId !== "level-1" ||
+      !activeObservationStep ||
+      (activeObservationStep.interactionType !== "hotspot" &&
+        activeObservationStep.interactionType !== "danger_mark")
+    ) {
+      return;
+    }
+
+    setActiveObservationTargetId(taskId);
+
+    if (activeObservationStep.id === taskId) {
+      completeObservationStep(activeObservationStep, taskId);
       return;
     }
 
@@ -895,14 +925,66 @@ export function StudentLevelPage() {
               <span className="surface-tag">{observationScene.referenceLabel}</span>
             </div>
 
-            <div className="student-observe-scene-board">
+            {activeObservationStep.interactionType === "hotspot" ||
+            activeObservationStep.interactionType === "danger_mark" ? (
+              <div className="student-photo-choice-grid">
+                {shuffledLevelOnePhotoCards.map((card) => {
+                  const isCurrent = activeObservationStep.id === card.taskId;
+                  const isDone = completedObservationSteps.includes(card.taskId);
+                  const isSelected = activeObservationTargetId === card.taskId;
+
+                  return (
+                    <button
+                      key={card.id}
+                      type="button"
+                      className={[
+                        "student-photo-choice-card",
+                        isDone ? "student-photo-choice-card--correct" : "",
+                        isCurrent || isSelected ? "student-photo-choice-card--selected" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      onClick={() => handleObservationPhotoCardSelect(card.taskId)}
+                    >
+                      <div className="student-photo-choice-card__frame">
+                        <img
+                          src={card.imageUrl}
+                          alt={card.label}
+                          className="student-photo-choice-card__image"
+                        />
+                      </div>
+                      <div className="student-photo-choice-card__content">
+                        <p>{card.shortHint}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : activeObservationStep.interactionType === "state_judge" ? (
+              <div className="student-observe-photo-stage">
+                <div className="student-observe-photo-stage__frame">
+                  <img
+                    src={levelOneDecisionScene.imageUrl}
+                    alt={levelOneDecisionScene.title}
+                    className="student-observe-photo-stage__image"
+                  />
+                </div>
+                <div className="student-observe-photo-stage__copy">
+                  <span>真实路口照片</span>
+                  <strong>{levelOneDecisionScene.title}</strong>
+                  <p>{levelOneDecisionScene.helperText}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="student-observe-photo-stage">
+                <div className="student-observe-photo-board">
               <img
-                src={levelOneStreetScene}
+                src={levelOneStickerScene.imageUrl}
                 alt="城市交通观察场景"
-                className="student-observe-scene-board__image"
+                className="student-observe-photo-board__image"
               />
-              <div className="student-observe-scene-board__targets">
-                {observationTargets.map((target) => {
+              <div className="student-observe-photo-board__targets">
+                {levelOneStickerScene.targets.map((target) => {
                   const isActive = activeObservationStep.targetIds.includes(target.id);
                   const isDone = hasTargetBeenSolved(
                     target.id,
@@ -933,16 +1015,11 @@ export function StudentLevelPage() {
                       }}
                       onClick={() => handleObservationTargetSelect(target.id)}
                       onDragOver={(event) => {
-                        if (activeObservationStep.interactionType === "drag_marker") {
-                          event.preventDefault();
-                        }
+                        event.preventDefault();
                       }}
                       onDrop={(event) => {
                         event.preventDefault();
-                        if (
-                          activeObservationStep.interactionType === "drag_marker" &&
-                          selectedStickerId
-                        ) {
+                        if (selectedStickerId) {
                           handleObservationTargetSelect(target.id);
                         }
                       }}
@@ -953,7 +1030,14 @@ export function StudentLevelPage() {
                   );
                 })}
               </div>
-            </div>
+                </div>
+                <div className="student-observe-photo-stage__copy">
+                  <span>真实道路照片</span>
+                  <strong>{levelOneStickerScene.title}</strong>
+                  <p>{levelOneStickerScene.helperText}</p>
+                </div>
+              </div>
+            )}
 
             <div className="student-observe-feedback">
               <strong>观察反馈</strong>
