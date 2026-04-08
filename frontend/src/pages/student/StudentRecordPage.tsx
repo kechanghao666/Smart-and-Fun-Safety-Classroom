@@ -9,6 +9,33 @@ import { buildGrowthSnapshot } from "../../utils/studentGrowth";
 import { getStudentRouteLabel } from "../../utils/studentRouteLabels";
 import { useApiResource } from "../../utils/useApiResource";
 
+function formatStudentTimelineTime(value: string) {
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  const now = new Date();
+  const isSameYear = parsed.getFullYear() === now.getFullYear();
+  const isSameDate =
+    isSameYear &&
+    parsed.getMonth() === now.getMonth() &&
+    parsed.getDate() === now.getDate();
+  const hour = `${parsed.getHours()}`.padStart(2, "0");
+  const minute = `${parsed.getMinutes()}`.padStart(2, "0");
+
+  if (isSameDate) {
+    return `今天 ${hour}:${minute}`;
+  }
+
+  if (isSameYear) {
+    return `${parsed.getMonth() + 1}月${parsed.getDate()}日 ${hour}:${minute}`;
+  }
+
+  return `${parsed.getFullYear()}年${parsed.getMonth() + 1}月${parsed.getDate()}日 ${hour}:${minute}`;
+}
+
 export function StudentRecordPage() {
   const navigate = useNavigate();
   const { state } = useAppState();
@@ -371,7 +398,7 @@ export function StudentRecordPage() {
                     </button>
                   </div>
                   <p>{item.description}</p>
-                  <em>{item.createdAt}</em>
+                  <em>{formatStudentTimelineTime(item.createdAt)}</em>
                 </div>
               </article>
             ))}

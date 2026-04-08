@@ -172,11 +172,11 @@ async function ensureLevelRows(db: Database, userId: string) {
     if (!row) {
       await db.run(
         `
-          INSERT INTO level_progress (
+          INSERT OR IGNORE INTO level_progress (
             user_id, level_id, status, score, stars, highlight, caution, ai_summary,
-            started_at, completed_at, updated_at
+            result_payload_json, started_at, completed_at, updated_at
           )
-          VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, ?)
+          VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, '{}', NULL, NULL, ?)
         `,
         userId,
         level.id,

@@ -206,6 +206,20 @@ function toTeacherStudentSummary(student: StudentContext): TeacherStudentSummary
   };
 }
 
+function filterRosterByTeacherClasses(
+  roster: StudentContext[],
+  classRows: Array<{ id: string; name: string }>,
+) {
+  const allowedClassIds = new Set(classRows.map((row) => row.id));
+  const allowedClassNames = new Set(classRows.map((row) => row.name));
+
+  return roster.filter(
+    (student) =>
+      (student.classId && allowedClassIds.has(student.classId)) ||
+      (!student.classId && allowedClassNames.has(student.className)),
+  );
+}
+
 async function buildTeacherClassSummaries(teacherUserId?: string) {
   const db = await getDb();
   const roster = await Promise.all((await getStudentRoster()).map(buildStudentContext));
@@ -252,9 +266,12 @@ async function buildTeacherClassSummaries(teacherUserId?: string) {
   );
   const pendingMap = new Map(pendingCounts.map((row) => [row.class_id, row.count]));
   const classMap = new Map<string, TeacherClassManagementItem>();
+  const visibleRoster = teacherUserId
+    ? filterRosterByTeacherClasses(roster, classRows)
+    : roster;
 
   for (const row of classRows) {
-    const students = roster.filter(
+    const students = visibleRoster.filter(
       (student) => student.classId === row.id || (!student.classId && student.className === row.name),
     );
     const completed = students.filter(
@@ -281,12 +298,13 @@ async function buildTeacherClassSummaries(teacherUserId?: string) {
     });
   }
 
-  for (const student of roster) {
+  if (!teacherUserId) {
+    for (const student of visibleRoster) {
     if (student.classId || !student.className) {
       continue;
     }
 
-    const students = roster.filter(
+    const students = visibleRoster.filter(
       (item) => !item.classId && item.className === student.className,
     );
     const completed = students.filter(
@@ -297,7 +315,7 @@ async function buildTeacherClassSummaries(teacherUserId?: string) {
     ).length;
     const syntheticId = `auto-${student.className}`;
 
-    classMap.set(syntheticId, {
+      classMap.set(syntheticId, {
       id: syntheticId,
       name: student.className,
       description: "根据学生档案自动识别的班级信息",
@@ -310,7 +328,8 @@ async function buildTeacherClassSummaries(teacherUserId?: string) {
         : 0,
       focusLabel: pickFocusLabel(students),
       pendingApplications: 0,
-    });
+      });
+    }
   }
 
   return [...classMap.values()].sort((left, right) => left.name.localeCompare(right.name, "zh-CN"));
@@ -321,7 +340,10 @@ export async function getTeacherDashboard(teacherUserId: string) {
     buildTeacherClassSummaries(teacherUserId),
     Promise.all((await getStudentRoster()).map(buildStudentContext)),
   ]);
-  const students = roster.map(toTeacherStudentSummary);
+  const students = filterRosterByTeacherClasses(
+    roster,
+    classSummaries.map((item) => ({ id: item.id, name: item.name })),
+  ).map(toTeacherStudentSummary);
   const alerts = students
     .filter(
       (student) => student.completedLevels < 3 || student.examStatus !== "已完成考试",
@@ -447,16 +469,23 @@ export async function updateTeacherClass(
 }
 
 export async function getTeacherStudents(
-  _teacherUserId: string,
+  teacherUserId: string,
   filters?: {
     className?: string;
     completionStatus?: string;
     examStatus?: string;
   },
 ) {
-  const roster = await Promise.all((await getStudentRoster()).map(buildStudentContext));
+  const [teacherClasses, roster] = await Promise.all([
+    buildTeacherClassSummaries(teacherUserId),
+    Promise.all((await getStudentRoster()).map(buildStudentContext)),
+  ]);
+  const visibleRoster = filterRosterByTeacherClasses(
+    roster,
+    teacherClasses.map((item) => ({ id: item.id, name: item.name })),
+  );
 
-  return roster
+  return visibleRoster
     .filter((student) =>
       !filters?.className || filters.className === "all"
         ? true
@@ -472,8 +501,22 @@ export async function getTeacherStudents(
     .map(toTeacherStudentSummary);
 }
 
-export async function getTeacherStudentDetail(studentId: string): Promise<TeacherStudentDetail> {
-  const user = (await getStudentRoster()).find((item) => item.id === studentId);
+export async function getTeacherStudentDetail(
+  studentId: string,
+  teacherUserId: string,
+): Promise<TeacherStudentDetail> {
+  const [teacherClasses, roster] = await Promise.all([
+    buildTeacherClassSummaries(teacherUserId),
+    getStudentRoster(),
+  ]);
+  const allowedClassIds = new Set(teacherClasses.map((item) => item.id));
+  const allowedClassNames = new Set(teacherClasses.map((item) => item.name));
+  const user = roster.find(
+    (item) =>
+      item.id === studentId &&
+      ((item.class_id && allowedClassIds.has(item.class_id)) ||
+        (!item.class_id && allowedClassNames.has(item.class_name))),
+  );
 
   if (!user) {
     throw new HttpError(404, "未找到该学生的学习结果。");

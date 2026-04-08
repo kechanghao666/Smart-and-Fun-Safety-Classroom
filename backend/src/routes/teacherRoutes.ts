@@ -145,7 +145,9 @@ teacherRouter.get("/students", async (request, response, next) => {
 
 teacherRouter.get("/students/:id", async (request, response, next) => {
   try {
-    response.json(await getTeacherStudentDetail(request.params.id));
+    response.json(
+      await getTeacherStudentDetail(request.params.id, request.authUser!.id),
+    );
   } catch (error) {
     next(error);
   }

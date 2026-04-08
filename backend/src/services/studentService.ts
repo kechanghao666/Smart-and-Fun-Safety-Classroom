@@ -180,12 +180,12 @@ async function ensureStudentState(userId: string) {
   if (!profile) {
     const now = new Date().toISOString();
 
-    await db.run(
-      `
-        INSERT INTO student_profiles (
-          user_id, nickname, avatar_id, avatar_label, stage, class_name, class_id, student_no,
-          base_points, starter_badges_json, last_visited_route, created_at, updated_at
-        )
+      await db.run(
+        `
+          INSERT OR IGNORE INTO student_profiles (
+            user_id, nickname, avatar_id, avatar_label, stage, class_name, class_id, student_no,
+            base_points, starter_badges_json, last_visited_route, created_at, updated_at
+          )
         VALUES (?, NULL, NULL, NULL, NULL, ?, ?, ?, 120, '["观察员新星"]', '/student/home', ?, ?)
       `,
       userId,
@@ -224,11 +224,11 @@ async function ensureStudentState(userId: string) {
     if (!row) {
       await db.run(
         `
-          INSERT INTO level_progress (
+          INSERT OR IGNORE INTO level_progress (
             user_id, level_id, status, score, stars, highlight, caution, ai_summary,
             result_payload_json, started_at, completed_at, updated_at
           )
-          VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, ?)
+          VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, '{}', NULL, NULL, ?)
         `,
         userId,
         level.id,

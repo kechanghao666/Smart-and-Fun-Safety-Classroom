@@ -9,6 +9,7 @@ interface StudentMascotBubbleProps {
   accent?: StudentBubbleAccent;
   notice?: string;
   actions?: ReactNode;
+  visual?: ReactNode;
 }
 
 export function StudentMascotBubble({
@@ -18,6 +19,7 @@ export function StudentMascotBubble({
   accent = "sky",
   notice,
   actions,
+  visual,
 }: StudentMascotBubbleProps) {
   return (
     <article className={`student-mascot-bubble student-mascot-bubble--${accent}`}>
@@ -26,12 +28,19 @@ export function StudentMascotBubble({
         <span />
         <span />
       </div>
-      <div className="student-mascot-bubble__content">
-        <span className="student-mascot-bubble__eyebrow">{eyebrow}</span>
-        <h3>{title}</h3>
-        <p>{message}</p>
-        {notice ? <p className="student-mascot-bubble__notice">{notice}</p> : null}
-        {actions ? <div className="student-mascot-bubble__actions">{actions}</div> : null}
+      <div
+        className={`student-mascot-bubble__layout${
+          visual ? " student-mascot-bubble__layout--with-visual" : ""
+        }`}
+      >
+        <div className="student-mascot-bubble__content">
+          <span className="student-mascot-bubble__eyebrow">{eyebrow}</span>
+          <h3>{title}</h3>
+          <p>{message}</p>
+          {notice ? <p className="student-mascot-bubble__notice">{notice}</p> : null}
+          {actions ? <div className="student-mascot-bubble__actions">{actions}</div> : null}
+        </div>
+        {visual ? <div className="student-mascot-bubble__visual">{visual}</div> : null}
       </div>
     </article>
   );

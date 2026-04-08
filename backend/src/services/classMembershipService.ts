@@ -8,6 +8,7 @@ import type {
   TeacherClassRow,
 } from "../types/contracts";
 import { HttpError } from "../utils/httpError";
+import { ensureUniqueClassCode } from "../utils/identityCodes";
 
 async function getTeacherOwnedClass(teacherUserId: string, classId: string) {
   const db = await getDb();
@@ -48,14 +49,55 @@ async function getStudentProfileRow(userId: string) {
   return row;
 }
 
+async function ensureClassCodeForResponse(
+  db: Awaited<ReturnType<typeof getDb>>,
+  row:
+    | {
+        id: string;
+        name: string;
+        class_code: string | null;
+      }
+    | null,
+) {
+  if (!row) {
+    return null;
+  }
+
+  if (row.class_code && row.class_code.trim()) {
+    return {
+      ...row,
+      class_code: row.class_code,
+    };
+  }
+
+  const classCode = await ensureUniqueClassCode(db, row.id, row.id);
+  await db.run(
+    `
+      UPDATE teacher_classes
+      SET class_code = ?, updated_at = ?
+      WHERE id = ?
+    `,
+    classCode,
+    new Date().toISOString(),
+    row.id,
+  );
+
+  return {
+    ...row,
+    class_code: classCode,
+  };
+}
+
 async function buildMembershipResponse(userId: string): Promise<StudentClassMembershipResponse> {
   const db = await getDb();
   const profile = await getStudentProfileRow(userId);
-  const currentClass = profile.class_id
-    ? await db.get<{
+  const currentClass = await ensureClassCodeForResponse(
+    db,
+    profile.class_id
+    ? (await db.get<{
         id: string;
         name: string;
-        class_code: string;
+        class_code: string | null;
       }>(
         `
           SELECT id, name, class_code
@@ -63,15 +105,16 @@ async function buildMembershipResponse(userId: string): Promise<StudentClassMemb
           WHERE id = ?
         `,
         profile.class_id,
-      )
-    : null;
+      )) ?? null
+    : null,
+  );
   const pending = await db.get<{
     id: string;
     class_id: string;
     status: ClassJoinRequestStatus;
     requested_at: string;
     name: string;
-    class_code: string;
+    class_code: string | null;
   }>(
     `
       SELECT
@@ -90,6 +133,23 @@ async function buildMembershipResponse(userId: string): Promise<StudentClassMemb
     `,
     userId,
   );
+  const ensuredPendingCode =
+    pending && (!pending.class_code || !pending.class_code.trim())
+      ? await ensureUniqueClassCode(db, pending.class_id, pending.class_id)
+      : pending?.class_code ?? null;
+
+  if (pending && ensuredPendingCode && ensuredPendingCode !== pending.class_code) {
+    await db.run(
+      `
+        UPDATE teacher_classes
+        SET class_code = ?, updated_at = ?
+        WHERE id = ?
+      `,
+      ensuredPendingCode,
+      new Date().toISOString(),
+      pending.class_id,
+    );
+  }
 
   return {
     studentNo: profile.student_no ?? "",
@@ -105,7 +165,7 @@ async function buildMembershipResponse(userId: string): Promise<StudentClassMemb
           id: pending.id,
           classId: pending.class_id,
           className: pending.name,
-          classCode: pending.class_code,
+          classCode: ensuredPendingCode ?? "",
           status: pending.status,
           requestedAt: pending.requested_at,
         }

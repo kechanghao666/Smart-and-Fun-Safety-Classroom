@@ -178,6 +178,39 @@ export function StudentAiPage() {
               </Link>
             )
           }
+          visual={
+            <div className="student-ai-repair-stage">
+              <div className="student-ai-repair-stage__header">
+                <span className="student-ai-repair-stage__badge">
+                  {reviewPrompts.length > 0 ? "推荐补强" : "自由提问"}
+                </span>
+                <strong>
+                  {reviewPrompts.length > 0 ? `${reviewPrompts.length} 个方向` : "先从上方问题卡开始"}
+                </strong>
+              </div>
+              <div className="student-ai-repair-stage__board">
+                {reviewPrompts.length > 0 ? (
+                  reviewPrompts.slice(0, 3).map((prompt, index) => (
+                    <div key={prompt.id} className="student-ai-repair-stage__item">
+                      <span>{index + 1}</span>
+                      <p>{prompt.label}</p>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div className="student-ai-repair-stage__empty-icon">
+                      <span />
+                      <span />
+                      <span />
+                    </div>
+                    <p className="student-ai-repair-stage__empty-copy">
+                      当前没有错题推荐，先从上面的快速提问卡开始和 AI 复习吧。
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+          }
         />
       </section>
 

@@ -67,6 +67,11 @@ export function StudentHomePage() {
       : state.progress.exam.status === "completed"
         ? "/student/theme/road-safety/exam/result"
         : state.progress.lastVisitedRoute;
+  const currentClassCode =
+    classMembership?.currentClass?.classCode?.trim() ||
+    classMembership?.pendingRequest?.classCode?.trim() ||
+    "";
+  const canApplyToClass = apiEnabled && Boolean(state.authToken);
 
   const fallbackGrowthData: StudentGrowthResponse = {
     characterName: profile?.nickname ?? "安全学员",
@@ -406,7 +411,9 @@ export function StudentHomePage() {
               <span className="student-checklist__dot" />
               <span>
                 {classMembership?.currentClass
-                  ? `当前班级号：${classMembership.currentClass.classCode}`
+                  ? currentClassCode
+                    ? `当前班级号：${currentClassCode}`
+                    : "当前班级号正在同步生成，请稍后刷新查看。"
                   : classMembership?.pendingRequest
                     ? `申请加入 ${classMembership.pendingRequest.className}，等待老师审批。`
                     : "输入班级号后，可以主动向老师提交入班申请。"}
@@ -420,19 +427,23 @@ export function StudentHomePage() {
               value={classCodeInput}
               onChange={(event) => setClassCodeInput(event.target.value.toUpperCase())}
               placeholder="输入班级号"
-              disabled={Boolean(classMembership?.currentClass) || isApplyingClass}
+              disabled={!canApplyToClass || isApplyingClass}
             />
             <button
               type="button"
               className="primary-button"
               onClick={() => void handleApplyClassMembership()}
               disabled={
-                Boolean(classMembership?.currentClass) ||
+                !canApplyToClass ||
                 isApplyingClass ||
                 classCodeInput.trim().length === 0
               }
             >
-              {isApplyingClass ? "提交中..." : "申请加入班级"}
+              {isApplyingClass
+                ? "提交中..."
+                : classMembership?.currentClass
+                  ? "申请更换班级"
+                  : "申请加入班级"}
             </button>
           </div>
 
@@ -533,7 +544,6 @@ export function StudentHomePage() {
               type="button"
               className="ghost-button"
               onClick={() => navigate("/student/theme/road-safety/wrong-questions")}
-              disabled={state.progress.exam.status !== "completed"}
             >
               错题回看
             </button>

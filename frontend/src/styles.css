@@ -2555,12 +2555,16 @@ button {
 .student-mini-card span {
   font-size: 13px;
   opacity: 0.92;
+  display: block;
+  width: 100%;
 }
 
 .student-adventure-stat strong,
 .student-mini-card strong {
   font-size: 20px;
   line-height: 1.2;
+  display: block;
+  width: 100%;
 }
 
 .student-adventure-hero__actions,
@@ -2932,6 +2936,11 @@ button {
   border-radius: 24px;
   padding: 18px;
   color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 10px;
 }
 
 .student-mini-card--sky,
@@ -3107,6 +3116,25 @@ button {
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(255, 247, 233, 0.96));
 }
 
+.student-mascot-bubble__layout {
+  display: grid;
+  gap: 22px;
+}
+
+.student-mascot-bubble__layout--with-visual {
+  grid-template-columns: minmax(0, 1.2fr) minmax(220px, 320px);
+  align-items: center;
+}
+
+.student-mascot-bubble__content {
+  display: grid;
+  gap: 14px;
+}
+
+.student-mascot-bubble__visual {
+  min-height: 220px;
+}
+
 .student-mascot-bubble__icon {
   display: flex;
   gap: 8px;
@@ -3128,6 +3156,216 @@ button {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+.student-growth-reminder-stage {
+  height: 100%;
+  min-height: 220px;
+  border-radius: 28px;
+  padding: 18px;
+  display: grid;
+  align-content: space-between;
+  gap: 18px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.85), transparent 34%),
+    linear-gradient(165deg, rgba(112, 205, 255, 0.22), rgba(80, 214, 181, 0.2)),
+    rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(71, 168, 217, 0.14);
+}
+
+.student-growth-reminder-stage__mascot {
+  position: relative;
+  min-height: 112px;
+  display: grid;
+  place-items: center;
+}
+
+.student-growth-reminder-stage__halo {
+  position: absolute;
+  width: 148px;
+  height: 84px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 225, 156, 0.7), rgba(255, 225, 156, 0));
+  filter: blur(2px);
+}
+
+.student-growth-reminder-stage__head,
+.student-growth-reminder-stage__body {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.student-growth-reminder-stage__head {
+  top: 8px;
+  width: 70px;
+  height: 70px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, #fffaf0, #fff3de);
+  box-shadow: inset 0 -6px 0 rgba(255, 255, 255, 0.5);
+}
+
+.student-growth-reminder-stage__head::before,
+.student-growth-reminder-stage__head::after {
+  content: "";
+  position: absolute;
+  top: 26px;
+  width: 10px;
+  height: 16px;
+  border-radius: 999px;
+  background: #24587c;
+}
+
+.student-growth-reminder-stage__head::before {
+  left: 20px;
+}
+
+.student-growth-reminder-stage__head::after {
+  right: 20px;
+}
+
+.student-growth-reminder-stage__body {
+  top: 66px;
+  width: 116px;
+  height: 70px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, #ffbd57, #ff8d3d);
+  color: #ffffff;
+  font-size: 34px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 12px 24px rgba(255, 144, 63, 0.22);
+}
+
+.student-growth-reminder-stage__info {
+  display: grid;
+  gap: 8px;
+}
+
+.student-growth-reminder-stage__badge {
+  width: fit-content;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #2a6285;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.student-growth-reminder-stage__info strong {
+  color: #173550;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.student-growth-reminder-stage__info p {
+  color: #4d6580;
+  font-size: 15px;
+}
+
+.student-growth-reminder-stage__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.student-growth-reminder-stage__chips span {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.76);
+  color: #24587c;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.student-ai-repair-stage {
+  height: 100%;
+  min-height: 220px;
+  border-radius: 28px;
+  padding: 18px;
+  display: grid;
+  gap: 16px;
+  align-content: start;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.88), transparent 34%),
+    linear-gradient(165deg, rgba(120, 212, 186, 0.22), rgba(98, 183, 255, 0.18)),
+    rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(70, 170, 160, 0.14);
+}
+
+.student-ai-repair-stage__header {
+  display: grid;
+  gap: 8px;
+}
+
+.student-ai-repair-stage__badge {
+  width: fit-content;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #2a6285;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.student-ai-repair-stage__header strong {
+  color: #173550;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.student-ai-repair-stage__board {
+  display: grid;
+  gap: 12px;
+}
+
+.student-ai-repair-stage__item {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(36, 124, 161, 0.1);
+}
+
+.student-ai-repair-stage__item span {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #4aa6ff, #38cfb6);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.student-ai-repair-stage__item p {
+  color: #204763;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.student-ai-repair-stage__empty-icon {
+  display: flex;
+  gap: 10px;
+}
+
+.student-ai-repair-stage__empty-icon span {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #55b9ff, #34d0b6);
+}
+
+.student-ai-repair-stage__empty-copy {
+  color: #456079;
+  font-size: 15px;
+  line-height: 1.7;
 }
 
 .student-mini-links {
@@ -4075,6 +4313,7 @@ button {
   display: grid;
   grid-template-columns: minmax(260px, 0.82fr) minmax(0, 1.18fr);
   gap: 20px;
+  align-items: stretch;
 }
 
 .student-ai-rule-card,
@@ -4083,11 +4322,40 @@ button {
   gap: 18px;
 }
 
+.student-ai-rule-card {
+  align-content: start;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+}
+
+.student-page--ai .student-ai-rule-card .student-checklist {
+  height: 100%;
+  align-content: stretch;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+}
+
+.student-page--ai .student-ai-rule-card .student-checklist__item {
+  width: 100%;
+  min-height: 120px;
+  padding: 24px 26px;
+  border-radius: 24px;
+  flex: 1;
+  align-items: center;
+}
+
+.student-page--ai .student-ai-rule-card .student-checklist__item span:last-child {
+  line-height: 1.65;
+}
+
+.student-ai-chat-stage {
+  height: 100%;
+}
+
 .student-ai-chat-log {
   display: grid;
   gap: 14px;
-  min-height: 320px;
-  max-height: 520px;
+  min-height: 260px;
+  max-height: 260px;
   padding-right: 6px;
   overflow-y: auto;
 }
@@ -4178,9 +4446,14 @@ button {
 }
 
 .student-page--theme .student-level-entry-card__visual span {
-  width: 86px;
-  height: 86px;
-  font-size: 30px;
+  width: auto;
+  min-width: 132px;
+  height: 74px;
+  padding: 0 24px;
+  border-radius: 28px;
+  font-size: 28px;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .student-page--home .student-link-board,
@@ -4219,6 +4492,10 @@ button {
   .student-choice-grid,
   .student-choice-grid--stage,
   .student-answer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .student-mascot-bubble__layout--with-visual {
     grid-template-columns: 1fr;
   }
 

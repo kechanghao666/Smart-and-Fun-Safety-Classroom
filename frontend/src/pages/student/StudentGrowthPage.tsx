@@ -367,6 +367,30 @@ export function StudentGrowthPage() {
               </Link>
             </>
           }
+          visual={
+            <div className="student-growth-reminder-stage">
+              <div className="student-growth-reminder-stage__mascot">
+                <span className="student-growth-reminder-stage__halo" />
+                <span className="student-growth-reminder-stage__head" />
+                <span className="student-growth-reminder-stage__body">
+                  {growthData.currentAbilityTag.slice(0, 1)}
+                </span>
+              </div>
+              <div className="student-growth-reminder-stage__info">
+                <span className="student-growth-reminder-stage__badge">当前展示</span>
+                <strong>{growthData.currentAppearance}</strong>
+                <p>{growthData.currentScene}</p>
+                <div className="student-growth-reminder-stage__chips">
+                  <span>{growthData.currentAbilityTag}</span>
+                  <span>
+                    {growthData.nextLevelRemaining !== null
+                      ? `再拿 ${growthData.nextLevelRemaining} 分`
+                      : "已点亮当前阶段"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          }
         />
       </section>
 
