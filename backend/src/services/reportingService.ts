@@ -11,16 +11,26 @@ import type {
   UserRole,
 } from "../types/contracts";
 import { HttpError } from "../utils/httpError";
+import { ensureUniqueClassCode } from "../utils/identityCodes";
 import { getLatestLearningRecordTime, getGrowthProfile } from "./growthService";
-import {
-  getStudentExamReview,
-  getStudentGrowth,
-} from "./studentInsightsService";
+import { getStudentExamReview, getStudentGrowth } from "./studentInsightsService";
 import { buildStudentProgress } from "./studentService";
+
+interface StudentRosterRow {
+  id: string;
+  account: string;
+  display_name: string;
+  student_no: string | null;
+  class_id: string | null;
+  class_name: string;
+  profile_updated_at: string;
+}
 
 interface StudentContext {
   id: string;
   name: string;
+  studentNo: string;
+  classId: string | null;
   className: string;
   progress: Awaited<ReturnType<typeof buildStudentProgress>>;
   lastActiveAt: string;
@@ -68,7 +78,7 @@ function formatDateTimeLabel(value: string | null) {
 
 function inferWeakSpot(progress: Awaited<ReturnType<typeof buildStudentProgress>>) {
   if (progress.exam.status === "completed" && progress.exam.wrongQuestionIds.length === 0) {
-    return "整体表现稳定，可继续强化乘车礼仪。";
+    return "整体表现稳定，可继续强化乘车礼仪与盲区判断。";
   }
 
   if (progress.exam.wrongQuestionIds.includes("q-3")) {
@@ -82,10 +92,7 @@ function inferWeakSpot(progress: Awaited<ReturnType<typeof buildStudentProgress>
   return "基础安全观察仍需通过关卡练习持续巩固。";
 }
 
-function matchesCompletionFilter(
-  completedLevels: number,
-  filter: string | undefined,
-) {
+function matchesCompletionFilter(completedLevels: number, filter: string | undefined) {
   if (!filter || filter === "all") {
     return true;
   }
@@ -96,7 +103,7 @@ function matchesCompletionFilter(
     return completedLevels === 3;
   }
 
-  if (["partial", "in-progress", "进行中", "未完成"].includes(normalized)) {
+  if (["partial", "in-progress", "进行中", "未完成", "incomplete"].includes(normalized)) {
     return completedLevels > 0 && completedLevels < 3;
   }
 
@@ -121,7 +128,7 @@ function matchesExamFilter(
     return examStatus === "completed";
   }
 
-  if (["available", "unlocked", "已解锁未考试"].includes(normalized)) {
+  if (["available", "pending", "unlocked", "已解锁未考试"].includes(normalized)) {
     return examStatus === "available" || examStatus === "in_progress";
   }
 
@@ -149,40 +156,34 @@ function pickFocusLabel(students: StudentContext[]) {
 async function getStudentRoster() {
   const db = await getDb();
 
-  return db.all<
-    Array<{
-      id: string;
-      account: string;
-      display_name: string;
-      class_name: string;
-      profile_updated_at: string;
-    }>
-  >(
+  return db.all<StudentRosterRow[]>(
     `
       SELECT
         users.id,
         users.account,
         users.display_name,
-        student_profiles.class_name,
+        student_profiles.student_no,
+        student_profiles.class_id,
+        COALESCE(teacher_classes.name, student_profiles.class_name) AS class_name,
         student_profiles.updated_at AS profile_updated_at
       FROM users
       INNER JOIN student_profiles ON student_profiles.user_id = users.id
+      LEFT JOIN teacher_classes ON teacher_classes.id = student_profiles.class_id
       WHERE users.role = 'student'
-      ORDER BY student_profiles.class_name ASC, users.account ASC
+      ORDER BY class_name ASC, users.account ASC
     `,
   );
 }
 
-async function buildStudentContext(
-  user: Awaited<ReturnType<typeof getStudentRoster>>[number],
-): Promise<StudentContext> {
+async function buildStudentContext(user: StudentRosterRow): Promise<StudentContext> {
   const progress = await buildStudentProgress(user.id);
-  const lastActive =
-    (await getLatestLearningRecordTime(user.id)) ?? user.profile_updated_at;
+  const lastActive = (await getLatestLearningRecordTime(user.id)) ?? user.profile_updated_at;
 
   return {
     id: user.id,
     name: user.display_name,
+    studentNo: user.student_no ?? "",
+    classId: user.class_id,
     className: user.class_name,
     progress,
     lastActiveAt: formatDateTimeLabel(lastActive),
@@ -194,6 +195,7 @@ function toTeacherStudentSummary(student: StudentContext): TeacherStudentSummary
   return {
     id: student.id,
     name: student.name,
+    studentNo: student.studentNo,
     className: student.className,
     completedLevels: student.progress.levels.filter((level) => level.status === "completed")
       .length,
@@ -207,20 +209,54 @@ function toTeacherStudentSummary(student: StudentContext): TeacherStudentSummary
 async function buildTeacherClassSummaries(teacherUserId?: string) {
   const db = await getDb();
   const roster = await Promise.all((await getStudentRoster()).map(buildStudentContext));
-  const classRows = await db.all<TeacherClassRow[]>(
+  const rawClassRows = await db.all<TeacherClassRow[]>(
     `
-      SELECT id, teacher_user_id, name, description, created_at, updated_at
+      SELECT id, teacher_user_id, name, class_code, description, created_at, updated_at
       FROM teacher_classes
       ${teacherUserId ? "WHERE teacher_user_id = ?" : ""}
       ORDER BY created_at ASC
     `,
     ...(teacherUserId ? [teacherUserId] : []),
   );
+  const classRows = await Promise.all(
+    rawClassRows.map(async (row) => {
+      if (row.class_code && row.class_code.trim()) {
+        return row;
+      }
 
+      const classCode = await ensureUniqueClassCode(db, row.id, row.id);
+      await db.run(
+        `
+          UPDATE teacher_classes
+          SET class_code = ?, updated_at = ?
+          WHERE id = ?
+        `,
+        classCode,
+        new Date().toISOString(),
+        row.id,
+      );
+
+      return {
+        ...row,
+        class_code: classCode,
+      };
+    }),
+  );
+  const pendingCounts = await db.all<Array<{ class_id: string; count: number }>>(
+    `
+      SELECT class_id, COUNT(*) AS count
+      FROM class_join_requests
+      WHERE status = 'pending'
+      GROUP BY class_id
+    `,
+  );
+  const pendingMap = new Map(pendingCounts.map((row) => [row.class_id, row.count]));
   const classMap = new Map<string, TeacherClassManagementItem>();
 
   for (const row of classRows) {
-    const students = roster.filter((student) => student.className === row.name);
+    const students = roster.filter(
+      (student) => student.classId === row.id || (!student.classId && student.className === row.name),
+    );
     const completed = students.filter(
       (student) =>
         student.progress.levels.filter((level) => level.status === "completed").length === 3,
@@ -229,43 +265,52 @@ async function buildTeacherClassSummaries(teacherUserId?: string) {
       (student) => student.progress.exam.status === "completed",
     ).length;
 
-    classMap.set(row.name, {
+    classMap.set(row.id, {
       id: row.id,
       name: row.name,
       description: row.description,
       createdAt: row.created_at,
+      classCode: row.class_code,
       studentCount: students.length,
       completedRate: students.length ? Math.round((completed / students.length) * 100) : 0,
       examCompletionRate: students.length
         ? Math.round((examCompleted / students.length) * 100)
         : 0,
       focusLabel: pickFocusLabel(students),
+      pendingApplications: pendingMap.get(row.id) ?? 0,
     });
   }
 
   for (const student of roster) {
-    if (!classMap.has(student.className)) {
-      const students = roster.filter((item) => item.className === student.className);
-      const completed = students.filter(
-        (item) => item.progress.levels.filter((level) => level.status === "completed").length === 3,
-      ).length;
-      const examCompleted = students.filter(
-        (item) => item.progress.exam.status === "completed",
-      ).length;
-
-      classMap.set(student.className, {
-        id: `auto-${student.className}`,
-        name: student.className,
-        description: "根据学生档案自动识别的班级信息",
-        createdAt: new Date().toISOString(),
-        studentCount: students.length,
-        completedRate: students.length ? Math.round((completed / students.length) * 100) : 0,
-        examCompletionRate: students.length
-          ? Math.round((examCompleted / students.length) * 100)
-          : 0,
-        focusLabel: pickFocusLabel(students),
-      });
+    if (student.classId || !student.className) {
+      continue;
     }
+
+    const students = roster.filter(
+      (item) => !item.classId && item.className === student.className,
+    );
+    const completed = students.filter(
+      (item) => item.progress.levels.filter((level) => level.status === "completed").length === 3,
+    ).length;
+    const examCompleted = students.filter(
+      (item) => item.progress.exam.status === "completed",
+    ).length;
+    const syntheticId = `auto-${student.className}`;
+
+    classMap.set(syntheticId, {
+      id: syntheticId,
+      name: student.className,
+      description: "根据学生档案自动识别的班级信息",
+      createdAt: new Date().toISOString(),
+      classCode: "--",
+      studentCount: students.length,
+      completedRate: students.length ? Math.round((completed / students.length) * 100) : 0,
+      examCompletionRate: students.length
+        ? Math.round((examCompleted / students.length) * 100)
+        : 0,
+      focusLabel: pickFocusLabel(students),
+      pendingApplications: 0,
+    });
   }
 
   return [...classMap.values()].sort((left, right) => left.name.localeCompare(right.name, "zh-CN"));
@@ -318,14 +363,18 @@ export async function createTeacherClass(
 
   const now = new Date().toISOString();
   const classId = String(input.id ?? `class-${Date.now()}`);
+  const classCode = await ensureUniqueClassCode(db, classId, classId);
   await db.run(
     `
-      INSERT INTO teacher_classes (id, teacher_user_id, name, description, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO teacher_classes (
+        id, teacher_user_id, name, class_code, description, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
     classId,
     teacherUserId,
     name,
+    classCode,
     description,
     now,
     now,
@@ -342,7 +391,7 @@ export async function updateTeacherClass(
   const db = await getDb();
   const existing = await db.get<TeacherClassRow>(
     `
-      SELECT id, teacher_user_id, name, description, created_at, updated_at
+      SELECT id, teacher_user_id, name, class_code, description, created_at, updated_at
       FROM teacher_classes
       WHERE id = ? AND teacher_user_id = ?
     `,
@@ -386,11 +435,11 @@ export async function updateTeacherClass(
       `
         UPDATE student_profiles
         SET class_name = ?, updated_at = ?
-        WHERE class_name = ?
+        WHERE class_id = ?
       `,
       nextName,
       new Date().toISOString(),
-      existing.name,
+      classId,
     );
   }
 
@@ -449,7 +498,7 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
           : "需要分段鼓励和即时反馈",
     levelStatuses: context.progress.levels.map((level) => ({
       levelId: level.id,
-      title: level.title.replace(" · ", "："),
+      title: level.title.replace(" 路 ", "："),
       status: level.status,
       score: context.progress.levelResults[level.id]?.score ?? null,
       note:
@@ -675,10 +724,8 @@ export async function getAdminStats() {
   );
   const averageGrowthPoints = validGrowthProfiles.length
     ? Math.round(
-        validGrowthProfiles.reduce(
-          (sum, item) => sum + item.profile.total_points,
-          0,
-        ) / validGrowthProfiles.length,
+        validGrowthProfiles.reduce((sum, item) => sum + item.profile.total_points, 0) /
+          validGrowthProfiles.length,
       )
     : 0;
   const appearanceUnlockRate = validGrowthProfiles.length
@@ -741,7 +788,7 @@ export async function getAdminStats() {
         ? `还有 ${studentCount - completedAll} 名学生尚未完成三关学习。`
         : "所有学生都已完成三关学习。",
       examCompleted.filter((student) => (student.progress.exam.score ?? 0) < 80).length
-        ? `有 ${
+        ? `目前有 ${
             examCompleted.filter((student) => (student.progress.exam.score ?? 0) < 80).length
           } 名学生考试成绩低于 80 分。`
         : "当前考试成绩整体稳定。",

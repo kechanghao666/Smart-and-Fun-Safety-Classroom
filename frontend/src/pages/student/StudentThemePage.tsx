@@ -14,6 +14,33 @@ import {
 } from "../../utils/studentGrowth";
 import { usePersistedState } from "../../utils/usePersistedState";
 
+const levelGuides: Record<
+  LevelId,
+  { label: string; shortGoal: string; cardHint: string }
+> = {
+  "level-1": {
+    label: "观察识别",
+    shortGoal: "在路口大场景里先找安全线索，再识别明显危险行为。",
+    cardHint: "左侧任务区 + 中间场景区 + 顶部状态栏",
+  },
+  "level-2": {
+    label: "路线判断",
+    shortGoal: "沿着回家地图逐站做判断，边走边守住安全值。",
+    cardHint: "地图主视图 + 底部事件卡 + 安全值",
+  },
+  "level-3": {
+    label: "操作守护",
+    shortGoal: "完成公交车、私家车、电动车三段操作守护任务。",
+    cardHint: "步骤切换 + 主场景 + 底部操作区",
+  },
+};
+
+const levelLabels: Record<LevelId, string> = {
+  "level-1": "第一关",
+  "level-2": "第二关",
+  "level-3": "第三关",
+};
+
 export function StudentThemePage() {
   const navigate = useNavigate();
   const { state } = useAppState();
@@ -27,7 +54,7 @@ export function StudentThemePage() {
   );
   const examUnlocked = state.progress.exam.status !== "locked";
   const examCompleted = state.progress.exam.status === "completed";
-  const accountKey = state.sessionAccount ?? "student-demo";
+  const accountKey = state.sessionAccount ?? "student";
   const [unlockAcknowledged, setUnlockAcknowledged] = usePersistedState<
     Record<string, boolean>
   >("student-theme-exam-unlock", {});
@@ -79,7 +106,7 @@ export function StudentThemePage() {
       state.progress.points,
       state.progress.rewardProgress.reviewedWrongQuestionIds.join("|"),
     ],
-    fallbackMessage: "主题页成长信息暂时无法同步，先展示当前的成长状态。",
+    fallbackMessage: "成长信息暂时无法刷新，先展示当前已同步的数据。",
   });
 
   const sceneVisualClass = getGrowthSceneVisualClass(growthData.currentScene);
@@ -91,7 +118,7 @@ export function StudentThemePage() {
 
   const themeAiPrompt = useMemo(
     () =>
-      `我正在学习道路安全教育主题，当前已完成 ${completedLevels} / 3 关，考试状态为 ${state.progress.exam.status}。请给我一句学习提醒，并告诉我现在最应该先做哪一步。`,
+      `我正在学习道路安全教育主题，已经完成 ${completedLevels} / 3 关，考试状态是 ${state.progress.exam.status}，请提醒我现在最适合先做什么。`,
     [completedLevels, state.progress.exam.status],
   );
 
@@ -104,7 +131,7 @@ export function StudentThemePage() {
     prompt: themeAiPrompt,
     scene: "hint",
     levelId: nextLevel?.id as LevelId | undefined,
-    fallbackText: "先看清现在最该完成的关卡，再沿着观察、判断、选择的顺序继续往前走。",
+    fallbackText: "先顺着三关路线往前走，完成观察识别、路线判断和操作守护，再去打开主题考试。",
   });
 
   useEffect(() => {
@@ -144,24 +171,24 @@ export function StudentThemePage() {
     <div className="page-stack student-page student-page--theme">
       <StudentAdventureHero
         eyebrow="主题地图"
-        title="道路安全冒险地图"
-        description="这里不是说明页，而是整轮冒险的大地图。顺着路线走完三关，再去打开考试宝箱。"
-        bubbleTitle="出发提示"
+        title="道路安全三关闯关学习"
+        description="这一页就是道路安全主题的总地图。三关按“观察识别 -> 路线判断 -> 操作守护”推进，全部完成后自动解锁主题考试。"
+        bubbleTitle="当前建议"
         bubbleText={
           nextLevel
-            ? `先去挑战 ${nextLevel.title}`
+            ? `先去完成 ${nextLevel.title}`
             : examCompleted
-              ? "去看看你的结果卡"
-              : "考试宝箱已经亮起来了"
+              ? "主题考试已经完成，可以回看结果卡和学习记录。"
+              : "三关已经走完，现在可以直接进入主题考试。"
         }
         mascotLabel={state.studentProfile?.avatarLabel.slice(0, 1) ?? "安"}
         mascotHint={`${growthData.stageLabel} · ${growthData.currentAbilityTag}`}
         variant="theme"
         accent="mint"
         stats={[
-          { label: "已完成", value: `${completedLevels}/3`, accent: "sky" },
+          { label: "已完成", value: `${completedLevels} / 3`, accent: "sky" },
           {
-            label: "考试宝箱",
+            label: "考试状态",
             value: examCompleted ? "已完成" : examUnlocked ? "已解锁" : "未解锁",
             accent: "orange",
           },
@@ -187,7 +214,7 @@ export function StudentThemePage() {
         }
         aside={
           <div className={`student-theme-hero-card ${sceneVisualClass}`}>
-            <span>当前角色</span>
+            <span>当前成长形态</span>
             <strong>{growthData.currentAppearance}</strong>
             <p>{growthData.currentScene}</p>
           </div>
@@ -196,14 +223,13 @@ export function StudentThemePage() {
 
       <section className="surface-card student-theme-map-panel">
         <div className="student-section-heading">
-          <span className="section-block__eyebrow">冒险路线</span>
-          <h2>沿着这条线往前走就好</h2>
+          <span className="section-block__eyebrow">关卡路线</span>
+          <h2>顺着这条学习路线一直往前走</h2>
         </div>
-
         <div className="student-theme-map">
           <div className="student-theme-map__step student-theme-map__step--active">
             <strong>第一站</strong>
-            <span>观察路口</span>
+            <span>观察识别</span>
           </div>
           <div
             className={
@@ -213,7 +239,7 @@ export function StudentThemePage() {
             }
           >
             <strong>第二站</strong>
-            <span>路线挑战</span>
+            <span>路线判断</span>
           </div>
           <div
             className={
@@ -223,7 +249,7 @@ export function StudentThemePage() {
             }
           >
             <strong>第三站</strong>
-            <span>出行守护</span>
+            <span>操作守护</span>
           </div>
           <div
             className={
@@ -232,8 +258,8 @@ export function StudentThemePage() {
                 : "student-theme-map__step student-theme-map__step--locked"
             }
           >
-            <strong>宝箱</strong>
-            <span>{examCompleted ? "挑战完成" : examUnlocked ? "考试已开" : "等待解锁"}</span>
+            <strong>主题考试</strong>
+            <span>{examCompleted ? "已完成" : examUnlocked ? "已解锁" : "待解锁"}</span>
           </div>
         </div>
       </section>
@@ -264,7 +290,7 @@ export function StudentThemePage() {
 
         <article className="surface-card student-growth-card">
           <span className="section-block__eyebrow">成长展示</span>
-          <h2>你现在的冒险形态</h2>
+          <h2>这次闯关会把哪些成长点亮</h2>
           <div className={`growth-showcase-card__preview ${sceneVisualClass}`}>
             <strong>{growthData.currentAppearance}</strong>
             <p>{growthData.currentScene}</p>
@@ -291,57 +317,51 @@ export function StudentThemePage() {
       </section>
 
       <section className="student-card-grid student-card-grid--three">
-        {state.progress.levels.map((level, index) => {
+        {state.progress.levels.map((level) => {
+          const guide = levelGuides[level.id];
           const hasResult = Boolean(state.progress.levelResults[level.id]);
-          const target =
-            level.status === "completed" && hasResult
-              ? `/student/theme/road-safety/level/${level.id}/result`
-              : `/student/theme/road-safety/level/${level.id}`;
-          const shortGoal =
-            index === 0
-              ? "找出路口里的安全线索"
-              : index === 1
-                ? "一路做出更安全的判断"
-                : "把装备放回正确的场景";
+          const resultRoute = `/student/theme/road-safety/level/${level.id}/result`;
+          const challengeRoute = `/student/theme/road-safety/level/${level.id}`;
 
           return (
             <article key={level.id} className="surface-card student-level-entry-card">
               <div className="student-level-entry-card__visual">
-                <span>{index + 1}</span>
+                <span>{levelLabels[level.id]}</span>
               </div>
               <div className="student-level-entry-card__content">
                 <div className="student-level-entry-card__top">
-                  <span className="surface-tag">{level.focus}</span>
+                  <span className="surface-tag">{guide.label}</span>
                   <StatusBadge status={level.status} />
                 </div>
                 <h3>{level.title}</h3>
-                <p>{shortGoal}</p>
+                <p>{guide.shortGoal}</p>
                 <div className="student-level-entry-card__meta">
                   <span>{level.duration}</span>
-                  <span>
-                    {level.status === "completed"
-                      ? "已通关"
-                      : level.status === "locked"
-                        ? "未解锁"
-                        : "可进入"}
-                  </span>
+                  <span>{guide.cardHint}</span>
                 </div>
-                <button
-                  type="button"
-                  className={
-                    level.status === "locked"
-                      ? "ghost-button"
-                      : "primary-button primary-button--playful"
-                  }
-                  disabled={level.status === "locked"}
-                  onClick={() => navigate(target)}
-                >
-                  {level.status === "completed"
-                    ? hasResult
-                      ? "查看庆祝页"
-                      : "重新进入"
-                    : "开始挑战"}
-                </button>
+                <div className="button-row">
+                  <button
+                    type="button"
+                    className={
+                      level.status === "locked"
+                        ? "ghost-button"
+                        : "primary-button primary-button--playful"
+                    }
+                    disabled={level.status === "locked"}
+                    onClick={() => navigate(challengeRoute)}
+                  >
+                    {level.status === "completed" ? "重新挑战本关" : "开始挑战"}
+                  </button>
+                  {hasResult ? (
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      onClick={() => navigate(resultRoute)}
+                    >
+                      查看结算页
+                    </button>
+                  ) : null}
+                </div>
               </div>
             </article>
           );
@@ -355,22 +375,20 @@ export function StudentThemePage() {
           }`}
         >
           <div className="student-section-heading">
-            <span className="section-block__eyebrow">考试宝箱</span>
-            <h2>三关结束后就在这里挑战</h2>
+            <span className="section-block__eyebrow">主题考试</span>
+            <h2>三关完成后就在这里继续</h2>
           </div>
           <p>
             {examCompleted
-              ? "考试已经完成，现在可以去看错题回看和结果卡。"
+              ? "主题考试已经完成，现在可以回看错题、学习记录和 AI 结果卡。"
               : examUnlocked
-                ? "宝箱已经点亮，快去完成主题考试。"
-                : "先通过三关，考试宝箱才会打开。"}
+                ? "三关全部完成后，考试入口已经点亮，可以直接开始。"
+                : "请先按顺序完成三关闯关学习，考试入口才会自动解锁。"}
           </p>
           <div className="button-row">
             <button
               type="button"
-              className={
-                examUnlocked ? "primary-button primary-button--playful" : "ghost-button"
-              }
+              className={examUnlocked ? "primary-button primary-button--playful" : "ghost-button"}
               disabled={!examUnlocked}
               onClick={() =>
                 navigate(
@@ -380,13 +398,10 @@ export function StudentThemePage() {
                 )
               }
             >
-              {examCompleted ? "查看考试结果" : "打开宝箱"}
+              {examCompleted ? "查看考试结果" : "进入主题考试"}
             </button>
             {examCompleted ? (
-              <Link
-                className="ghost-button link-button"
-                to="/student/theme/road-safety/wrong-questions"
-              >
+              <Link className="ghost-button link-button" to="/student/theme/road-safety/wrong-questions">
                 错题回看
               </Link>
             ) : null}
@@ -396,20 +411,20 @@ export function StudentThemePage() {
         <article className="surface-card student-link-board">
           <div className="student-section-heading">
             <span className="section-block__eyebrow">收尾入口</span>
-            <h2>完成主题后去哪儿？</h2>
+            <h2>完成主题后还可以去哪儿</h2>
           </div>
           <div className="student-mini-links">
             <Link className="student-mini-link student-mini-link--link" to="/student/ai-report">
               <strong>AI 结果卡</strong>
-              <span>看亮点、成长和下一步</span>
+              <span>查看亮点、成长和下一步建议</span>
             </Link>
             <Link className="student-mini-link student-mini-link--link" to="/student/records">
               <strong>学习记录</strong>
-              <span>回看整个主题旅程</span>
+              <span>回看完整主题旅程和最近一次学习位置</span>
             </Link>
-            <Link className="student-mini-link student-mini-link--link" to="/student/home">
-              <strong>返回首页</strong>
-              <span>从首页重新出发</span>
+            <Link className="student-mini-link student-mini-link--link" to="/student/growth">
+              <strong>成长档案</strong>
+              <span>查看人物外观、场景和成长阶段变化</span>
             </Link>
           </div>
         </article>
@@ -418,24 +433,19 @@ export function StudentThemePage() {
       {showExamUnlock ? (
         <section className="overlay-modal-backdrop">
           <article className="surface-card student-treasure-modal">
-            <span className="section-block__eyebrow">宝箱已解锁</span>
-            <h2>三关学习全部完成啦</h2>
-            <p>现在可以打开考试宝箱，完成这一轮道路安全冒险。</p>
-            <div className="student-treasure-modal__badge">奖章宝箱</div>
+            <span className="section-block__eyebrow">主题考试已解锁</span>
+            <h2>三关闯关学习已经全部完成</h2>
+            <p>现在可以进入主题考试，也可以稍后再从主题地图回来继续。</p>
             <div className="button-row">
-              <button
-                type="button"
-                className="ghost-button"
-                onClick={() => acknowledgeUnlock()}
-              >
-                稍后去
+              <button type="button" className="ghost-button" onClick={() => acknowledgeUnlock()}>
+                稍后去完成
               </button>
               <button
                 type="button"
                 className="primary-button primary-button--playful"
                 onClick={() => acknowledgeUnlock("/student/theme/road-safety/exam")}
               >
-                立刻挑战
+                立即进入
               </button>
             </div>
           </article>

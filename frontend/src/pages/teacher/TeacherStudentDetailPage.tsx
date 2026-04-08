@@ -52,6 +52,7 @@ export function TeacherStudentDetailPage() {
           <h1>{student.name}</h1>
           <div className="chip-row">
             <span className="surface-tag">{student.className}</span>
+            <span className="surface-tag">学号 {student.studentNo ?? "--"}</span>
             <span className="surface-tag">{student.growthStage}</span>
             <span className="surface-tag">{growthLevelLabel}</span>
             <span className={`teacher-attention-pill teacher-attention-pill--${attentionLevel}`}>

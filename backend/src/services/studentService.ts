@@ -25,6 +25,7 @@ import {
 import type {
   CompleteLevelResponse,
   ExamSubmissionRow,
+  LevelCompletionPayload,
   LevelId,
   LevelProgressRow,
   LevelResult,
@@ -34,6 +35,7 @@ import type {
   StudentProgress,
 } from "../types/contracts";
 import { HttpError } from "../utils/httpError";
+import { ensureUniqueStudentNo } from "../utils/identityCodes";
 
 function parseBadges(value: string) {
   try {
@@ -56,12 +58,124 @@ export function parseLevelId(value: string) {
   return value;
 }
 
+function clampScore(value: unknown, fallback: number) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.max(0, Math.min(100, Math.round(value)))
+    : fallback;
+}
+
+function clampStars(value: unknown, fallback: number) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.max(1, Math.min(3, Math.round(value)))
+    : fallback;
+}
+
+function pickString(value: unknown, fallback: string) {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function pickStringArray(value: unknown, fallback: string[]) {
+  return Array.isArray(value) && value.every((item) => typeof item === "string" && item.trim())
+    ? value.map((item) => item.trim())
+    : fallback;
+}
+
+function buildLevelResultFromPayload(
+  levelId: LevelId,
+  payload: LevelCompletionPayload | undefined,
+  completedAt: string,
+): LevelResult {
+  const template = levelResultTemplates[levelId];
+
+  return {
+    levelId,
+    score: clampScore(payload?.score, template.score),
+    stars: clampStars(payload?.stars, template.stars),
+    completedAt,
+    highlight: pickString(payload?.highlight, template.highlight),
+    caution: pickString(payload?.caution, template.caution),
+    aiSummary: pickString(payload?.aiSummary, template.aiSummary),
+    keySafetyPoints: pickStringArray(payload?.keySafetyPoints, template.keySafetyPoints),
+    cautionPoints: pickStringArray(payload?.cautionPoints, template.cautionPoints),
+    rewardIcon: pickString(payload?.rewardIcon, template.rewardIcon),
+    rewardLabel: pickString(payload?.rewardLabel, template.rewardLabel),
+  };
+}
+
+function parseStoredLevelResult(row: LevelProgressRow): LevelResult | null {
+  if (
+    row.score === null ||
+    row.stars === null ||
+    !row.completed_at ||
+    !row.highlight ||
+    !row.caution ||
+    !row.ai_summary
+  ) {
+    return null;
+  }
+
+  const template = levelResultTemplates[row.level_id];
+
+  try {
+    if (row.result_payload_json) {
+      const parsed = JSON.parse(row.result_payload_json) as Partial<LevelResult>;
+      return {
+        levelId: row.level_id,
+        score: clampScore(parsed.score, row.score),
+        stars: clampStars(parsed.stars, row.stars),
+        completedAt: pickString(parsed.completedAt, row.completed_at),
+        highlight: pickString(parsed.highlight, row.highlight),
+        caution: pickString(parsed.caution, row.caution),
+        aiSummary: pickString(parsed.aiSummary, row.ai_summary),
+        keySafetyPoints: pickStringArray(parsed.keySafetyPoints, template.keySafetyPoints),
+        cautionPoints: pickStringArray(parsed.cautionPoints, template.cautionPoints),
+        rewardIcon: pickString(parsed.rewardIcon, template.rewardIcon),
+        rewardLabel: pickString(parsed.rewardLabel, template.rewardLabel),
+      };
+    }
+  } catch {
+    // Ignore malformed legacy payloads and fall back to row/template merge.
+  }
+
+  return {
+    levelId: row.level_id,
+    score: row.score,
+    stars: row.stars,
+    completedAt: row.completed_at,
+    highlight: row.highlight,
+    caution: row.caution,
+    aiSummary: row.ai_summary,
+    keySafetyPoints: template.keySafetyPoints,
+    cautionPoints: template.cautionPoints,
+    rewardIcon: template.rewardIcon,
+    rewardLabel: template.rewardLabel,
+  };
+}
+
 async function ensureStudentState(userId: string) {
   const db = await getDb();
-  const profile = await db.get<{ user_id: string }>(
-    "SELECT user_id FROM student_profiles WHERE user_id = ?",
+  const profile = await db.get<StudentProfileRow>(
+    `
+      SELECT
+        user_id, nickname, avatar_id, avatar_label, stage, student_no, class_id, class_name,
+        base_points, starter_badges_json, last_visited_route, created_at, updated_at
+      FROM student_profiles
+      WHERE user_id = ?
+    `,
     userId,
   );
+  const defaultClassName = "三年级（2）班";
+  const className = profile?.class_name || defaultClassName;
+  const classRow = await db.get<{ id: string }>(
+    `
+      SELECT id
+      FROM teacher_classes
+      WHERE name = ?
+      LIMIT 1
+    `,
+    className,
+  );
+  const studentNo = profile?.student_no ?? (await ensureUniqueStudentNo(db, userId, userId));
 
   if (!profile) {
     const now = new Date().toISOString();
@@ -69,14 +183,34 @@ async function ensureStudentState(userId: string) {
     await db.run(
       `
         INSERT INTO student_profiles (
-          user_id, nickname, avatar_id, avatar_label, stage, class_name,
+          user_id, nickname, avatar_id, avatar_label, stage, class_name, class_id, student_no,
           base_points, starter_badges_json, last_visited_route, created_at, updated_at
         )
-        VALUES (?, NULL, NULL, NULL, NULL, '三年级（2）班', 120, '["观察员新星"]', '/student/home', ?, ?)
+        VALUES (?, NULL, NULL, NULL, NULL, ?, ?, ?, 120, '["观察员新星"]', '/student/home', ?, ?)
       `,
       userId,
+      className,
+      classRow?.id ?? null,
+      studentNo,
       now,
       now,
+    );
+  } else if (!profile.student_no || !profile.class_id) {
+    await db.run(
+      `
+        UPDATE student_profiles
+        SET
+          class_name = COALESCE(NULLIF(class_name, ''), ?),
+          class_id = COALESCE(class_id, ?),
+          student_no = COALESCE(student_no, ?),
+          updated_at = ?
+        WHERE user_id = ?
+      `,
+      className,
+      classRow?.id ?? null,
+      studentNo,
+      new Date().toISOString(),
+      userId,
     );
   }
 
@@ -92,9 +226,9 @@ async function ensureStudentState(userId: string) {
         `
           INSERT INTO level_progress (
             user_id, level_id, status, score, stars, highlight, caution, ai_summary,
-            started_at, completed_at, updated_at
+            result_payload_json, started_at, completed_at, updated_at
           )
-          VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, ?)
+          VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, ?)
         `,
         userId,
         level.id,
@@ -112,7 +246,7 @@ async function getStudentProfileRow(userId: string) {
   return db.get<StudentProfileRow>(
     `
       SELECT
-        user_id, nickname, avatar_id, avatar_label, stage, class_name,
+        user_id, nickname, avatar_id, avatar_label, stage, student_no, class_id, class_name,
         base_points, starter_badges_json, last_visited_route, created_at, updated_at
       FROM student_profiles
       WHERE user_id = ?
@@ -128,7 +262,7 @@ async function getLevelRows(userId: string) {
     `
       SELECT
         user_id, level_id, status, score, stars, highlight, caution, ai_summary,
-        started_at, completed_at, updated_at
+        result_payload_json, started_at, completed_at, updated_at
       FROM level_progress
       WHERE user_id = ?
     `,
@@ -174,7 +308,7 @@ async function updateLastVisitedRoute(userId: string, route: string) {
 export async function getStudentProfile(userId: string): Promise<StudentProfile | null> {
   const row = await getStudentProfileRow(userId);
 
-  if (!row?.nickname || !row.avatar_id || !row.avatar_label || !row.stage) {
+  if (!row?.nickname || !row.avatar_id || !row.avatar_label || !row.stage || !row.student_no) {
     return null;
   }
 
@@ -183,12 +317,13 @@ export async function getStudentProfile(userId: string): Promise<StudentProfile 
     avatarId: row.avatar_id,
     avatarLabel: row.avatar_label,
     stage: row.stage,
+    studentNo: row.student_no,
   };
 }
 
 export async function saveStudentProfile(
   userId: string,
-  input: StudentProfile,
+  input: Pick<StudentProfile, "nickname" | "avatarId" | "avatarLabel" | "stage">,
 ): Promise<StudentProfile> {
   const db = await getDb();
   await ensureStudentState(userId);
@@ -218,7 +353,7 @@ export async function saveStudentProfile(
     userId,
     type: "profile_updated",
     title: "完成首次基础信息补充",
-    description: "昵称、头像和学段信息已保存，可继续进入道路安全主题学习。",
+    description: "昵称、头像、学段和学号已绑定，可以继续进入道路安全主题学习。",
     route: "/student/profile-setup",
     dedupeKey: `record:profile:${userId}`,
   });
@@ -288,26 +423,12 @@ export async function buildStudentProgress(userId: string): Promise<StudentProgr
 
   const levelResults = completedLevels.reduce<Partial<Record<LevelId, LevelResult>>>(
     (resultMap, row) => {
-      if (
-        row.score === null ||
-        row.stars === null ||
-        !row.completed_at ||
-        !row.highlight ||
-        !row.caution ||
-        !row.ai_summary
-      ) {
-        return resultMap;
+      const parsed = parseStoredLevelResult(row);
+
+      if (parsed) {
+        resultMap[row.level_id] = parsed;
       }
 
-      resultMap[row.level_id] = {
-        levelId: row.level_id,
-        score: row.score,
-        stars: row.stars,
-        completedAt: row.completed_at,
-        highlight: row.highlight,
-        caution: row.caution,
-        aiSummary: row.ai_summary,
-      };
       return resultMap;
     },
     {},
@@ -345,17 +466,15 @@ export async function buildStudentProgress(userId: string): Promise<StudentProgr
     },
   };
 }
-export async function startLevel(
-  userId: string,
-  levelId: LevelId,
-): Promise<StudentProgress> {
+
+export async function startLevel(userId: string, levelId: LevelId): Promise<StudentProgress> {
   const db = await getDb();
   await ensureStudentState(userId);
   const row = await db.get<LevelProgressRow>(
     `
       SELECT
         user_id, level_id, status, score, stars, highlight, caution, ai_summary,
-        started_at, completed_at, updated_at
+        result_payload_json, started_at, completed_at, updated_at
       FROM level_progress
       WHERE user_id = ? AND level_id = ?
     `,
@@ -389,7 +508,7 @@ export async function startLevel(
       userId,
       type: "level_started",
       title: `开始${levelBlueprints.find((item) => item.id === levelId)?.title ?? levelId}`,
-      description: "系统已记录当前关卡位置，稍后可通过“继续学习”直接返回。",
+      description: "系统已记录当前关卡位置，稍后可以通过“继续学习”直接返回。",
       route: `/student/theme/${THEME_ID}/level/${levelId}`,
       createdAt: startedAt,
       dedupeKey: `record:start:${userId}:${levelId}`,
@@ -403,6 +522,7 @@ export async function startLevel(
 export async function completeLevel(
   userId: string,
   levelId: LevelId,
+  payload?: LevelCompletionPayload,
 ): Promise<CompleteLevelResponse> {
   const db = await getDb();
   await ensureStudentState(userId);
@@ -410,7 +530,7 @@ export async function completeLevel(
     `
       SELECT
         user_id, level_id, status, score, stars, highlight, caution, ai_summary,
-        started_at, completed_at, updated_at
+        result_payload_json, started_at, completed_at, updated_at
       FROM level_progress
       WHERE user_id = ? AND level_id = ?
     `,
@@ -423,40 +543,43 @@ export async function completeLevel(
   }
 
   if (row.status === "locked") {
-    throw new HttpError(409, "请先完成前一关后再进入当前关卡。");
+    throw new HttpError(409, "请先完成前一关后，再进入当前关卡。");
   }
 
   const now = new Date().toISOString();
-  const template = levelResultTemplates[levelId];
+  const isReplay = row.status === "completed";
+  const nextResult = buildLevelResultFromPayload(levelId, payload, now);
 
-  if (row.status !== "completed") {
-    await db.run(
-      `
-        UPDATE level_progress
-        SET
-          status = 'completed',
-          score = ?,
-          stars = ?,
-          highlight = ?,
-          caution = ?,
-          ai_summary = ?,
-          started_at = COALESCE(started_at, ?),
-          completed_at = ?,
-          updated_at = ?
-        WHERE user_id = ? AND level_id = ?
-      `,
-      template.score,
-      template.stars,
-      template.highlight,
-      template.caution,
-      template.aiSummary,
-      now,
-      now,
-      now,
-      userId,
-      levelId,
-    );
+  await db.run(
+    `
+      UPDATE level_progress
+      SET
+        status = 'completed',
+        score = ?,
+        stars = ?,
+        highlight = ?,
+        caution = ?,
+        ai_summary = ?,
+        result_payload_json = ?,
+        started_at = COALESCE(started_at, ?),
+        completed_at = ?,
+        updated_at = ?
+      WHERE user_id = ? AND level_id = ?
+    `,
+    nextResult.score,
+    nextResult.stars,
+    nextResult.highlight,
+    nextResult.caution,
+    nextResult.aiSummary,
+    JSON.stringify(nextResult),
+    row.started_at ?? now,
+    now,
+    now,
+    userId,
+    levelId,
+  );
 
+  if (!isReplay) {
     const currentIndex = levelBlueprints.findIndex((item) => item.id === levelId);
     const nextLevel = levelBlueprints[currentIndex + 1];
 
@@ -472,12 +595,18 @@ export async function completeLevel(
         nextLevel.id,
       );
     }
+  } else {
+    await logLearningRecord({
+      userId,
+      type: "level_replayed",
+      title: `重新挑战${levelBlueprints.find((item) => item.id === levelId)?.title ?? levelId}`,
+      description: `本次重玩成绩 ${nextResult.score} 分，已刷新本关展示结果，但不会重复发放首次通关奖励。`,
+      route: `/student/theme/${THEME_ID}/level/${levelId}/result`,
+      createdAt: now,
+    });
   }
 
-  await updateLastVisitedRoute(
-    userId,
-    `/student/theme/${THEME_ID}/level/${levelId}/result`,
-  );
+  await updateLastVisitedRoute(userId, `/student/theme/${THEME_ID}/level/${levelId}/result`);
   await syncProgressBasedGrowthEvents(userId);
 
   const progress = await buildStudentProgress(userId);
@@ -496,7 +625,7 @@ export async function submitExam(
   const examQuestions = await getExamQuestionsFromDb();
 
   if (progress.exam.status === "locked") {
-    throw new HttpError(409, "请先完成三关闯关学习后再参加主题考试。");
+    throw new HttpError(409, "请先完成三关闯关学习后，再参加主题考试。");
   }
 
   if (progress.exam.status === "completed") {

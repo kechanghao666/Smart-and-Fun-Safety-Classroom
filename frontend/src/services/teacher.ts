@@ -1,4 +1,6 @@
-﻿import type {
+import type {
+  StudentClassMembershipResponse,
+  TeacherClassApplicationItem,
   TeacherClassManagementItem,
   TeacherClassSummary,
   TeacherStudentDetail,
@@ -51,6 +53,58 @@ export function updateTeacherClass(
     token,
     body: payload,
   });
+}
+
+export function inviteStudentToTeacherClass(
+  token: string,
+  classId: string,
+  studentNo: string,
+) {
+  return requestJson<StudentClassMembershipResponse>(
+    `/api/teacher/classes/${classId}/invite-student`,
+    {
+      method: "POST",
+      token,
+      body: { studentNo },
+    },
+  );
+}
+
+export function fetchTeacherClassApplications(token: string, classId: string) {
+  return requestJson<TeacherClassApplicationItem[]>(
+    `/api/teacher/classes/${classId}/applications`,
+    {
+      token,
+    },
+  );
+}
+
+export function approveTeacherClassApplication(
+  token: string,
+  classId: string,
+  applicationId: string,
+) {
+  return requestJson<TeacherClassApplicationItem[]>(
+    `/api/teacher/classes/${classId}/applications/${applicationId}/approve`,
+    {
+      method: "POST",
+      token,
+    },
+  );
+}
+
+export function rejectTeacherClassApplication(
+  token: string,
+  classId: string,
+  applicationId: string,
+) {
+  return requestJson<TeacherClassApplicationItem[]>(
+    `/api/teacher/classes/${classId}/applications/${applicationId}/reject`,
+    {
+      method: "POST",
+      token,
+    },
+  );
 }
 
 export function fetchTeacherStudents(token: string, filters?: TeacherStudentFilters) {

@@ -2,6 +2,10 @@ import { Router } from "express";
 import { requireRole } from "../middleware/auth";
 import { getExamQuestionsFromDb } from "../services/courseContentService";
 import {
+  applyStudentToClassByCode,
+  getStudentClassMembership,
+} from "../services/classMembershipService";
+import {
   buildStudentProgress,
   completeLevel,
   parseLevelId,
@@ -111,6 +115,28 @@ studentRouter.get("/ai-report", async (request, response, next) => {
   }
 });
 
+studentRouter.get("/class-membership", async (request, response, next) => {
+  try {
+    response.json(await getStudentClassMembership(request.authUser!.id));
+  } catch (error) {
+    next(error);
+  }
+});
+
+studentRouter.post("/class-membership/apply", async (request, response, next) => {
+  try {
+    const classCode = String(request.body?.classCode ?? "").trim();
+
+    if (!classCode) {
+      throw new HttpError(400, "班级号不能为空。");
+    }
+
+    response.json(await applyStudentToClassByCode(request.authUser!.id, classCode));
+  } catch (error) {
+    next(error);
+  }
+});
+
 studentRouter.post("/profile", async (request, response, next) => {
   try {
     const nickname = String(request.body?.nickname ?? "").trim();
@@ -154,7 +180,11 @@ studentRouter.post("/levels/:levelId/start", async (request, response, next) => 
 studentRouter.post("/levels/:levelId/complete", async (request, response, next) => {
   try {
     response.json(
-      await completeLevel(request.authUser!.id, parseLevelId(request.params.levelId)),
+      await completeLevel(
+        request.authUser!.id,
+        parseLevelId(request.params.levelId),
+        request.body ?? undefined,
+      ),
     );
   } catch (error) {
     next(error);

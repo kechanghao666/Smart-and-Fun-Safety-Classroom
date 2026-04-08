@@ -327,11 +327,23 @@ async function seedAdminLevels(db: Database) {
         : item;
     const existing = await db.get<{
       id: string;
-      scene_reference_label: string | null;
+      gameplay_mode: string | null;
+      route_challenge_json: string | null;
+      guardian_challenge_json: string | null;
       observation_scene_json: string | null;
       task_steps_json: string | null;
     }>(
-      "SELECT id, scene_reference_label, observation_scene_json, task_steps_json FROM admin_levels WHERE id = ?",
+      `
+        SELECT
+          id,
+          gameplay_mode,
+          route_challenge_json,
+          guardian_challenge_json,
+          observation_scene_json,
+          task_steps_json
+        FROM admin_levels
+        WHERE id = ?
+      `,
       enrichedItem.id,
     );
 
@@ -340,12 +352,14 @@ async function seedAdminLevels(db: Database) {
         `
           INSERT INTO admin_levels (
             id, title, focus, duration, display_order, scene_asset_label,
+            gameplay_mode,
             task_outline_json, reward_label, feedback_style, feedback_copy,
             hotspot_items_json, prop_items_json, target_area_notes_json,
             scene_reference_label, observation_scene_json, task_steps_json,
+            route_challenge_json, guardian_challenge_json,
             midpoint_copy, completion_copy, updated_at
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
         enrichedItem.id,
         enrichedItem.title,
@@ -353,6 +367,7 @@ async function seedAdminLevels(db: Database) {
         enrichedItem.duration,
         enrichedItem.displayOrder ?? 1,
         enrichedItem.sceneAssetLabel ?? "",
+        enrichedItem.gameplayMode ?? "observation",
         JSON.stringify(enrichedItem.taskOutline ?? []),
         enrichedItem.rewardLabel,
         enrichedItem.feedbackStyle,
@@ -363,6 +378,8 @@ async function seedAdminLevels(db: Database) {
         enrichedItem.observationScene?.referenceLabel ?? "",
         JSON.stringify(enrichedItem.observationScene ?? {}),
         JSON.stringify(enrichedItem.taskSteps ?? []),
+        JSON.stringify(enrichedItem.routeChallengeConfig ?? {}),
+        JSON.stringify(enrichedItem.guardianChallengeConfig ?? {}),
         enrichedItem.midpointCopy ?? "",
         enrichedItem.completionCopy ?? "",
         new Date().toISOString(),
@@ -398,6 +415,35 @@ async function seedAdminLevels(db: Database) {
         enrichedItem.id,
       );
     }
+
+    const expectedGameplayMode = enrichedItem.gameplayMode ?? "observation";
+    const shouldBackfillGameplayMode =
+      !existing.gameplay_mode ||
+      (enrichedItem.id !== "level-1" && existing.gameplay_mode !== expectedGameplayMode);
+
+    await db.run(
+      `
+        UPDATE admin_levels
+        SET
+          gameplay_mode = ?,
+          route_challenge_json = CASE
+            WHEN route_challenge_json IS NULL OR route_challenge_json = '' OR route_challenge_json = '{}'
+            THEN ?
+            ELSE route_challenge_json
+          END,
+          guardian_challenge_json = CASE
+            WHEN guardian_challenge_json IS NULL OR guardian_challenge_json = '' OR guardian_challenge_json = '{}'
+            THEN ?
+            ELSE guardian_challenge_json
+          END,
+          updated_at = updated_at
+        WHERE id = ?
+      `,
+      shouldBackfillGameplayMode ? expectedGameplayMode : existing.gameplay_mode,
+      JSON.stringify(enrichedItem.routeChallengeConfig ?? {}),
+      JSON.stringify(enrichedItem.guardianChallengeConfig ?? {}),
+      enrichedItem.id,
+    );
   }
 }
 

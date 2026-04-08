@@ -24,6 +24,7 @@ import {
   getAdminUsers,
   updateAdminUser,
 } from "../services/reportingService";
+import { parseLevelId } from "../services/studentService";
 
 export const adminRouter = Router();
 
@@ -143,7 +144,7 @@ adminRouter.delete("/themes/:id", async (request, response, next) => {
 
 adminRouter.put("/levels/:id", async (request, response, next) => {
   try {
-    response.json(await updateAdminLevel(request.params.id, request.body ?? {}));
+    response.json(await updateAdminLevel(parseLevelId(request.params.id), request.body ?? {}));
   } catch (error) {
     next(error);
   }

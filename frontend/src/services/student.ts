@@ -1,7 +1,9 @@
 import type {
   ExamQuestion,
   LevelId,
+  LevelCompletionPayload,
   LevelResult,
+  StudentClassMembershipResponse,
   StudentAiReportResponse,
   StudentExamReviewItem,
   StudentExamReviewResponse,
@@ -86,6 +88,20 @@ export function fetchStudentGrowth(token: string) {
   });
 }
 
+export function fetchStudentClassMembership(token: string) {
+  return requestJson<StudentClassMembershipResponse>("/api/student/class-membership", {
+    token,
+  });
+}
+
+export function applyStudentClassMembership(token: string, classCode: string) {
+  return requestJson<StudentClassMembershipResponse>("/api/student/class-membership/apply", {
+    method: "POST",
+    token,
+    body: { classCode },
+  });
+}
+
 export function saveStudentGrowthPreferences(
   token: string,
   payload: { appearance?: string | null; scene?: string | null },
@@ -110,10 +126,15 @@ export function startStudentLevel(token: string, levelId: LevelId) {
   });
 }
 
-export function completeStudentLevel(token: string, levelId: LevelId) {
+export function completeStudentLevel(
+  token: string,
+  levelId: LevelId,
+  payload?: LevelCompletionPayload,
+) {
   return requestJson<CompleteLevelResponse>(`/api/student/levels/${levelId}/complete`, {
     method: "POST",
     token,
+    body: payload,
   });
 }
 

@@ -9,6 +9,9 @@ export type LevelId = "level-1" | "level-2" | "level-3";
 export type StudentStage = "小学低段" | "小学中段" | "小学高段";
 export type ThemeAccent = "sky" | "mint" | "orange";
 export type GrowthDimensionId = "appearance" | "safety" | "scene";
+export type LevelGameplayMode = "observation" | "route" | "guardian";
+export type GuardianTaskType = "drag" | "tap" | "sequence";
+export type ClassJoinRequestStatus = "pending" | "approved" | "rejected";
 export type ObservationInteractionType =
   | "hotspot"
   | "danger_mark"
@@ -21,6 +24,7 @@ export type LearningRecordType =
   | "profile_updated"
   | "level_started"
   | "level_completed"
+  | "level_replayed"
   | "exam_unlocked"
   | "exam_completed"
   | "wrong_question_reviewed"
@@ -36,6 +40,7 @@ export interface StudentProfile {
   avatarId: string;
   avatarLabel: string;
   stage: StudentStage;
+  studentNo: string;
 }
 
 export interface StudentRewardProgress {
@@ -101,13 +106,102 @@ export interface ObservationLevelConfig {
   completionCopy: string;
 }
 
+export interface RouteChallengeChoice {
+  id: string;
+  label: string;
+  safe: boolean;
+  feedback: string;
+  safetyDelta: number;
+}
+
+export interface RouteChallengeNode {
+  id: string;
+  title: string;
+  mapLabel: string;
+  scenario: string;
+  hint: string;
+  helperText: string;
+  position: {
+    top: number;
+    left: number;
+  };
+  imageUrl?: string | null;
+  sourcePageUrl?: string | null;
+  options: RouteChallengeChoice[];
+}
+
+export interface RouteChallengeConfig {
+  mapTitle: string;
+  mapDescription: string;
+  routeLabel: string;
+  safetyLabel: string;
+  currentRoleLabel: string;
+  nodes: RouteChallengeNode[];
+  completionCopy: string;
+}
+
+export interface GuardianTargetZone {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  label: string;
+}
+
+export interface GuardianTapTarget {
+  id: string;
+  label: string;
+  hint: string;
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  correct: boolean;
+  feedback: string;
+}
+
+export interface GuardianSequenceItem {
+  id: string;
+  label: string;
+  expectedOrder: number;
+}
+
+export interface GuardianChallengeStage {
+  id: string;
+  title: string;
+  detail: string;
+  toolLabel: string;
+  toolHint: string;
+  stageLabel: string;
+  successText: string;
+  taskType: GuardianTaskType;
+  sceneImageUrl: string;
+  sceneSourcePageUrl: string;
+  sceneCaption: string;
+  toolImageUrl?: string | null;
+  toolSourcePageUrl?: string | null;
+  toolCaption?: string | null;
+  actionHint: string;
+  targetZone?: GuardianTargetZone | null;
+  tapTargets?: GuardianTapTarget[];
+  sequenceItems?: GuardianSequenceItem[];
+}
+
+export interface GuardianChallengeConfig {
+  stages: GuardianChallengeStage[];
+  completionCopy: string;
+}
+
 export interface LevelBlueprint {
   id: LevelId;
   title: string;
   focus: string;
   description: string;
   duration: string;
+  gameplayMode: LevelGameplayMode;
   observationConfig?: ObservationLevelConfig | null;
+  routeChallengeConfig?: RouteChallengeConfig | null;
+  guardianChallengeConfig?: GuardianChallengeConfig | null;
 }
 
 export interface LevelProgress extends LevelBlueprint {
@@ -122,6 +216,10 @@ export interface LevelResult {
   highlight: string;
   caution: string;
   aiSummary: string;
+  keySafetyPoints: string[];
+  cautionPoints: string[];
+  rewardIcon: string;
+  rewardLabel: string;
 }
 
 export interface ExamQuestion {
@@ -172,6 +270,18 @@ export interface StudentExamAnswer {
 export interface CompleteLevelResponse {
   progress: StudentProgress;
   result?: LevelResult;
+}
+
+export interface LevelCompletionPayload {
+  score: number;
+  stars: number;
+  highlight: string;
+  caution: string;
+  aiSummary: string;
+  keySafetyPoints: string[];
+  cautionPoints: string[];
+  rewardIcon: string;
+  rewardLabel: string;
 }
 
 export interface LearningRecordItem {
@@ -310,6 +420,7 @@ export interface StudentAiReportResponse {
 export interface TeacherStudentSummary {
   id: string;
   name: string;
+  studentNo: string;
   className: string;
   completedLevels: number;
   examStatus: string;
@@ -330,6 +441,8 @@ export interface TeacherClassSummary {
 export interface TeacherClassManagementItem extends TeacherClassSummary {
   description: string;
   createdAt: string;
+  classCode: string;
+  pendingApplications: number;
 }
 
 export interface TeacherStudentLevelStatus {
@@ -349,6 +462,16 @@ export interface TeacherStudentDetail extends TeacherStudentSummary {
   recommendations: string[];
   growthPoints?: number;
   unlockedScenes?: string[];
+}
+
+export interface TeacherClassApplicationItem {
+  id: string;
+  studentId: string;
+  studentNo: string;
+  studentName: string;
+  requestedAt: string;
+  currentClassName: string | null;
+  status: ClassJoinRequestStatus;
 }
 
 export interface AdminModuleCard {
@@ -373,6 +496,7 @@ export interface LevelManagementItem {
   title: string;
   focus: string;
   duration: string;
+  gameplayMode: LevelGameplayMode;
   displayOrder?: number;
   sceneAssetLabel?: string;
   taskOutline?: string[];
@@ -386,6 +510,8 @@ export interface LevelManagementItem {
   taskSteps?: ObservationTaskStep[];
   midpointCopy?: string;
   completionCopy?: string;
+  routeChallengeConfig?: RouteChallengeConfig | null;
+  guardianChallengeConfig?: GuardianChallengeConfig | null;
 }
 
 export interface QuestionBankManagementItem {
@@ -449,6 +575,8 @@ export interface StudentProfileRow {
   avatar_id: string | null;
   avatar_label: string | null;
   stage: StudentStage | null;
+  student_no: string | null;
+  class_id: string | null;
   class_name: string;
   base_points: number;
   starter_badges_json: string;
@@ -466,6 +594,7 @@ export interface LevelProgressRow {
   highlight: string | null;
   caution: string | null;
   ai_summary: string | null;
+  result_payload_json: string | null;
   started_at: string | null;
   completed_at: string | null;
   updated_at: string;
@@ -531,9 +660,20 @@ export interface TeacherClassRow {
   id: string;
   teacher_user_id: string;
   name: string;
+  class_code: string;
   description: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface ClassJoinRequestRow {
+  id: string;
+  student_user_id: string;
+  class_id: string;
+  status: ClassJoinRequestStatus;
+  requested_at: string;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
 }
 
 export interface GrowthConfigRow {
@@ -558,6 +698,7 @@ export interface LevelManagementRow {
   title: string;
   focus: string;
   duration: string;
+  gameplay_mode: LevelGameplayMode;
   display_order: number;
   scene_asset_label: string;
   task_outline_json: string;
@@ -572,6 +713,8 @@ export interface LevelManagementRow {
   task_steps_json: string;
   midpoint_copy: string;
   completion_copy: string;
+  route_challenge_json: string;
+  guardian_challenge_json: string;
   updated_at: string;
 }
 
@@ -607,5 +750,22 @@ export interface AiChatRequest {
 export interface AiChatResponse {
   reply: string;
   suggestions?: string[];
+}
+
+export interface StudentClassMembershipResponse {
+  studentNo: string;
+  currentClass: {
+    id: string;
+    name: string;
+    classCode: string;
+  } | null;
+  pendingRequest: {
+    id: string;
+    classId: string;
+    className: string;
+    classCode: string;
+    status: ClassJoinRequestStatus;
+    requestedAt: string;
+  } | null;
 }
 

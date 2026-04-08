@@ -37,13 +37,16 @@ export async function createSchema(db: Database) {
       avatar_id TEXT,
       avatar_label TEXT,
       stage TEXT,
+      student_no TEXT,
+      class_id TEXT,
       class_name TEXT NOT NULL DEFAULT '三年级（2）班',
       base_points INTEGER NOT NULL DEFAULT 120,
       starter_badges_json TEXT NOT NULL DEFAULT '["观察员新星"]',
       last_visited_route TEXT NOT NULL DEFAULT '/student/home',
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (class_id) REFERENCES teacher_classes(id) ON DELETE SET NULL
     );
 
     CREATE TABLE IF NOT EXISTS level_progress (
@@ -55,6 +58,7 @@ export async function createSchema(db: Database) {
       highlight TEXT,
       caution TEXT,
       ai_summary TEXT,
+      result_payload_json TEXT NOT NULL DEFAULT '{}',
       started_at TEXT,
       completed_at TEXT,
       updated_at TEXT NOT NULL,
@@ -109,6 +113,7 @@ export async function createSchema(db: Database) {
       title TEXT NOT NULL,
       focus TEXT NOT NULL,
       duration TEXT NOT NULL,
+      gameplay_mode TEXT NOT NULL DEFAULT 'observation',
       display_order INTEGER NOT NULL DEFAULT 1,
       scene_asset_label TEXT NOT NULL DEFAULT '',
       task_outline_json TEXT NOT NULL DEFAULT '[]',
@@ -123,6 +128,8 @@ export async function createSchema(db: Database) {
       task_steps_json TEXT NOT NULL DEFAULT '[]',
       midpoint_copy TEXT NOT NULL DEFAULT '',
       completion_copy TEXT NOT NULL DEFAULT '',
+      route_challenge_json TEXT NOT NULL DEFAULT '{}',
+      guardian_challenge_json TEXT NOT NULL DEFAULT '{}',
       updated_at TEXT NOT NULL
     );
 
@@ -207,10 +214,24 @@ export async function createSchema(db: Database) {
       id TEXT PRIMARY KEY,
       teacher_user_id TEXT NOT NULL,
       name TEXT NOT NULL UNIQUE,
+      class_code TEXT,
       description TEXT NOT NULL DEFAULT '',
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       FOREIGN KEY (teacher_user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS class_join_requests (
+      id TEXT PRIMARY KEY,
+      student_user_id TEXT NOT NULL,
+      class_id TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      requested_at TEXT NOT NULL,
+      reviewed_at TEXT,
+      reviewed_by TEXT,
+      FOREIGN KEY (student_user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (class_id) REFERENCES teacher_classes(id) ON DELETE CASCADE,
+      FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
     );
 
     CREATE TABLE IF NOT EXISTS growth_settings (
@@ -223,10 +244,24 @@ export async function createSchema(db: Database) {
 
   await ensureColumn(db, "users", "status", "TEXT NOT NULL DEFAULT 'active'");
   await ensureColumn(db, "users", "admin_note", "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn(db, "student_profiles", "student_no", "TEXT");
+  await ensureColumn(db, "student_profiles", "class_id", "TEXT");
+  await ensureColumn(
+    db,
+    "level_progress",
+    "result_payload_json",
+    "TEXT NOT NULL DEFAULT '{}'",
+  );
 
   await ensureColumn(db, "themes", "cover_accent", "TEXT NOT NULL DEFAULT 'sky'");
   await ensureColumn(db, "themes", "cover_illustration", "TEXT NOT NULL DEFAULT ''");
 
+  await ensureColumn(
+    db,
+    "admin_levels",
+    "gameplay_mode",
+    "TEXT NOT NULL DEFAULT 'observation'",
+  );
   await ensureColumn(db, "admin_levels", "display_order", "INTEGER NOT NULL DEFAULT 1");
   await ensureColumn(db, "admin_levels", "scene_asset_label", "TEXT NOT NULL DEFAULT ''");
   await ensureColumn(db, "admin_levels", "task_outline_json", "TEXT NOT NULL DEFAULT '[]'");
@@ -264,6 +299,18 @@ export async function createSchema(db: Database) {
     "completion_copy",
     "TEXT NOT NULL DEFAULT ''",
   );
+  await ensureColumn(
+    db,
+    "admin_levels",
+    "route_challenge_json",
+    "TEXT NOT NULL DEFAULT '{}'",
+  );
+  await ensureColumn(
+    db,
+    "admin_levels",
+    "guardian_challenge_json",
+    "TEXT NOT NULL DEFAULT '{}'",
+  );
 
   await ensureColumn(db, "question_bank", "theme_id", "TEXT NOT NULL DEFAULT 'road-safety'");
   await ensureColumn(db, "question_bank", "theme_title", "TEXT NOT NULL DEFAULT '道路安全教育'");
@@ -289,4 +336,24 @@ export async function createSchema(db: Database) {
     "selected_scene",
     "TEXT NOT NULL DEFAULT '城市街道'",
   );
+  await ensureColumn(db, "teacher_classes", "class_code", "TEXT");
+
+  await db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_student_profiles_student_no
+      ON student_profiles(student_no)
+      WHERE student_no IS NOT NULL;
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_teacher_classes_class_code
+      ON teacher_classes(class_code)
+      WHERE class_code IS NOT NULL;
+
+    CREATE INDEX IF NOT EXISTS idx_student_profiles_class_id
+      ON student_profiles(class_id);
+
+    CREATE INDEX IF NOT EXISTS idx_class_join_requests_class_id
+      ON class_join_requests(class_id);
+
+    CREATE INDEX IF NOT EXISTS idx_class_join_requests_student_user_id
+      ON class_join_requests(student_user_id);
+  `);
 }
