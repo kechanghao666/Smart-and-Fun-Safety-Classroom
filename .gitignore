@@ -18,4 +18,5 @@ backend/data/*.sqlite
 backend/data/*.sqlite-shm
 backend/data/*.sqlite-wal
 .codex_tmp/
+auth-info.docx
 
