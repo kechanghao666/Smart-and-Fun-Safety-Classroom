@@ -1,6 +1,4 @@
-const rawApiBaseUrl = (
-  import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:3001"
-).trim();
+const rawApiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "/api").trim();
 const rawTimeout = Number(import.meta.env.VITE_API_TIMEOUT_MS ?? "8000");
 
 export const apiBaseUrl = rawApiBaseUrl.replace(/\/+$/, "");

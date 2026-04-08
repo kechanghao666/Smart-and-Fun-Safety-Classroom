@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import cors from "cors";
 import express from "express";
 import { env } from "./config/env";
@@ -13,6 +15,9 @@ const configuredOrigins = env.corsOrigin
   .map((item) => item.trim())
   .filter(Boolean);
 const localDevOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
+const frontendDistDir = path.resolve(__dirname, "../../frontend/dist");
+const frontendIndexPath = path.join(frontendDistDir, "index.html");
+const hasFrontendBuild = fs.existsSync(frontendIndexPath);
 
 function isAllowedOrigin(origin?: string) {
   if (!origin) {
@@ -52,6 +57,19 @@ app.use("/api/student", studentRouter);
 app.use("/api/teacher", teacherRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/ai", aiRouter);
+
+if (hasFrontendBuild) {
+  app.use(express.static(frontendDistDir));
+
+  app.get("*", (request, response, next) => {
+    if (request.path.startsWith("/api")) {
+      next();
+      return;
+    }
+
+    response.sendFile(frontendIndexPath);
+  });
+}
 
 app.use((_request, _response, next) => {
   next(new HttpError(404, "未找到对应接口。"));

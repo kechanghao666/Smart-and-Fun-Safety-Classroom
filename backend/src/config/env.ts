@@ -21,6 +21,7 @@ function toNumber(value: string | undefined, fallback: number) {
 }
 
 export const env = {
+  host: process.env.HOST ?? "0.0.0.0",
   port: toNumber(process.env.PORT, 3001),
   corsOrigin:
     process.env.CORS_ORIGIN ??

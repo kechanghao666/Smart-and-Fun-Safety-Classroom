@@ -9,8 +9,10 @@ async function main() {
   await createSchema(db);
   await seedDatabase(db);
 
-  app.listen(env.port, () => {
-    console.log(`Backend server listening on http://127.0.0.1:${env.port}`);
+  app.listen(env.port, env.host, () => {
+    console.log(
+      `Backend server listening on http://${env.host === "0.0.0.0" ? "localhost" : env.host}:${env.port}`,
+    );
   });
 }
 

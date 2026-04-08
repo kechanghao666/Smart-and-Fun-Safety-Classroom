@@ -11,8 +11,10 @@
     "dev:backend": "npm --prefix backend run dev",
     "build": "npm --prefix frontend run build",
     "build:backend": "npm --prefix backend run build",
+    "build:all": "npm run build && npm run build:backend",
     "check:backend": "npm --prefix backend run check",
-    "preview": "npm --prefix frontend run preview"
+    "preview": "npm --prefix frontend run preview",
+    "start:prod": "npm --prefix backend run start"
   },
   "engines": {
     "node": ">=20.0.0"

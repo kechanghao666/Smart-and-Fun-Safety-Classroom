@@ -31,17 +31,18 @@ project/
 复制 [frontend/.env.example](frontend/.env.example) 为 `frontend/.env.local`：
 
 ```bash
-VITE_API_BASE_URL=http://127.0.0.1:3001
+VITE_API_BASE_URL=/api
 VITE_API_TIMEOUT_MS=8000
 ```
 
-不配置 `VITE_API_BASE_URL` 时，前端默认连接本地后端 `http://127.0.0.1:3001`。
+默认推荐使用 `/api`，这样本地开发会走 Vite 代理，部署到服务器后会直接走同源后端地址，不会再写死某一台电脑的 `127.0.0.1`。
 
 ### 后端
 
 复制 [backend/.env.example](backend/.env.example) 为 `backend/.env`：
 
 ```bash
+HOST=0.0.0.0
 PORT=3001
 CORS_ORIGIN=http://127.0.0.1:5173,http://localhost:5173
 DB_PATH=./data/smart-and-fun-safety-classroom.sqlite
@@ -52,12 +53,12 @@ SPARK_APP_ID=
 SPARK_API_KEY=
 SPARK_API_SECRET=
 SPARK_API_PASSWORD=
-AI_FALLBACK_ENABLED=true
+AI_FALLBACK_ENABLED=false
 ```
 
 如果需要真实 Spark 联调，只填写 `SPARK_*` 凭据；不要把凭据提交到仓库。
 
-## 启动方法
+## 本地开发
 
 在仓库根目录执行：
 
@@ -87,13 +88,80 @@ npm run build
 
 默认地址：
 
-- 前端：[http://127.0.0.1:5173](http://127.0.0.1:5173)
+- 前端：[http://localhost:5173](http://localhost:5173)
 - 后端健康检查：[http://127.0.0.1:3001/api/health](http://127.0.0.1:3001/api/health)
 
 本地开发建议：
 
 - 前端优先使用 [http://localhost:5173](http://localhost:5173) 或终端实际显示的 Vite 地址。
 - 如果 5173 被占用，Vite 可能自动切换到 `5174`、`5175` 等端口；后端现在默认允许本机 `localhost` 和 `127.0.0.1` 的开发端口访问。
+
+## 远程部署与公开体验
+
+当前项目已经支持“后端托管前端静态页”的单地址部署模式。也就是说，前端构建后会由后端直接提供页面，别人访问你的服务器地址就能使用，不再依赖你本机的 `127.0.0.1`。
+
+### 适合的部署方式
+
+- 云服务器 / 学校服务器 / 实验室公网主机
+- 能长期运行 Node.js 进程，并允许外部访问 `PORT`
+
+### 部署步骤
+
+在服务器上执行：
+
+```bash
+npm install
+```
+
+复制环境文件：
+
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env.local
+```
+
+如果服务器上已经有旧的 `frontend/.env.local`，请确认把 `VITE_API_BASE_URL` 改成 `/api`，不要继续保留 `http://127.0.0.1:3001`。
+
+按需修改 `backend/.env`：
+
+```bash
+HOST=0.0.0.0
+PORT=3001
+```
+
+构建前后端：
+
+```bash
+npm run build:all
+```
+
+启动生产服务：
+
+```bash
+npm run start:prod
+```
+
+启动成功后，访问：
+
+- `http://你的服务器IP:3001`
+- 或你绑定的域名
+
+后端健康检查仍然是：
+
+- `http://你的服务器IP:3001/api/health`
+
+### 为什么现在可以远程打开
+
+- 前端默认请求同源 `/api`
+- 本地开发时由 Vite 代理到后端
+- 生产环境下由后端直接托管 `frontend/dist`
+- 所以部署后别人打开的是“你的服务器地址”，而不是他们自己电脑上的 `127.0.0.1`
+
+### 如果你想给别人长期体验
+
+- 推荐把项目部署到一台公网服务器
+- 确保服务器防火墙和云平台安全组放行对应端口
+- 如需更正式的访问方式，可再加 Nginx 反向代理和域名
 
 ## 测试入口
 
