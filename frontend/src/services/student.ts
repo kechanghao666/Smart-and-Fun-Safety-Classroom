@@ -41,7 +41,7 @@ export interface AiChatResponse {
 }
 
 export function saveStudentProfile(token: string, payload: StudentProfile) {
-  return requestJson<StudentProfile>("/api/student/profile", {
+  return requestJson<StudentProfile>("/student/profile", {
     method: "POST",
     token,
     body: payload,
@@ -49,32 +49,32 @@ export function saveStudentProfile(token: string, payload: StudentProfile) {
 }
 
 export function fetchStudentProgress(token: string) {
-  return requestJson<StudentProgress>("/api/student/progress", {
+  return requestJson<StudentProgress>("/student/progress", {
     token,
   });
 }
 
 export function fetchStudentExamQuestions(token: string) {
-  return requestJson<ExamQuestion[]>("/api/student/exam/questions", {
+  return requestJson<ExamQuestion[]>("/student/exam/questions", {
     token,
   });
 }
 
 export function fetchStudentRecords(token: string) {
-  return requestJson<StudentRecordsResponse>("/api/student/records", {
+  return requestJson<StudentRecordsResponse>("/student/records", {
     token,
   });
 }
 
 export function fetchStudentExamReview(token: string) {
-  return requestJson<StudentExamReviewResponse>("/api/student/exam/review", {
+  return requestJson<StudentExamReviewResponse>("/student/exam/review", {
     token,
   });
 }
 
 export function completeStudentWrongQuestionReview(token: string, questionId: string) {
   return requestJson<CompleteWrongQuestionReviewResponse>(
-    `/api/student/exam/review/${questionId}/complete`,
+    `/student/exam/review/${questionId}/complete`,
     {
       method: "POST",
       token,
@@ -83,19 +83,19 @@ export function completeStudentWrongQuestionReview(token: string, questionId: st
 }
 
 export function fetchStudentGrowth(token: string) {
-  return requestJson<StudentGrowthResponse>("/api/student/growth", {
+  return requestJson<StudentGrowthResponse>("/student/growth", {
     token,
   });
 }
 
 export function fetchStudentClassMembership(token: string) {
-  return requestJson<StudentClassMembershipResponse>("/api/student/class-membership", {
+  return requestJson<StudentClassMembershipResponse>("/student/class-membership", {
     token,
   });
 }
 
 export function applyStudentClassMembership(token: string, classCode: string) {
-  return requestJson<StudentClassMembershipResponse>("/api/student/class-membership/apply", {
+  return requestJson<StudentClassMembershipResponse>("/student/class-membership/apply", {
     method: "POST",
     token,
     body: { classCode },
@@ -106,7 +106,7 @@ export function saveStudentGrowthPreferences(
   token: string,
   payload: { appearance?: string | null; scene?: string | null },
 ) {
-  return requestJson<StudentGrowthResponse>("/api/student/growth/preferences", {
+  return requestJson<StudentGrowthResponse>("/student/growth/preferences", {
     method: "PUT",
     token,
     body: payload,
@@ -114,13 +114,13 @@ export function saveStudentGrowthPreferences(
 }
 
 export function fetchStudentAiReport(token: string) {
-  return requestJson<StudentAiReportResponse>("/api/student/ai-report", {
+  return requestJson<StudentAiReportResponse>("/student/ai-report", {
     token,
   });
 }
 
 export function startStudentLevel(token: string, levelId: LevelId) {
-  return requestJson<StudentProgress>(`/api/student/levels/${levelId}/start`, {
+  return requestJson<StudentProgress>(`/student/levels/${levelId}/start`, {
     method: "POST",
     token,
   });
@@ -131,7 +131,7 @@ export function completeStudentLevel(
   levelId: LevelId,
   payload?: LevelCompletionPayload,
 ) {
-  return requestJson<CompleteLevelResponse>(`/api/student/levels/${levelId}/complete`, {
+  return requestJson<CompleteLevelResponse>(`/student/levels/${levelId}/complete`, {
     method: "POST",
     token,
     body: payload,
@@ -139,7 +139,7 @@ export function completeStudentLevel(
 }
 
 export function submitStudentExam(token: string, answers: StudentExamAnswer[]) {
-  return requestJson<StudentProgress>("/api/student/exam/submit", {
+  return requestJson<StudentProgress>("/student/exam/submit", {
     method: "POST",
     token,
     body: { answers },
@@ -147,7 +147,7 @@ export function submitStudentExam(token: string, answers: StudentExamAnswer[]) {
 }
 
 export function chatWithStudentAi(token: string, payload: AiChatRequest) {
-  return requestJson<AiChatResponse>("/api/ai/chat", {
+  return requestJson<AiChatResponse>("/ai/chat", {
     method: "POST",
     token,
     body: payload,

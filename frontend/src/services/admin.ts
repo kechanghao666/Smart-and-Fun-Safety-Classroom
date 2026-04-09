@@ -12,19 +12,19 @@ import type {
 import { requestJson } from "./http";
 
 export function fetchAdminModules(token: string) {
-  return requestJson<AdminModuleCard[]>("/api/admin/modules", {
+  return requestJson<AdminModuleCard[]>("/admin/modules", {
     token,
   });
 }
 
 export function fetchAdminThemes(token: string) {
-  return requestJson<ThemeManagementItem[]>("/api/admin/themes", {
+  return requestJson<ThemeManagementItem[]>("/admin/themes", {
     token,
   });
 }
 
 export function createAdminTheme(token: string, payload: ThemeManagementItem) {
-  return requestJson<ThemeManagementItem[]>("/api/admin/themes", {
+  return requestJson<ThemeManagementItem[]>("/admin/themes", {
     method: "POST",
     token,
     body: payload,
@@ -32,7 +32,7 @@ export function createAdminTheme(token: string, payload: ThemeManagementItem) {
 }
 
 export function updateAdminTheme(token: string, themeId: string, payload: ThemeManagementItem) {
-  return requestJson<ThemeManagementItem[]>(`/api/admin/themes/${themeId}`, {
+  return requestJson<ThemeManagementItem[]>(`/admin/themes/${themeId}`, {
     method: "PUT",
     token,
     body: payload,
@@ -40,20 +40,20 @@ export function updateAdminTheme(token: string, themeId: string, payload: ThemeM
 }
 
 export function deleteAdminTheme(token: string, themeId: string) {
-  return requestJson<ThemeManagementItem[]>(`/api/admin/themes/${themeId}`, {
+  return requestJson<ThemeManagementItem[]>(`/admin/themes/${themeId}`, {
     method: "DELETE",
     token,
   });
 }
 
 export function fetchAdminLevels(token: string) {
-  return requestJson<LevelManagementItem[]>("/api/admin/levels", {
+  return requestJson<LevelManagementItem[]>("/admin/levels", {
     token,
   });
 }
 
 export function updateAdminLevel(token: string, levelId: string, payload: LevelManagementItem) {
-  return requestJson<LevelManagementItem[]>(`/api/admin/levels/${levelId}`, {
+  return requestJson<LevelManagementItem[]>(`/admin/levels/${levelId}`, {
     method: "PUT",
     token,
     body: payload,
@@ -61,7 +61,7 @@ export function updateAdminLevel(token: string, levelId: string, payload: LevelM
 }
 
 export function fetchAdminQuestionBank(token: string) {
-  return requestJson<QuestionBankManagementItem[]>("/api/admin/question-bank", {
+  return requestJson<QuestionBankManagementItem[]>("/admin/question-bank", {
     token,
   });
 }
@@ -71,7 +71,7 @@ export function updateAdminQuestionBank(
   questionId: string,
   payload: QuestionBankManagementItem,
 ) {
-  return requestJson<QuestionBankManagementItem[]>(`/api/admin/question-bank/${questionId}`, {
+  return requestJson<QuestionBankManagementItem[]>(`/admin/question-bank/${questionId}`, {
     method: "PUT",
     token,
     body: payload,
@@ -79,13 +79,13 @@ export function updateAdminQuestionBank(
 }
 
 export function fetchAdminAiCopy(token: string) {
-  return requestJson<AiCopyTemplateItem[]>("/api/admin/ai-copy", {
+  return requestJson<AiCopyTemplateItem[]>("/admin/ai-copy", {
     token,
   });
 }
 
 export function updateAdminAiCopy(token: string, templateId: string, payload: AiCopyTemplateItem) {
-  return requestJson<AiCopyTemplateItem[]>(`/api/admin/ai-copy/${templateId}`, {
+  return requestJson<AiCopyTemplateItem[]>(`/admin/ai-copy/${templateId}`, {
     method: "PUT",
     token,
     body: payload,
@@ -114,7 +114,7 @@ export function fetchAdminUsers(
   },
 ) {
   return requestJson<AdminUserSummary[]>(
-    `/api/admin/users${buildQueryString({
+    `/admin/users${buildQueryString({
       query: filters?.query,
       status: filters?.status,
       role: filters?.role,
@@ -130,7 +130,7 @@ export function updateAdminUser(
   userId: string,
   payload: { status?: AdminUserSummary["status"]; note?: string },
 ) {
-  return requestJson<AdminUserSummary | null>(`/api/admin/users/${userId}`, {
+  return requestJson<AdminUserSummary | null>(`/admin/users/${userId}`, {
     method: "PATCH",
     token,
     body: payload,
@@ -143,19 +143,19 @@ export interface AdminStatsResponse {
 }
 
 export function fetchAdminStats(token: string) {
-  return requestJson<AdminStatsResponse>("/api/admin/stats", {
+  return requestJson<AdminStatsResponse>("/admin/stats", {
     token,
   });
 }
 
 export function fetchAdminGrowthConfig(token: string) {
-  return requestJson<GrowthConfigItem>("/api/admin/growth-config", {
+  return requestJson<GrowthConfigItem>("/admin/growth-config", {
     token,
   });
 }
 
 export function updateAdminGrowthConfig(token: string, payload: GrowthConfigItem) {
-  return requestJson<GrowthConfigItem>("/api/admin/growth-config", {
+  return requestJson<GrowthConfigItem>("/admin/growth-config", {
     method: "PUT",
     token,
     body: payload,

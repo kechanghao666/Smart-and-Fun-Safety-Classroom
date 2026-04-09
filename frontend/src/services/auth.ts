@@ -11,7 +11,7 @@ export interface LoginResponse {
 }
 
 export function loginWithPassword(account: string, password: string) {
-  return requestJson<LoginResponse>("/api/auth/login", {
+  return requestJson<LoginResponse>("/auth/login", {
     method: "POST",
     body: { account, password },
   });
@@ -23,7 +23,7 @@ export function registerWithPassword(input: {
   displayName: string;
   role: UserRole;
 }) {
-  return requestJson<LoginResponse>("/api/auth/register", {
+  return requestJson<LoginResponse>("/auth/register", {
     method: "POST",
     body: input,
   });

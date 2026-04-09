@@ -21,13 +21,13 @@ export interface TeacherStudentFilters {
 }
 
 export function fetchTeacherDashboard(token: string) {
-  return requestJson<TeacherDashboardResponse>("/api/teacher/dashboard", {
+  return requestJson<TeacherDashboardResponse>("/teacher/dashboard", {
     token,
   });
 }
 
 export function fetchTeacherClasses(token: string) {
-  return requestJson<TeacherClassManagementItem[]>("/api/teacher/classes", {
+  return requestJson<TeacherClassManagementItem[]>("/teacher/classes", {
     token,
   });
 }
@@ -36,7 +36,7 @@ export function createTeacherClass(
   token: string,
   payload: { name: string; description: string },
 ) {
-  return requestJson<TeacherClassManagementItem>("/api/teacher/classes", {
+  return requestJson<TeacherClassManagementItem>("/teacher/classes", {
     method: "POST",
     token,
     body: payload,
@@ -48,7 +48,7 @@ export function updateTeacherClass(
   classId: string,
   payload: { name?: string; description?: string },
 ) {
-  return requestJson<TeacherClassManagementItem>(`/api/teacher/classes/${classId}`, {
+  return requestJson<TeacherClassManagementItem>(`/teacher/classes/${classId}`, {
     method: "PUT",
     token,
     body: payload,
@@ -61,7 +61,7 @@ export function inviteStudentToTeacherClass(
   studentNo: string,
 ) {
   return requestJson<StudentClassMembershipResponse>(
-    `/api/teacher/classes/${classId}/invite-student`,
+    `/teacher/classes/${classId}/invite-student`,
     {
       method: "POST",
       token,
@@ -72,7 +72,7 @@ export function inviteStudentToTeacherClass(
 
 export function fetchTeacherClassApplications(token: string, classId: string) {
   return requestJson<TeacherClassApplicationItem[]>(
-    `/api/teacher/classes/${classId}/applications`,
+    `/teacher/classes/${classId}/applications`,
     {
       token,
     },
@@ -85,7 +85,7 @@ export function approveTeacherClassApplication(
   applicationId: string,
 ) {
   return requestJson<TeacherClassApplicationItem[]>(
-    `/api/teacher/classes/${classId}/applications/${applicationId}/approve`,
+    `/teacher/classes/${classId}/applications/${applicationId}/approve`,
     {
       method: "POST",
       token,
@@ -99,7 +99,7 @@ export function rejectTeacherClassApplication(
   applicationId: string,
 ) {
   return requestJson<TeacherClassApplicationItem[]>(
-    `/api/teacher/classes/${classId}/applications/${applicationId}/reject`,
+    `/teacher/classes/${classId}/applications/${applicationId}/reject`,
     {
       method: "POST",
       token,
@@ -124,7 +124,7 @@ export function fetchTeacherStudents(token: string, filters?: TeacherStudentFilt
 
   const query = params.toString();
   return requestJson<TeacherStudentSummary[]>(
-    query ? `/api/teacher/students?${query}` : "/api/teacher/students",
+    query ? `/teacher/students?${query}` : "/teacher/students",
     {
       token,
     },
@@ -132,7 +132,7 @@ export function fetchTeacherStudents(token: string, filters?: TeacherStudentFilt
 }
 
 export function fetchTeacherStudentDetail(token: string, studentId: string) {
-  return requestJson<TeacherStudentDetail>(`/api/teacher/students/${studentId}`, {
+  return requestJson<TeacherStudentDetail>(`/teacher/students/${studentId}`, {
     token,
   });
 }
