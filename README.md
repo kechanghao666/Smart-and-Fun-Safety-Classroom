@@ -226,4 +226,5 @@ npm run start:prod
 - [docs/v1-contracts.md](docs/v1-contracts.md)
 - [docs/collaboration-guide.md](docs/collaboration-guide.md)
 - [docs/main-quality-alignment-log.md](docs/main-quality-alignment-log.md)
+- [docs/aliyun-light-deployment-runbook.md](docs/aliyun-light-deployment-runbook.md)
 - [backend/README.md](backend/README.md)
