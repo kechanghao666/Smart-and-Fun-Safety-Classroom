@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { DataWorkbench } from "../../components/DataWorkbench";
+import { EmptyState } from "../../components/EmptyState";
+import { MetricCard } from "../../components/MetricCard";
+import { PageHero } from "../../components/PageHero";
 import { PaginationControls } from "../../components/PaginationControls";
 import { fetchTeacherStudents } from "../../services/teacher";
 import { useAppState } from "../../state/AppState";
@@ -133,98 +137,46 @@ export function TeacherStudentsPage() {
 
   return (
     <div className="page-stack">
-      <section className="hero-banner hero-banner--teacher">
-        <div>
-          <span className="hero-banner__eyebrow">班级学生列表</span>
-          <h1>按班级、完成状态、考试状态和风险点快速筛选学生</h1>
-          <p>列表页先承担教师的快速检索，再通过学生详情页展开完整的学习与成长状态。</p>
-          {error ? <p className="inline-note">{error}</p> : null}
-        </div>
-      </section>
-
-      <article className="feedback-box teacher-feedback-note">
-        <strong>{error ? "学生列表同步失败" : "学生列表已从后端加载"}</strong>
-        <p>
-          {isLoading
-            ? "正在同步学生列表..."
-            : error || "班级、完成状态和考试状态筛选会自动更新当前查看结果。"}
-        </p>
-      </article>
+      <PageHero
+        eyebrow="学生总览"
+        title="先筛出要关注的人，再决定点开哪一位"
+        description="搜索、班级、完成状态和考试状态放在同一层，先快速筛，再进入学生详情看完整闭环。"
+        tone="teacher"
+        stats={[
+          { label: "当前筛出", value: `${filteredStudents.length} 人` },
+          { label: "需优先跟进", value: `${urgentCount} 人` },
+          { label: "待考试", value: `${pendingExamCount} 人` },
+        ]}
+      />
 
       <section className="card-grid card-grid--three">
-        <article className="surface-card stat-card stat-card--compact">
-          <span>当前筛出</span>
-          <strong>{filteredStudents.length}</strong>
-          <p>根据搜索词、班级、完成状态和考试状态综合筛选后的学生数量。</p>
-        </article>
-        <article className="surface-card stat-card stat-card--compact">
-          <span>三关已完成</span>
-          <strong>{fullyCompletedCount}</strong>
-          <p>用于判断学生是否已经完成主题主学习流程。</p>
-        </article>
-        <article className="surface-card stat-card stat-card--compact">
-          <span>需立即跟进</span>
-          <strong>{urgentCount}</strong>
-          <p>优先查看高风险学生详情页，缩短发现问题到跟进的路径。</p>
-        </article>
+        <MetricCard
+          label="当前筛出"
+          value={`${filteredStudents.length}`}
+          description="根据搜索词、班级、完成状态和考试状态综合筛选后的学生数量。"
+          tone="teacher"
+        />
+        <MetricCard
+          label="三关已完成"
+          value={`${fullyCompletedCount}`}
+          description="快速判断哪些学生已经走完整个主题主链路。"
+          tone="teacher"
+        />
+        <MetricCard
+          label="待考试"
+          value={`${pendingExamCount}`}
+          description="优先发现还没进入考试和收口阶段的学生。"
+          tone="teacher"
+        />
       </section>
 
-      <section className="surface-card filter-bar filter-bar--teacher">
-        <label className="form-field">
-          <span>搜索学生</span>
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="搜索姓名或薄弱点"
-          />
-        </label>
-
-        <label className="form-field">
-          <span>班级</span>
-          <select value={classFilter} onChange={(event) => setClassFilter(event.target.value)}>
-            <option value="all">全部班级</option>
-            {classOptions.map((className) => (
-              <option key={className} value={className}>
-                {className}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="form-field">
-          <span>完成状态</span>
-          <select
-            value={completionFilter}
-            onChange={(event) =>
-              setCompletionFilter(event.target.value as CompletionFilter)
-            }
-          >
-            <option value="all">全部状态</option>
-            <option value="completed">已完成三关</option>
-            <option value="incomplete">未完成三关</option>
-          </select>
-        </label>
-
-        <label className="form-field">
-          <span>考试状态</span>
-          <select
-            value={examFilter}
-            onChange={(event) => setExamFilter(event.target.value as ExamFilter)}
-          >
-            <option value="all">全部状态</option>
-            <option value="completed">已完成考试</option>
-            <option value="pending">未完成考试</option>
-          </select>
-        </label>
-      </section>
-
-      <section className="surface-card admin-preview-card admin-preview-card--compact">
-        <div className="section-block__header">
-          <div>
-            <span className="section-block__eyebrow">优先名单</span>
-            <h2>最值得先跟进的学生</h2>
-          </div>
-          {hasFilters ? (
+      <DataWorkbench
+        eyebrow="筛选台"
+        title="用四个条件快速收紧范围"
+        description="先把人筛准，再去看详情页，教师工作节奏会更稳。"
+        tone="teacher"
+        toolbar={
+          hasFilters ? (
             <button
               type="button"
               className="ghost-button"
@@ -237,114 +189,180 @@ export function TeacherStudentsPage() {
             >
               清空筛选
             </button>
-          ) : null}
-        </div>
+          ) : null
+        }
+      >
+        <section className="surface-card filter-bar filter-bar--teacher">
+          <label className="form-field">
+            <span>搜索学生</span>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="搜索姓名或薄弱点"
+            />
+          </label>
 
-        <div className="teacher-compact-priority-grid">
+          <label className="form-field">
+            <span>班级</span>
+            <select value={classFilter} onChange={(event) => setClassFilter(event.target.value)}>
+              <option value="all">全部班级</option>
+              {classOptions.map((className) => (
+                <option key={className} value={className}>
+                  {className}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="form-field">
+            <span>完成状态</span>
+            <select
+              value={completionFilter}
+              onChange={(event) =>
+                setCompletionFilter(event.target.value as CompletionFilter)
+              }
+            >
+              <option value="all">全部状态</option>
+              <option value="completed">已完成三关</option>
+              <option value="incomplete">未完成三关</option>
+            </select>
+          </label>
+
+          <label className="form-field">
+            <span>考试状态</span>
+            <select
+              value={examFilter}
+              onChange={(event) => setExamFilter(event.target.value as ExamFilter)}
+            >
+              <option value="all">全部状态</option>
+              <option value="completed">已完成考试</option>
+              <option value="pending">未完成考试</option>
+            </select>
+          </label>
+        </section>
+      </DataWorkbench>
+
+      <section className="card-grid card-grid--two">
+        <DataWorkbench
+          eyebrow="优先名单"
+          title="这三位建议先看"
+          tone="teacher"
+        >
           {priorityStudents.length > 0 ? (
-            priorityStudents.map((student) => {
-              const attentionLevel = getTeacherAttentionLevel(student);
-
-              return (
-                <article key={student.id} className="teacher-analysis-card teacher-analysis-card--compact">
-                  <div className="row-between">
-                    <div>
-                      <strong>{student.name}</strong>
-                      <p className="teacher-analysis-card__meta">{student.className}</p>
-                    </div>
-                    <span className={`teacher-attention-pill teacher-attention-pill--${attentionLevel}`}>
-                      {getTeacherAttentionLabel(attentionLevel)}
-                    </span>
-                  </div>
-                  <p className="compact-copy compact-copy--two-line" title={student.weakSpot}>
-                    {student.weakSpot}
-                  </p>
-                </article>
-              );
-            })
-          ) : (
-            <article className="feedback-box empty-state-card empty-state-card--compact">
-              <strong>当前没有需要优先跟进的学生</strong>
-              <p>可以先查看本页下方的学生总览列表。</p>
-            </article>
-          )}
-        </div>
-      </section>
-
-      <section className="surface-card teacher-student-list-panel">
-        <div className="section-block__header">
-          <div>
-            <span className="section-block__eyebrow">学生总览</span>
-            <h2>固定尺寸列表中查看全部学生</h2>
-          </div>
-          <div className="chip-row">
-            <span className="surface-tag">待考试 {pendingExamCount} 人</span>
-            <span className="surface-tag">每页 {STUDENTS_PER_PAGE} 人</span>
-          </div>
-        </div>
-
-        {paginatedStudents.length > 0 ? (
-          <>
-            <div className="teacher-student-list">
-              {paginatedStudents.map((student) => {
+            <div className="teacher-attention-grid">
+              {priorityStudents.map((student) => {
                 const attentionLevel = getTeacherAttentionLevel(student);
 
                 return (
-                  <article key={student.id} className="teacher-student-row">
-                    <div className="teacher-student-row__identity">
+                  <article
+                    key={student.id}
+                    className="teacher-analysis-card teacher-analysis-card--compact"
+                  >
+                    <div className="row-between">
                       <div>
                         <strong>{student.name}</strong>
-                        <p className="teacher-analysis-card__meta">
-                          {student.className} · 学号 {student.studentNo ?? "--"}
-                        </p>
+                        <p className="teacher-analysis-card__meta">{student.className}</p>
                       </div>
-                    </div>
-
-                    <div className="teacher-student-row__metrics">
-                      <span className="surface-tag">三关 {student.completedLevels} / 3</span>
-                      <span className="surface-tag">
-                        考试 {student.score ?? student.examStatus}
-                      </span>
-                      <span className="surface-tag">最近学习 {student.lastActiveAt}</span>
-                    </div>
-
-                    <p
-                      className="teacher-student-row__weakspot compact-copy compact-copy--two-line"
-                      title={student.weakSpot}
-                    >
-                      {student.weakSpot}
-                    </p>
-
-                    <div className="teacher-student-row__actions">
-                      <span className={`teacher-attention-pill teacher-attention-pill--${attentionLevel}`}>
+                      <span
+                        className={`teacher-attention-pill teacher-attention-pill--${attentionLevel}`}
+                      >
                         {getTeacherAttentionLabel(attentionLevel)}
                       </span>
-                      <Link
-                        className="ghost-button link-button teacher-student-row__action-link"
-                        to={`/teacher/students/${student.id}`}
-                      >
-                        查看学生详情
-                      </Link>
                     </div>
+                    <p className="compact-copy compact-copy--two-line" title={student.weakSpot}>
+                      {student.weakSpot}
+                    </p>
                   </article>
                 );
               })}
             </div>
-
-            <PaginationControls
-              page={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              label={`共 ${filteredStudents.length} 名学生`}
+          ) : (
+            <EmptyState
+              title="当前没有需要优先跟进的学生"
+              description="可以先看下方总表，或调整筛选条件重新缩小范围。"
             />
-          </>
-        ) : (
-          <article className="empty-state-card empty-state-card--compact">
-            <strong>当前没有符合条件的学生</strong>
-            <p>可以调整筛选条件，或等待教师端数据同步后再查看。</p>
-          </article>
-        )}
+          )}
+        </DataWorkbench>
+
+        <DataWorkbench
+          eyebrow="列表总览"
+          title="固定密度查看整班学生"
+          tone="teacher"
+        >
+          {paginatedStudents.length > 0 ? (
+            <>
+              <div className="teacher-student-list">
+                {paginatedStudents.map((student) => {
+                  const attentionLevel = getTeacherAttentionLevel(student);
+
+                  return (
+                    <article key={student.id} className="teacher-student-row">
+                      <div className="teacher-student-row__identity">
+                        <div>
+                          <strong>{student.name}</strong>
+                          <p className="teacher-analysis-card__meta">
+                            {student.className} · 学号 {student.studentNo ?? "--"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="teacher-student-row__metrics">
+                        <span className="surface-tag">三关 {student.completedLevels} / 3</span>
+                        <span className="surface-tag">
+                          考试 {student.score ?? student.examStatus}
+                        </span>
+                        <span className="surface-tag">最近学习 {student.lastActiveAt}</span>
+                      </div>
+
+                      <p
+                        className="teacher-student-row__weakspot compact-copy compact-copy--two-line"
+                        title={student.weakSpot}
+                      >
+                        {student.weakSpot}
+                      </p>
+
+                      <div className="teacher-student-row__actions">
+                        <span
+                          className={`teacher-attention-pill teacher-attention-pill--${attentionLevel}`}
+                        >
+                          {getTeacherAttentionLabel(attentionLevel)}
+                        </span>
+                        <Link
+                          className="ghost-button link-button teacher-student-row__action-link"
+                          to={`/teacher/students/${student.id}`}
+                        >
+                          查看学生详情
+                        </Link>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+
+              <PaginationControls
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                label={`共 ${filteredStudents.length} 名学生`}
+              />
+            </>
+          ) : (
+            <EmptyState
+              title="当前没有符合条件的学生"
+              description="可以调整筛选条件，或等待教师端数据同步后再查看。"
+            />
+          )}
+        </DataWorkbench>
       </section>
+
+      <article className="feedback-box feedback-box--compact">
+        <strong>{error ? "学生列表同步失败" : "学生列表已从后端加载"}</strong>
+        <p>
+          {isLoading
+            ? "正在同步学生列表..."
+            : error || "筛选条件、优先名单和学生总览都会跟随真实数据自动刷新。"}
+        </p>
+      </article>
     </div>
   );
 }

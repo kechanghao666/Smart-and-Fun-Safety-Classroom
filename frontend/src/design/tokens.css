@@ -1,0 +1,33 @@
+:root {
+  --app-max-width: 1240px;
+  --app-shell-max-width: 1360px;
+  --radius-12: 12px;
+  --radius-16: 16px;
+  --radius-20: 20px;
+  --radius-28: 28px;
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+  --surface: rgba(255, 255, 255, 0.88);
+  --surface-strong: rgba(255, 255, 255, 0.96);
+  --surface-soft: rgba(247, 251, 255, 0.88);
+  --line: rgba(17, 43, 73, 0.08);
+  --line-strong: rgba(17, 43, 73, 0.16);
+  --text: #15324b;
+  --text-secondary: #51657a;
+  --text-tertiary: #7b8da0;
+  --blue: #237ac7;
+  --blue-strong: #1d5d94;
+  --green: #1f9c7c;
+  --green-strong: #0f7459;
+  --orange: #ef9b38;
+  --orange-strong: #c06a13;
+  --red: #d65454;
+  --teacher-accent: #355f8e;
+  --admin-accent: #1d2d3d;
+  --shadow-sm: 0 8px 20px rgba(21, 50, 75, 0.06);
+  --shadow-md: 0 16px 38px rgba(21, 50, 75, 0.08);
+  --shadow-lg: 0 24px 60px rgba(21, 50, 75, 0.12);
+}

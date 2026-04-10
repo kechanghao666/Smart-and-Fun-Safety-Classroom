@@ -1,0 +1,74 @@
+.app-shell--teacher {
+  background:
+    radial-gradient(circle at top left, rgba(63, 122, 191, 0.08), transparent 24%),
+    linear-gradient(180deg, #f7f9fc 0%, #f6f8fb 100%);
+}
+
+.app-shell--teacher .sidebar {
+  padding: 24px;
+  background: rgba(252, 253, 255, 0.88);
+}
+
+.app-shell--teacher .brand-card,
+.app-shell--teacher .sidebar-role-card,
+.app-shell--teacher .workspace-header,
+.teacher-analysis-card,
+.teacher-action-card,
+.teacher-student-row {
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.app-shell--teacher .sidebar-link--active {
+  background: rgba(53, 95, 142, 0.1);
+  color: var(--teacher-accent);
+}
+
+.app-shell--teacher .workspace-header {
+  border-color: rgba(53, 95, 142, 0.08);
+}
+
+.hero-banner--teacher,
+.page-hero--teacher {
+  background:
+    linear-gradient(135deg, rgba(238, 244, 251, 0.96), rgba(255, 255, 255, 0.94)),
+    var(--surface);
+}
+
+.teacher-attention-pill--urgent {
+  background: rgba(214, 84, 84, 0.14);
+  color: #b13e3e;
+}
+
+.teacher-attention-pill--watch {
+  background: rgba(239, 155, 56, 0.14);
+  color: var(--orange-strong);
+}
+
+.teacher-attention-pill--stable {
+  background: rgba(31, 156, 124, 0.14);
+  color: var(--green-strong);
+}
+
+.teacher-student-row {
+  border-radius: 22px;
+  border: 1px solid rgba(17, 43, 73, 0.06);
+  box-shadow: var(--shadow-sm);
+}
+
+.teacher-student-row__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.teacher-compact-priority-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 1100px) {
+  .teacher-compact-priority-grid {
+    grid-template-columns: 1fr;
+  }
+}

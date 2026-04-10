@@ -1,0 +1,412 @@
+.student-shell {
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.student-shell__header,
+.student-shell__titlebar {
+  border-radius: var(--radius-28);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(12px);
+}
+
+.student-shell__header {
+  width: min(100%, var(--app-shell-max-width));
+  margin: 0 auto 20px;
+  padding: 20px 24px 16px;
+  display: grid;
+  gap: 18px;
+}
+
+.student-shell__topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.student-shell__brand,
+.student-shell__status,
+.student-shell__status-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.student-shell__brand h1,
+.student-shell__titlebar h2 {
+  margin: 0;
+  letter-spacing: -0.03em;
+}
+
+.student-shell__brand p,
+.student-shell__status-card p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.student-shell__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(35, 122, 199, 0.16), rgba(31, 156, 124, 0.18));
+  color: var(--blue-strong);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.student-shell__status {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.student-shell__status-card {
+  padding: 10px 14px;
+  border-radius: 18px;
+  background: rgba(248, 251, 255, 0.92);
+}
+
+.student-shell__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.student-shell__nav-link {
+  padding: 11px 16px;
+  border-radius: 999px;
+  color: var(--text-secondary);
+}
+
+.student-shell__nav-link--active {
+  background: linear-gradient(135deg, rgba(35, 122, 199, 0.14), rgba(31, 156, 124, 0.16));
+  color: var(--text);
+  font-weight: 700;
+}
+
+.student-shell__main {
+  display: grid;
+  gap: 22px;
+}
+
+.student-shell__titlebar {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.student-shell__titlebar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.student-page .surface-card,
+.student-page .student-adventure-card,
+.student-page .student-mini-card,
+.student-page .student-mini-link,
+.student-page .student-theme-card,
+.student-page .student-level-entry-card,
+.student-page .student-reward-board,
+.student-page .student-link-board,
+.student-page .student-celebration-card,
+.student-page .student-growth-dimension-card {
+  border-radius: 24px;
+  background: var(--surface-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.student-adventure-hero {
+  border-radius: 32px;
+  border: 1px solid rgba(35, 122, 199, 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.4), transparent 26%),
+    linear-gradient(135deg, rgba(224, 244, 255, 0.94), rgba(236, 252, 246, 0.94));
+  box-shadow: var(--shadow-md);
+}
+
+.student-adventure-hero__copy,
+.student-adventure-hero__scene {
+  padding: clamp(24px, 3vw, 34px);
+}
+
+.student-adventure-hero__copy {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.student-adventure-hero__copy h1 {
+  margin: 0;
+  font-size: clamp(34px, 4vw, 52px);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+}
+
+.student-adventure-hero__copy p,
+.student-adventure-bubble p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.student-adventure-hero__eyebrow,
+.student-adventure-bubble__eyebrow {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.student-adventure-hero__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.student-adventure-stat {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.student-adventure-stat strong {
+  font-size: 28px;
+}
+
+.student-adventure-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.student-adventure-hero__scene {
+  position: relative;
+  display: grid;
+  align-content: end;
+}
+
+.student-adventure-hero__scene-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(220px, 1.1fr);
+  gap: 18px;
+  align-items: end;
+}
+
+.student-adventure-hero__visual,
+.student-adventure-hero__aside,
+.student-adventure-bubble,
+.student-hero-sidekick,
+.student-theme-hero-card,
+.student-growth-stage {
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(17, 43, 73, 0.06);
+  box-shadow: 0 18px 36px rgba(19, 49, 75, 0.08);
+}
+
+.student-adventure-hero__visual {
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.student-adventure-bubble,
+.student-adventure-hero__aside {
+  padding: 18px 20px;
+}
+
+.student-adventure-bubble strong,
+.student-hero-sidekick strong,
+.student-theme-hero-card strong,
+.student-growth-stage strong {
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.student-adventure-bubble strong,
+.student-adventure-bubble p,
+.student-hero-sidekick strong,
+.student-hero-sidekick p,
+.student-theme-hero-card strong,
+.student-theme-hero-card p,
+.student-growth-stage strong,
+.student-growth-stage p {
+  margin: 0;
+}
+
+.student-hero-sidekick,
+.student-theme-hero-card,
+.student-growth-stage {
+  display: grid;
+  gap: 8px;
+  padding: 18px 20px;
+}
+
+.student-card-grid {
+  align-items: start;
+}
+
+.student-adventure-card,
+.student-mini-card,
+.student-mini-link,
+.student-level-entry-card,
+.student-theme-card {
+  border: 1px solid rgba(17, 43, 73, 0.06);
+}
+
+.student-adventure-card,
+.student-mini-card {
+  min-height: 170px;
+}
+
+.student-adventure-card strong,
+.student-mini-card strong {
+  font-size: clamp(24px, 3vw, 34px);
+}
+
+.student-section-heading {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.student-section-heading h2 {
+  margin: 0;
+  font-size: clamp(24px, 2.8vw, 34px);
+  letter-spacing: -0.03em;
+}
+
+.student-checklist__item,
+.student-mini-link,
+.student-level-entry-card__content,
+.student-growth-board__summary-card,
+.student-report-reward-visual__summary-card {
+  background: rgba(248, 251, 255, 0.9);
+}
+
+.student-mini-link {
+  display: grid;
+  gap: 10px;
+  padding: 18px 20px;
+  text-align: left;
+}
+
+.student-mini-link strong {
+  font-size: 20px;
+}
+
+.student-growth-board__layout--rich {
+  grid-template-columns: minmax(280px, 0.95fr) minmax(0, 1.05fr);
+}
+
+.student-growth-board__quickline,
+.student-report-reward-visual__grid,
+.student-report-reward-visual__summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.student-report-reward-visual {
+  display: grid;
+  gap: 16px;
+}
+
+.student-report-reward-visual__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.student-report-reward-visual__hero-copy,
+.student-report-reward-visual__hero-meter,
+.student-report-reward-visual__summary-card {
+  display: grid;
+  gap: 8px;
+}
+
+.student-report-reward-visual__hero-meter {
+  align-content: center;
+  justify-items: end;
+}
+
+.student-report-reward-visual__hero-meter strong {
+  font-size: 30px;
+}
+
+.student-report-reward-visual__card {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.student-report-reward-visual__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.student-report-reward-visual__tags span {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
+}
+
+@media (max-width: 1100px) {
+  .student-shell__topline,
+  .student-shell__titlebar,
+  .student-adventure-hero__scene-grid,
+  .student-growth-board__layout--rich,
+  .student-report-reward-visual__hero,
+  .student-report-reward-visual__grid,
+  .student-report-reward-visual__summary {
+    grid-template-columns: 1fr;
+  }
+
+  .student-shell__status {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  .student-shell {
+    padding: 16px;
+  }
+
+  .student-shell__header,
+  .student-shell__titlebar,
+  .student-adventure-hero,
+  .student-page .surface-card {
+    border-radius: 24px;
+  }
+
+  .student-adventure-hero__copy h1 {
+    font-size: 32px;
+  }
+
+  .student-shell__topline,
+  .student-shell__brand,
+  .student-shell__status,
+  .student-shell__titlebar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
