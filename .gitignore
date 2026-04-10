@@ -19,4 +19,5 @@ backend/data/*.sqlite-shm
 backend/data/*.sqlite-wal
 .codex_tmp/
 auth-info.docx
+deploy-smart-classroom*.tar.gz
 

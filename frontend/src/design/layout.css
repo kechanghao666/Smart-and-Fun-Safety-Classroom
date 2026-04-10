@@ -19,7 +19,6 @@ body {
 }
 
 .surface-card,
-.hero-panel,
 .hero-banner,
 .workspace-header,
 .page-hero,
@@ -32,6 +31,38 @@ body {
   background: var(--surface);
   box-shadow: var(--shadow-sm);
   backdrop-filter: blur(12px);
+}
+
+.hero-panel {
+  border-radius: var(--radius-28);
+  border: 1px solid rgba(35, 122, 199, 0.12);
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.28), transparent 24%),
+    linear-gradient(135deg, rgba(54, 166, 244, 0.96), rgba(33, 189, 151, 0.92));
+  box-shadow: var(--shadow-md);
+  color: #f8fbff;
+  overflow: hidden;
+  padding: clamp(26px, 3vw, 34px);
+}
+
+.hero-panel__content {
+  max-width: 760px;
+}
+
+.hero-panel h1 {
+  margin: 10px 0 12px;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+}
+
+.hero-panel p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.7;
+}
+
+.hero-panel__eyebrow {
+  color: rgba(255, 255, 255, 0.78);
 }
 
 .surface-card {

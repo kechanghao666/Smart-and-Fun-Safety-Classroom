@@ -109,8 +109,6 @@
 }
 
 .student-page .surface-card,
-.student-page .student-adventure-card,
-.student-page .student-mini-card,
 .student-page .student-mini-link,
 .student-page .student-theme-card,
 .student-page .student-level-entry-card,
@@ -121,6 +119,84 @@
   border-radius: 24px;
   background: var(--surface-strong);
   box-shadow: var(--shadow-sm);
+}
+
+.student-page .student-adventure-card,
+.student-page .student-mini-card {
+  border-radius: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.student-page .student-adventure-card {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-height: 170px;
+  padding: 22px;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.student-page .student-adventure-card__icon {
+  display: inline-grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.24);
+  font-weight: 800;
+}
+
+.student-page .student-adventure-card h2,
+.student-page .student-adventure-card strong,
+.student-page .student-adventure-card p,
+.student-page .student-adventure-card span,
+.student-page .student-mini-card span,
+.student-page .student-mini-card strong {
+  color: inherit;
+  margin: 0;
+}
+
+.student-page .student-adventure-card p {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.student-page .student-mini-card {
+  min-height: 110px;
+  border-radius: 24px;
+  padding: 18px;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.student-page .student-mini-card span {
+  font-size: 13px;
+  opacity: 0.92;
+}
+
+.student-page .student-mini-card strong {
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.student-page .student-mini-card--sky,
+.student-page .student-adventure-card--sky {
+  background: linear-gradient(160deg, rgba(53, 167, 246, 0.95), rgba(71, 111, 247, 0.88));
+}
+
+.student-page .student-mini-card--mint,
+.student-page .student-adventure-card--mint {
+  background: linear-gradient(160deg, rgba(36, 206, 166, 0.92), rgba(28, 158, 135, 0.9));
+}
+
+.student-page .student-mini-card--orange,
+.student-page .student-adventure-card--orange {
+  background: linear-gradient(160deg, rgba(255, 185, 88, 0.95), rgba(241, 134, 61, 0.92));
 }
 
 .student-adventure-hero {
@@ -148,6 +224,9 @@
   font-size: clamp(34px, 4vw, 52px);
   line-height: 1.02;
   letter-spacing: -0.04em;
+  color: var(--text);
+  max-width: 11ch;
+  text-shadow: none;
 }
 
 .student-adventure-hero__copy p,
@@ -155,6 +234,12 @@
   margin: 0;
   color: var(--text-secondary);
   line-height: 1.7;
+}
+
+.student-adventure-hero__copy > p {
+  max-width: 34rem;
+  color: var(--text-secondary);
+  font-size: 16px;
 }
 
 .student-adventure-hero__eyebrow,
@@ -176,11 +261,31 @@
   gap: 8px;
   padding: 16px 18px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text);
+  border: 1px solid rgba(17, 43, 73, 0.06);
+  box-shadow: 0 14px 28px rgba(19, 49, 75, 0.08);
 }
 
 .student-adventure-stat strong {
   font-size: 28px;
+  color: var(--text);
+}
+
+.student-adventure-stat span {
+  color: var(--text-secondary);
+}
+
+.student-adventure-stat--sky {
+  background: linear-gradient(160deg, rgba(230, 244, 255, 0.96), rgba(214, 235, 255, 0.94));
+}
+
+.student-adventure-stat--mint {
+  background: linear-gradient(160deg, rgba(231, 254, 246, 0.96), rgba(209, 245, 233, 0.94));
+}
+
+.student-adventure-stat--orange {
+  background: linear-gradient(160deg, rgba(255, 243, 224, 0.97), rgba(255, 231, 197, 0.94));
 }
 
 .student-adventure-hero__actions {
