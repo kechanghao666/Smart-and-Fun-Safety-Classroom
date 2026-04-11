@@ -23,11 +23,14 @@ import type {
   LevelManagementItem,
   ObservationSceneConfig,
   ObservationTaskStep,
+  PaginatedResponse,
+  PaginationQuery,
   QuestionBankManagementItem,
   RouteChallengeConfig,
   ThemeManagementItem,
 } from "../types/contracts";
 import { HttpError } from "../utils/httpError";
+import { paginateItems, resolvePaginationQuery } from "../utils/pagination";
 
 type ThemeAccent = "sky" | "mint" | "orange";
 
@@ -444,6 +447,15 @@ function mapThemeRow(row: ThemeRow) {
   };
 }
 
+function includesQuery(values: Array<string | undefined>, query: string | undefined) {
+  if (!query) {
+    return true;
+  }
+
+  const normalizedQuery = query.toLowerCase();
+  return values.some((value) => (value ?? "").toLowerCase().includes(normalizedQuery));
+}
+
 function mapLevelRow(row: LevelRow) {
   const fallback = levelFieldFallbacks[row.id];
   const gameplayMode = resolveGameplayModeFromLevelRow(row, fallback.gameplayMode);
@@ -509,6 +521,8 @@ function mapQuestionBankRow(row: QuestionRow) {
     correctLabel: row.correct_label,
     explanation: row.explanation,
     reviewLevelId: row.review_level_id,
+    reviewLabel: row.review_label || fallback?.reviewLabel || "",
+    reviewSuggestion: row.review_suggestion || fallback?.reviewSuggestion || "",
     status: row.status,
   };
 }
@@ -620,7 +634,7 @@ function parseQuestionPayload(input: QuestionPayload, fallback?: QuestionRow) {
   };
 }
 
-export async function getAdminThemesFromDb() {
+async function listAdminThemesFromDb() {
   const db = await getDb();
   const rows = await db.all<ThemeRow[]>(`
     SELECT
@@ -638,6 +652,17 @@ export async function getAdminThemesFromDb() {
   `);
 
   return rows.map(mapThemeRow);
+}
+
+export async function getAdminThemesFromDb(
+  query?: PaginationQuery,
+): Promise<PaginatedResponse<ThemeManagementItem>> {
+  const pagination = resolvePaginationQuery(query, { pageSize: 10 });
+  const items = (await listAdminThemesFromDb()).filter((item) =>
+    includesQuery([item.title, item.description, item.coverLabel], pagination.query),
+  );
+
+  return paginateItems(items, pagination);
 }
 
 export async function createAdminTheme(input: ThemePayload) {
@@ -677,7 +702,7 @@ export async function createAdminTheme(input: ThemePayload) {
     new Date().toISOString(),
   );
 
-  return getAdminThemesFromDb();
+  return listAdminThemesFromDb();
 }
 
 export async function updateAdminTheme(id: string, input: ThemePayload) {
@@ -755,7 +780,7 @@ export async function updateAdminTheme(id: string, input: ThemePayload) {
     id,
   );
 
-  return getAdminThemesFromDb();
+  return listAdminThemesFromDb();
 }
 
 export async function deleteAdminTheme(id: string) {
@@ -770,7 +795,7 @@ export async function deleteAdminTheme(id: string) {
   }
 
   await db.run("DELETE FROM themes WHERE id = ?", id);
-  return getAdminThemesFromDb();
+  return listAdminThemesFromDb();
 }
 
 export async function getAdminLevelsFromDb() {
@@ -988,7 +1013,7 @@ export async function updateAdminLevel(id: LevelId, input: LevelPayload) {
   return getAdminLevelsFromDb();
 }
 
-export async function getAdminQuestionBankFromDb() {
+async function listAdminQuestionBankFromDb() {
   const db = await getDb();
   const rows = await db.all<QuestionRow[]>(`
     SELECT
@@ -1010,6 +1035,34 @@ export async function getAdminQuestionBankFromDb() {
   `);
 
   return rows.map(mapQuestionBankRow);
+}
+
+export async function getAdminQuestionBankFromDb(filters?: {
+  query?: string;
+  themeId?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<PaginatedResponse<QuestionBankManagementItem>> {
+  const pagination = resolvePaginationQuery(filters, { pageSize: 10 });
+  const items = (await listAdminQuestionBankFromDb())
+    .filter((item) =>
+      !filters?.themeId || filters.themeId === "all" ? true : item.themeId === filters.themeId,
+    )
+    .filter((item) =>
+      includesQuery(
+        [
+          item.id,
+          item.prompt,
+          item.themeTitle,
+          item.reviewLevelId,
+          item.reviewLabel,
+          item.reviewSuggestion,
+        ],
+        pagination.query,
+      ),
+    );
+
+  return paginateItems(items, pagination);
 }
 
 export async function createAdminQuestionBank(input: QuestionPayload) {
@@ -1061,7 +1114,7 @@ export async function createAdminQuestionBank(input: QuestionPayload) {
     new Date().toISOString(),
   );
 
-  return getAdminQuestionBankFromDb();
+  return listAdminQuestionBankFromDb();
 }
 
 export async function updateAdminQuestionBank(id: string, input: QuestionPayload) {
@@ -1127,7 +1180,7 @@ export async function updateAdminQuestionBank(id: string, input: QuestionPayload
     id,
   );
 
-  return getAdminQuestionBankFromDb();
+  return listAdminQuestionBankFromDb();
 }
 
 export async function deleteAdminQuestionBank(id: string) {
@@ -1138,10 +1191,10 @@ export async function deleteAdminQuestionBank(id: string) {
   }
 
   await db.run("DELETE FROM question_bank WHERE id = ?", id);
-  return getAdminQuestionBankFromDb();
+  return listAdminQuestionBankFromDb();
 }
 
-export async function getAdminAiCopyFromDb() {
+async function listAdminAiCopyFromDb() {
   const db = await getDb();
   const rows = await db.all<AiCopyRow[]>(`
     SELECT id, category, title, scene, prompt_text, updated_at
@@ -1150,6 +1203,29 @@ export async function getAdminAiCopyFromDb() {
   `);
 
   return rows.map(mapAiCopyRow);
+}
+
+export async function getAdminAiCopyFromDb(filters?: {
+  query?: string;
+  category?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<PaginatedResponse<AiCopyTemplateItem>> {
+  const pagination = resolvePaginationQuery(filters, { pageSize: 10 });
+  const items = (await listAdminAiCopyFromDb())
+    .filter((item) =>
+      !filters?.category || filters.category === "all"
+        ? true
+        : item.category === filters.category,
+    )
+    .filter((item) =>
+      includesQuery(
+        [item.title, item.scene, item.promptText, item.category],
+        pagination.query,
+      ),
+    );
+
+  return paginateItems(items, pagination);
 }
 
 export async function getGrowthConfigFromDb() {
@@ -1259,7 +1335,7 @@ export async function createAdminAiCopy(input: AiCopyTemplateItem) {
     new Date().toISOString(),
   );
 
-  return getAdminAiCopyFromDb();
+  return listAdminAiCopyFromDb();
 }
 
 export async function updateAdminAiCopy(id: string, input: Partial<AiCopyTemplateItem>) {
@@ -1310,7 +1386,7 @@ export async function updateAdminAiCopy(id: string, input: Partial<AiCopyTemplat
     id,
   );
 
-  return getAdminAiCopyFromDb();
+  return listAdminAiCopyFromDb();
 }
 
 export async function deleteAdminAiCopy(id: string) {
@@ -1321,5 +1397,5 @@ export async function deleteAdminAiCopy(id: string) {
   }
 
   await db.run("DELETE FROM ai_copy_templates WHERE id = ?", id);
-  return getAdminAiCopyFromDb();
+  return listAdminAiCopyFromDb();
 }

@@ -67,8 +67,140 @@
   gap: 16px;
 }
 
+.management-layout--teacher {
+  align-items: start;
+}
+
+.teacher-inline-form-card,
+.teacher-inline-summary-card,
+.teacher-detail-shell,
+.teacher-followup-card,
+.teacher-priority-card {
+  border-radius: 24px;
+}
+
+.teacher-inline-form,
+.teacher-inline-form__actions--spread {
+  display: flex;
+  gap: 16px;
+  align-items: end;
+}
+
+.teacher-inline-form--two-line {
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.teacher-inline-form__actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.teacher-inline-form__actions--spread {
+  justify-content: flex-end;
+}
+
+.teacher-detail-shell {
+  padding: 26px;
+}
+
+.teacher-tab-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.teacher-tab {
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(17, 43, 73, 0.08);
+  background: rgba(246, 249, 252, 0.92);
+  color: var(--text-subtle);
+  font: inherit;
+}
+
+.teacher-tab--active {
+  border-color: rgba(53, 95, 142, 0.18);
+  background: rgba(53, 95, 142, 0.1);
+  color: var(--teacher-accent);
+}
+
+.teacher-editor-panel {
+  padding: 24px;
+}
+
+.teacher-followup-card p,
+.teacher-priority-card p,
+.teacher-inline-summary-card p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.teacher-dashboard-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.teacher-risk-panel--positive {
+  background: rgba(237, 248, 242, 0.92);
+  border-color: rgba(31, 156, 124, 0.08);
+}
+
+.teacher-student-row--class {
+  min-height: 148px;
+}
+
+.teacher-student-row--class .teacher-student-row__main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.teacher-student-row--class .teacher-student-row__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.teacher-student-row--class .teacher-student-row__side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.management-list-panel--teacher {
+  max-height: 680px;
+  overflow: auto;
+}
+
+.button-row--tight {
+  justify-content: flex-start;
+}
+
 @media (max-width: 1100px) {
   .teacher-compact-priority-grid {
     grid-template-columns: 1fr;
+  }
+
+  .teacher-dashboard-pair {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .teacher-inline-form,
+  .teacher-inline-form__actions--spread {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .teacher-student-row--class .teacher-student-row__side {
+    align-items: flex-start;
   }
 }

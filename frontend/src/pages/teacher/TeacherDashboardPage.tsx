@@ -2,7 +2,6 @@ import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { DataWorkbench } from "../../components/DataWorkbench";
 import { EmptyState } from "../../components/EmptyState";
-import { InsightList } from "../../components/InsightList";
 import { MetricCard } from "../../components/MetricCard";
 import { PageHero } from "../../components/PageHero";
 import {
@@ -31,7 +30,7 @@ export function TeacherDashboardPage() {
     fallbackData: fallbackDashboard,
     fetcher: () => fetchTeacherDashboard(state.authToken ?? ""),
     dependencies: [state.authToken],
-    fallbackMessage: "教师端总览暂时无法同步，请稍后重试。",
+    fallbackMessage: "教师总览暂时无法同步，请稍后再试。",
   });
   const [selectedClassId, setSelectedClassId] = usePersistedState<string>(
     "teacher-dashboard-current-class",
@@ -54,28 +53,23 @@ export function TeacherDashboardPage() {
   const filteredStudents = selectedClass
     ? data.students.filter((student) => student.className === selectedClass.name)
     : data.students;
-  const filteredClassSummaries = selectedClass ? [selectedClass] : data.classSummaries;
+  const filteredClasses = selectedClass ? [selectedClass] : data.classSummaries;
   const completedAll = filteredStudents.filter((student) => student.completedLevels === 3).length;
   const examCompleted = filteredStudents.filter((student) => student.score !== null).length;
-  const urgentCount = filteredStudents.filter(
+  const urgentStudents = filteredStudents.filter(
     (student) => getTeacherAttentionLevel(student) === "urgent",
-  ).length;
-  const attentionWeight = {
-    urgent: 0,
-    watch: 1,
-    stable: 2,
-  } as const;
-  const attentionStudents = filteredStudents
+  );
+  const priorityStudents = filteredStudents
     .slice()
     .sort((left, right) => {
-      const leftLevel = getTeacherAttentionLevel(left);
-      const rightLevel = getTeacherAttentionLevel(right);
-      return attentionWeight[leftLevel] - attentionWeight[rightLevel];
+      const leftRank = getTeacherAttentionLevel(left) === "urgent" ? 0 : 1;
+      const rightRank = getTeacherAttentionLevel(right) === "urgent" ? 0 : 1;
+      return leftRank - rightRank || left.completedLevels - right.completedLevels;
     })
     .slice(0, 4);
-  const dashboardActions = buildTeacherDashboardActions(
-    filteredStudents,
-    filteredClassSummaries,
+  const dashboardActions = buildTeacherDashboardActions(filteredStudents, filteredClasses).slice(
+    0,
+    3,
   );
   const teacherDisplayName = state.sessionAccount ?? "当前教师";
   const classLabel = selectedClass ? selectedClass.name : "全部班级";
@@ -87,32 +81,35 @@ export function TeacherDashboardPage() {
     filteredStudents.length > 0
       ? Math.round((examCompleted / filteredStudents.length) * 100)
       : 0;
-
-  const classRiskSummary = useMemo(() => {
-    if (filteredClassSummaries.length === 0) {
-      return null;
-    }
-
-    return filteredClassSummaries
+  const weakestClass =
+    filteredClasses
       .slice()
-      .sort((left, right) => left.completedRate - right.completedRate)[0];
-  }, [filteredClassSummaries]);
+      .sort((left, right) => left.completedRate - right.completedRate)[0] ?? null;
+  const bestClass =
+    filteredClasses
+      .slice()
+      .sort((left, right) => right.completedRate - left.completedRate)[0] ?? null;
 
-  const insightItems = dashboardActions.map((item) => ({
-    title: item.title,
-    detail: item.detail,
-  }));
+  const actionCards = useMemo(
+    () =>
+      dashboardActions.map((item, index) => ({
+        id: `${index}-${item.title}`,
+        title: item.title,
+        detail: item.detail,
+      })),
+    [dashboardActions],
+  );
 
   return (
     <div className="page-stack">
       <PageHero
         eyebrow="教师工作台"
-        title="先看班级整体，再决定今天优先跟进谁"
-        description="把班级进度、考试完成度、风险学生和建议动作放进同一块工作台，减少来回切页和重复判断。"
+        title="先看整体，再决定今天优先跟进谁"
+        description="把班级进度、考试收口、优先学生和建议动作收成同一块工作台，老师不用在多个页面里重复判断。"
         tone="teacher"
         stats={[
           { label: "当前查看", value: classLabel },
-          { label: "重点跟进", value: `${urgentCount} 人` },
+          { label: "需立即跟进", value: `${urgentStudents.length} 人` },
           { label: "教师账号", value: teacherDisplayName },
         ]}
         actions={
@@ -145,83 +142,51 @@ export function TeacherDashboardPage() {
 
       <section className="card-grid card-grid--four">
         <MetricCard
-          label="当前查看"
-          value={classLabel}
-          description="快速切换班级后，整个页面的风险判断和完成率会一起更新。"
-          tone="teacher"
-        />
-        <MetricCard
-          label="三关完成率"
+          label="班级完成率"
           value={`${completedRate}%`}
-          description="帮助你判断这批学生是否已经走完主题主链路。"
+          description="当前视图下三关主链路的整体推进情况。"
           tone="teacher"
         />
         <MetricCard
           label="考试完成率"
           value={`${examRate}%`}
-          description="优先发现还没进入考试收口阶段的学生。"
+          description="用于判断这一批学生是否还卡在考试收口前。"
           tone="teacher"
         />
         <MetricCard
-          label="需优先跟进"
-          value={`${urgentCount} 人`}
-          description="优先处理高风险学生，缩短发现问题到课堂跟进的路径。"
+          label="需立即跟进"
+          value={`${urgentStudents.length}`}
+          description="高风险学生会优先出现在下方行动区。"
+          tone="teacher"
+        />
+        <MetricCard
+          label="当前优先班级"
+          value={weakestClass?.name ?? "--"}
+          description={weakestClass?.focusLabel ?? "当前暂无班级摘要。"}
           tone="teacher"
         />
       </section>
 
-      <DataWorkbench
-        eyebrow="班级概览"
-        title="先看哪一个班级最需要补课和回看"
-        description="用统一进度条看三关推进与考试推进，再决定今天先盯哪一班。"
-        tone="teacher"
-      >
-        {filteredClassSummaries.length > 0 ? (
-          <div className="teacher-class-overview">
-            {filteredClassSummaries.map((classroom) => (
-              <article key={classroom.id} className="teacher-overview-card">
-                <div className="row-between">
-                  <strong>{classroom.name}</strong>
-                  <span className="surface-tag">{classroom.focusLabel}</span>
-                </div>
-                <div className="teacher-progress-pair">
-                  <div>
-                    <span>三关完成</span>
-                    <strong>{classroom.completedRate}%</strong>
-                  </div>
-                  <div>
-                    <span>考试完成</span>
-                    <strong>{classroom.examCompletionRate}%</strong>
-                  </div>
-                </div>
-                <div className="bar-item__track">
-                  <span
-                    className="bar-item__fill"
-                    style={{ width: `${classroom.completedRate}%` }}
-                  />
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <EmptyState
-            title="当前还没有班级概览数据"
-            description="等班级统计同步完成后，这里会自动汇总完成率、考试状态和风险提示。"
-          />
-        )}
-      </DataWorkbench>
+      <article className="feedback-box feedback-box--compact">
+        <strong>{error ? "教师端数据同步失败" : "教师端数据已从后端加载"}</strong>
+        <p>
+          {isLoading
+            ? "正在同步教师总览数据..."
+            : error || "班级切换、学生风险和建议动作都会随真实数据自动更新。"}
+        </p>
+      </article>
 
       <section className="card-grid card-grid--two">
         <DataWorkbench
-          eyebrow="异常提醒"
-          title="这些学生值得你先打开详情"
+          eyebrow="优先跟进"
+          title="先点开这些学生"
+          description="老师最需要先处理的是风险高、进度停滞或考试未收口的学生。"
           tone="teacher"
         >
-          {attentionStudents.length > 0 ? (
+          {priorityStudents.length > 0 ? (
             <div className="teacher-attention-grid">
-              {attentionStudents.map((student) => {
+              {priorityStudents.map((student) => {
                 const attentionLevel = getTeacherAttentionLevel(student);
-
                 return (
                   <article
                     key={student.id}
@@ -230,7 +195,9 @@ export function TeacherDashboardPage() {
                     <div className="row-between">
                       <div>
                         <strong>{student.name}</strong>
-                        <p className="teacher-analysis-card__meta">{student.className}</p>
+                        <p className="teacher-analysis-card__meta">
+                          {student.className} · 学号 {student.studentNo ?? "--"}
+                        </p>
                       </div>
                       <span
                         className={`teacher-attention-pill teacher-attention-pill--${attentionLevel}`}
@@ -241,15 +208,16 @@ export function TeacherDashboardPage() {
                     <p className="compact-copy compact-copy--two-line" title={student.weakSpot}>
                       {student.weakSpot}
                     </p>
-                    <div className="row-between">
-                      <span className="inline-note">
-                        三关 {student.completedLevels} / 3 · 考试 {student.examStatus}
+                    <div className="teacher-student-row__metrics">
+                      <span className="surface-tag">三关 {student.completedLevels}/3</span>
+                      <span className="surface-tag">考试 {student.examStatus}</span>
+                      <span className="surface-tag">
+                        {student.score === null ? "未出成绩" : `${student.score} 分`}
                       </span>
-                      <Link
-                        className="ghost-button link-button"
-                        to={`/teacher/students/${student.id}`}
-                      >
-                        学生详情
+                    </div>
+                    <div className="button-row button-row--tight">
+                      <Link className="ghost-button link-button" to={`/teacher/students/${student.id}`}>
+                        查看详情
                       </Link>
                     </div>
                   </article>
@@ -258,50 +226,57 @@ export function TeacherDashboardPage() {
             </div>
           ) : (
             <EmptyState
-              title="当前没有异常学生"
-              description="可以先查看班级趋势，或切换班级后继续观察下一批学生。"
+              title="当前没有需要优先处理的学生"
+              description="可以先看下方建议动作，或者切换到其它班级继续观察。"
             />
           )}
         </DataWorkbench>
 
         <div className="page-stack">
-          <InsightList
-            eyebrow="建议动作"
-            title="今天最适合立刻展开的三件事"
-            items={insightItems}
-          />
-
           <DataWorkbench
-            eyebrow="风险概览"
-            title="最需要先补课的班级"
+            eyebrow="建议动作"
+            title="今天先做这三件事"
+            description="只保留最值得立刻执行的动作，不再重复展示同一类提醒。"
             tone="teacher"
           >
-            {classRiskSummary ? (
+            <div className="page-stack page-stack--compact">
+              {actionCards.map((item) => (
+                <article key={item.id} className="teacher-action-card teacher-action-card--compact">
+                  <strong>{item.title}</strong>
+                  <p className="compact-copy compact-copy--two-line" title={item.detail}>
+                    {item.detail}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </DataWorkbench>
+
+          <DataWorkbench
+            eyebrow="班级对比"
+            title="先补哪里，先夸哪里"
+            tone="teacher"
+          >
+            <div className="teacher-dashboard-pair">
               <article className="teacher-risk-panel">
-                <strong>{classRiskSummary.name}</strong>
+                <strong>需补强班级</strong>
                 <p>
-                  {classRiskSummary.focusLabel}
-                  ，建议优先围绕三关未完成和考试未完成学生安排课后复盘。
+                  {weakestClass
+                    ? `${weakestClass.name} 当前完成率最低，建议优先围绕三关未完成和考试未收口学生安排复盘。`
+                    : "当前暂无班级统计数据。"}
                 </p>
               </article>
-            ) : (
-              <EmptyState
-                title="暂时没有可判断的班级"
-                description="等班级数据同步后，这里会自动提示你最该先补哪一班。"
-              />
-            )}
+              <article className="teacher-risk-panel teacher-risk-panel--positive">
+                <strong>亮点班级</strong>
+                <p>
+                  {bestClass
+                    ? `${bestClass.name} 当前推进最快，可以作为课堂分享或同伴示范案例。`
+                    : "当前暂无亮点班级数据。"}
+                </p>
+              </article>
+            </div>
           </DataWorkbench>
         </div>
       </section>
-
-      <article className="feedback-box feedback-box--compact">
-        <strong>{error ? "教师端数据同步失败" : "教师端数据已从后端加载"}</strong>
-        <p>
-          {isLoading
-            ? "正在同步教师端数据..."
-            : error || "班级切换、风险列表和建议动作都会跟随真实数据自动更新。"}
-        </p>
-      </article>
     </div>
   );
 }

@@ -35,6 +35,23 @@ export type GrowthEventSourceType =
   | "wrong_question_review"
   | "streak_bonus";
 
+export interface PaginationQuery {
+  page?: number;
+  pageSize?: number;
+  query?: string;
+}
+
+export interface PaginationMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedResponse<T> extends PaginationMeta {
+  items: T[];
+}
+
 export interface StudentProfile {
   nickname: string;
   avatarId: string;
@@ -487,6 +504,8 @@ export interface ThemeManagementItem {
   title: string;
   description: string;
   coverLabel: string;
+  coverAccent?: ThemeAccent;
+  coverIllustration?: string;
   isOpen: boolean;
   sortOrder: number;
 }
@@ -516,10 +535,16 @@ export interface LevelManagementItem {
 
 export interface QuestionBankManagementItem {
   id: string;
+  themeId?: string;
+  themeTitle?: string;
   prompt: string;
+  options?: string[];
+  correctOptionIndex?: number;
   correctLabel: string;
   explanation: string;
   reviewLevelId: LevelId;
+  reviewLabel?: string;
+  reviewSuggestion?: string;
   status: "enabled" | "draft";
 }
 

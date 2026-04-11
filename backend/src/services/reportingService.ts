@@ -4,6 +4,8 @@ import type {
   AdminStatMetric,
   AdminUserStatus,
   AdminUserSummary,
+  PaginatedResponse,
+  PaginationQuery,
   TeacherClassManagementItem,
   TeacherClassRow,
   TeacherStudentDetail,
@@ -12,6 +14,7 @@ import type {
 } from "../types/contracts";
 import { HttpError } from "../utils/httpError";
 import { ensureUniqueClassCode } from "../utils/identityCodes";
+import { paginateItems, resolvePaginationQuery } from "../utils/pagination";
 import { getLatestLearningRecordTime, getGrowthProfile } from "./growthService";
 import { getStudentExamReview, getStudentGrowth } from "./studentInsightsService";
 import { buildStudentProgress } from "./studentService";
@@ -151,6 +154,36 @@ function pickFocusLabel(students: StudentContext[]) {
   }
 
   return [...counter.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? "暂无学生数据";
+}
+
+function containsQuery(value: string, query: string) {
+  return value.toLowerCase().includes(query.toLowerCase());
+}
+
+function matchesStudentQuery(student: StudentContext, query: string | undefined) {
+  if (!query) {
+    return true;
+  }
+
+  return (
+    containsQuery(student.name, query) ||
+    containsQuery(student.studentNo, query) ||
+    containsQuery(student.className, query) ||
+    containsQuery(student.weakSpot, query)
+  );
+}
+
+function matchesClassQuery(item: TeacherClassManagementItem, query: string | undefined) {
+  if (!query) {
+    return true;
+  }
+
+  return (
+    containsQuery(item.name, query) ||
+    containsQuery(item.description, query) ||
+    containsQuery(item.classCode ?? "", query) ||
+    containsQuery(item.focusLabel, query)
+  );
 }
 
 async function getStudentRoster() {
@@ -359,7 +392,19 @@ export async function getTeacherDashboard(teacherUserId: string) {
 }
 
 export async function getTeacherClasses(teacherUserId: string) {
-  return buildTeacherClassSummaries(teacherUserId);
+  return getTeacherClassesPage(teacherUserId);
+}
+
+export async function getTeacherClassesPage(
+  teacherUserId: string,
+  query?: PaginationQuery,
+): Promise<PaginatedResponse<TeacherClassManagementItem>> {
+  const pagination = resolvePaginationQuery(query, { pageSize: 10 });
+  const items = (await buildTeacherClassSummaries(teacherUserId)).filter((item) =>
+    matchesClassQuery(item, pagination.query),
+  );
+
+  return paginateItems(items, pagination);
 }
 
 export async function createTeacherClass(
@@ -402,7 +447,7 @@ export async function createTeacherClass(
     now,
   );
 
-  return (await getTeacherClasses(teacherUserId)).find((item) => item.id === classId) ?? null;
+  return (await buildTeacherClassSummaries(teacherUserId)).find((item) => item.id === classId) ?? null;
 }
 
 export async function updateTeacherClass(
@@ -465,27 +510,32 @@ export async function updateTeacherClass(
     );
   }
 
-  return (await getTeacherClasses(teacherUserId)).find((item) => item.id === classId) ?? null;
+  return (await buildTeacherClassSummaries(teacherUserId)).find((item) => item.id === classId) ?? null;
 }
 
 export async function getTeacherStudents(
   teacherUserId: string,
   filters?: {
+    query?: string;
     className?: string;
     completionStatus?: string;
     examStatus?: string;
+    page?: number;
+    pageSize?: number;
   },
-) {
+): Promise<PaginatedResponse<TeacherStudentSummary>> {
   const [teacherClasses, roster] = await Promise.all([
     buildTeacherClassSummaries(teacherUserId),
     Promise.all((await getStudentRoster()).map(buildStudentContext)),
   ]);
+  const pagination = resolvePaginationQuery(filters, { pageSize: 8 });
   const visibleRoster = filterRosterByTeacherClasses(
     roster,
     teacherClasses.map((item) => ({ id: item.id, name: item.name })),
   );
 
-  return visibleRoster
+  const items = visibleRoster
+    .filter((student) => matchesStudentQuery(student, pagination.query))
     .filter((student) =>
       !filters?.className || filters.className === "all"
         ? true
@@ -499,6 +549,35 @@ export async function getTeacherStudents(
     )
     .filter((student) => matchesExamFilter(student.progress.exam.status, filters?.examStatus))
     .map(toTeacherStudentSummary);
+
+  return paginateItems(items, pagination);
+}
+
+export async function getTeacherClassStudents(
+  teacherUserId: string,
+  classId: string,
+  query?: PaginationQuery,
+): Promise<PaginatedResponse<TeacherStudentSummary>> {
+  const pagination = resolvePaginationQuery(query, { pageSize: 10 });
+  const teacherClasses = await buildTeacherClassSummaries(teacherUserId);
+  const targetClass = teacherClasses.find((item) => item.id === classId);
+
+  if (!targetClass) {
+    throw new HttpError(404, "未找到对应班级。");
+  }
+
+  const roster = await Promise.all((await getStudentRoster()).map(buildStudentContext));
+  const visibleRoster = filterRosterByTeacherClasses(
+    roster,
+    teacherClasses.map((item) => ({ id: item.id, name: item.name })),
+  );
+
+  const items = visibleRoster
+    .filter((student) => student.className === targetClass.name)
+    .filter((student) => matchesStudentQuery(student, pagination.query))
+    .map(toTeacherStudentSummary);
+
+  return paginateItems(items, pagination);
 }
 
 export async function getTeacherStudentDetail(
@@ -600,11 +679,11 @@ async function getUserLastActiveLabel(userId: string, fallback: string) {
   return formatDateTimeLabel((await getLatestLearningRecordTime(userId)) ?? fallback);
 }
 
-export async function getAdminUsers(filters?: {
+async function listAdminUsers(filters?: {
   query?: string;
   status?: string;
   role?: string;
-}): Promise<AdminUserSummary[]> {
+}) {
   const db = await getDb();
   const users = await db.all<
     Array<{
@@ -662,6 +741,18 @@ export async function getAdminUsers(filters?: {
   );
 }
 
+export async function getAdminUsers(filters?: {
+  query?: string;
+  status?: string;
+  role?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<PaginatedResponse<AdminUserSummary>> {
+  const pagination = resolvePaginationQuery(filters, { pageSize: 10 });
+  const items = await listAdminUsers(filters);
+  return paginateItems(items, pagination);
+}
+
 export async function updateAdminUser(
   userId: string,
   input: { status?: AdminUserStatus; note?: string },
@@ -705,7 +796,7 @@ export async function updateAdminUser(
     await db.run("DELETE FROM sessions WHERE user_id = ?", userId);
   }
 
-  return (await getAdminUsers()).find((user) => user.id === userId) ?? null;
+  return (await listAdminUsers()).find((user) => user.id === userId) ?? null;
 }
 
 function buildMetric(

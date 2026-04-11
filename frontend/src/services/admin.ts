@@ -1,5 +1,6 @@
 import type {
   AdminModuleCard,
+  PaginatedResponse,
   AdminStatMetric,
   AdminUserSummary,
   AiCopyTemplateItem,
@@ -18,9 +19,27 @@ export function fetchAdminModules(token: string) {
 }
 
 export function fetchAdminThemes(token: string) {
-  return requestJson<ThemeManagementItem[]>("/admin/themes", {
-    token,
-  });
+  return fetchAdminThemesPage(token, { page: 1, pageSize: 500 }).then((result) => result.items);
+}
+
+export function fetchAdminThemesPage(
+  token: string,
+  filters?: {
+    query?: string;
+    page?: number;
+    pageSize?: number;
+  },
+) {
+  return requestJson<PaginatedResponse<ThemeManagementItem>>(
+    `/admin/themes${buildQueryString({
+      query: filters?.query,
+      page: filters?.page,
+      pageSize: filters?.pageSize,
+    })}`,
+    {
+      token,
+    },
+  );
 }
 
 export function createAdminTheme(token: string, payload: ThemeManagementItem) {
@@ -61,8 +80,38 @@ export function updateAdminLevel(token: string, levelId: string, payload: LevelM
 }
 
 export function fetchAdminQuestionBank(token: string) {
+  return fetchAdminQuestionBankPage(token, { page: 1, pageSize: 500 }).then(
+    (result) => result.items,
+  );
+}
+
+export function fetchAdminQuestionBankPage(
+  token: string,
+  filters?: {
+    query?: string;
+    themeId?: string;
+    page?: number;
+    pageSize?: number;
+  },
+) {
+  return requestJson<PaginatedResponse<QuestionBankManagementItem>>(
+    `/admin/question-bank${buildQueryString({
+      query: filters?.query,
+      themeId: filters?.themeId,
+      page: filters?.page,
+      pageSize: filters?.pageSize,
+    })}`,
+    {
+      token,
+    },
+  );
+}
+
+export function createAdminQuestionBank(token: string, payload: QuestionBankManagementItem) {
   return requestJson<QuestionBankManagementItem[]>("/admin/question-bank", {
+    method: "POST",
     token,
+    body: payload,
   });
 }
 
@@ -78,9 +127,44 @@ export function updateAdminQuestionBank(
   });
 }
 
-export function fetchAdminAiCopy(token: string) {
-  return requestJson<AiCopyTemplateItem[]>("/admin/ai-copy", {
+export function deleteAdminQuestionBank(token: string, questionId: string) {
+  return requestJson<QuestionBankManagementItem[]>(`/admin/question-bank/${questionId}`, {
+    method: "DELETE",
     token,
+  });
+}
+
+export function fetchAdminAiCopy(token: string) {
+  return fetchAdminAiCopyPage(token, { page: 1, pageSize: 500 }).then((result) => result.items);
+}
+
+export function fetchAdminAiCopyPage(
+  token: string,
+  filters?: {
+    query?: string;
+    category?: string;
+    page?: number;
+    pageSize?: number;
+  },
+) {
+  return requestJson<PaginatedResponse<AiCopyTemplateItem>>(
+    `/admin/ai-copy${buildQueryString({
+      query: filters?.query,
+      category: filters?.category,
+      page: filters?.page,
+      pageSize: filters?.pageSize,
+    })}`,
+    {
+      token,
+    },
+  );
+}
+
+export function createAdminAiCopy(token: string, payload: AiCopyTemplateItem) {
+  return requestJson<AiCopyTemplateItem[]>("/admin/ai-copy", {
+    method: "POST",
+    token,
+    body: payload,
   });
 }
 
@@ -92,12 +176,24 @@ export function updateAdminAiCopy(token: string, templateId: string, payload: Ai
   });
 }
 
-function buildQueryString(filters: Record<string, string | undefined>) {
+export function deleteAdminAiCopy(token: string, templateId: string) {
+  return requestJson<AiCopyTemplateItem[]>(`/admin/ai-copy/${templateId}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
+function buildQueryString(filters: Record<string, string | number | undefined>) {
   const params = new URLSearchParams();
 
   Object.entries(filters).forEach(([key, value]) => {
     if (typeof value === "string" && value.trim()) {
       params.set(key, value.trim());
+      return;
+    }
+
+    if (typeof value === "number" && Number.isFinite(value)) {
+      params.set(key, String(value));
     }
   });
 
@@ -111,13 +207,17 @@ export function fetchAdminUsers(
     query?: string;
     status?: string;
     role?: string;
+    page?: number;
+    pageSize?: number;
   },
 ) {
-  return requestJson<AdminUserSummary[]>(
+  return requestJson<PaginatedResponse<AdminUserSummary>>(
     `/admin/users${buildQueryString({
       query: filters?.query,
       status: filters?.status,
       role: filters?.role,
+      page: filters?.page,
+      pageSize: filters?.pageSize,
     })}`,
     {
       token,

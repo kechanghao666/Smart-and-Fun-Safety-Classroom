@@ -5,12 +5,15 @@ import { fetchAdminLevels, saveAdminLevels } from "../../services/admin";
 import { useAppState } from "../../state/AppState";
 import type {
   GuardianChallengeConfig,
+  GuardianChallengeStage,
+  GuardianTaskType,
   LevelGameplayMode,
   LevelId,
   LevelManagementItem,
   ObservationSceneConfig,
   ObservationTaskStep,
   RouteChallengeConfig,
+  RouteChallengeNode,
 } from "../../types";
 import { useEditableAdminResource } from "../../utils/useEditableAdminResource";
 
@@ -38,6 +41,49 @@ type JsonField =
   | "taskSteps"
   | "routeChallengeConfig"
   | "guardianChallengeConfig";
+
+function createRouteNode(index: number): RouteChallengeNode {
+  return {
+    id: `node-${Date.now()}-${index}`,
+    title: `节点 ${index + 1}`,
+    mapLabel: `节点 ${index + 1}`,
+    scenario: "请填写该路线节点对应的事件描述。",
+    hint: "请填写教师给学生的提示。",
+    helperText: "请填写节点辅助说明。",
+    position: { top: 30 + index * 8, left: 20 + index * 10 },
+    options: [
+      {
+        label: "安全做法",
+        safe: true,
+        feedback: "请填写安全选项反馈。",
+        safetyDelta: 8,
+      },
+      {
+        label: "危险做法",
+        safe: false,
+        feedback: "请填写危险选项反馈。",
+        safetyDelta: -10,
+      },
+    ],
+  };
+}
+
+function createGuardianStage(index: number): GuardianChallengeStage {
+  return {
+    id: `stage-${Date.now()}-${index}`,
+    title: `守护任务 ${index + 1}`,
+    detail: "请填写该场景的任务说明。",
+    toolLabel: "工具",
+    toolHint: "请填写工具提示。",
+    stageLabel: index === 0 ? "公交车" : index === 1 ? "私家车" : "电动车",
+    successText: "请填写完成提示。",
+    taskType: index === 2 ? "sequence" : index === 1 ? "tap" : "drag",
+    sceneImageUrl: "",
+    sceneSourcePageUrl: "",
+    sceneCaption: "请填写场景说明。",
+    actionHint: "请填写操作提示。",
+  };
+}
 
 export function AdminLevelsPage() {
   const { state } = useAppState();
@@ -102,6 +148,18 @@ export function AdminLevelsPage() {
     );
   }
 
+  function patchSelected(updater: (current: LevelManagementItem) => LevelManagementItem) {
+    if (!selectedLevel) {
+      return;
+    }
+
+    editor.updateDraft((current) =>
+      current.map((item) =>
+        item.id === selectedLevel.id ? updater(cloneValue(item)) : item,
+      ),
+    );
+  }
+
   function applyJsonField(field: JsonField) {
     if (!selectedLevel) {
       return;
@@ -111,27 +169,15 @@ export function AdminLevelsPage() {
       const rawValue = jsonDrafts[field];
 
       if (field === "observationScene") {
-        updateLevel(
-          selectedLevel.id,
-          "observationScene",
-          JSON.parse(rawValue) as ObservationSceneConfig,
-        );
+        updateLevel(selectedLevel.id, "observationScene", JSON.parse(rawValue) as ObservationSceneConfig);
       }
 
       if (field === "taskSteps") {
-        updateLevel(
-          selectedLevel.id,
-          "taskSteps",
-          JSON.parse(rawValue) as ObservationTaskStep[],
-        );
+        updateLevel(selectedLevel.id, "taskSteps", JSON.parse(rawValue) as ObservationTaskStep[]);
       }
 
       if (field === "routeChallengeConfig") {
-        updateLevel(
-          selectedLevel.id,
-          "routeChallengeConfig",
-          JSON.parse(rawValue) as RouteChallengeConfig,
-        );
+        updateLevel(selectedLevel.id, "routeChallengeConfig", JSON.parse(rawValue) as RouteChallengeConfig);
       }
 
       if (field === "guardianChallengeConfig") {
@@ -151,17 +197,54 @@ export function AdminLevelsPage() {
     }
   }
 
-  const routeNodeCount = levels.filter((item) => item.gameplayMode === "route").length;
+  const routeCount = levels.filter((item) => item.gameplayMode === "route").length;
   const guardianCount = levels.filter((item) => item.gameplayMode === "guardian").length;
   const observationCount = levels.filter((item) => item.gameplayMode === "observation").length;
+  const routeConfig = selectedLevel?.routeChallengeConfig ?? null;
+  const guardianConfig = selectedLevel?.guardianChallengeConfig ?? null;
+  const observationScene = selectedLevel?.observationScene ?? null;
+  const taskSteps = selectedLevel?.taskSteps ?? [];
+
+  function updateRouteNode(index: number, updater: (node: RouteChallengeNode) => RouteChallengeNode) {
+    if (!routeConfig) {
+      return;
+    }
+    patchSelected((current) => ({
+      ...current,
+      routeChallengeConfig: {
+        ...routeConfig,
+        nodes: routeConfig.nodes.map((node, nodeIndex) =>
+          nodeIndex === index ? updater(cloneValue(node)) : node,
+        ),
+      },
+    }));
+  }
+
+  function updateGuardianStage(
+    index: number,
+    updater: (stage: GuardianChallengeStage) => GuardianChallengeStage,
+  ) {
+    if (!guardianConfig) {
+      return;
+    }
+    patchSelected((current) => ({
+      ...current,
+      guardianChallengeConfig: {
+        ...guardianConfig,
+        stages: guardianConfig.stages.map((stage, stageIndex) =>
+          stageIndex === index ? updater(cloneValue(stage)) : stage,
+        ),
+      },
+    }));
+  }
 
   return (
     <div className="page-stack">
       <section className="hero-banner hero-banner--admin">
         <div>
           <span className="hero-banner__eyebrow">关卡内容管理</span>
-          <h1>统一编辑三关的玩法模式与配置内容</h1>
-          <p>这一页现在同时支持观察识别、路线判断和操作守护三种模式，不再只偏第一关。管理员修改后，学生端会直接以后端下发配置渲染。</p>
+          <h1>先用结构化表单改玩法，再在高级区维护 JSON</h1>
+          <p>关卡页现在保留三关固定入口，主编辑区优先暴露结构化字段，JSON 被收进折叠区，只给高级维护使用。</p>
         </div>
       </section>
 
@@ -179,20 +262,20 @@ export function AdminLevelsPage() {
       />
 
       <section className="card-grid card-grid--three">
-        <article className="surface-card stat-card admin-summary-card">
-          <span>观察识别关卡</span>
+        <article className="surface-card stat-card stat-card--compact admin-summary-card">
+          <span>观察识别</span>
           <strong>{observationCount}</strong>
-          <p>这类关卡主要配置场景热点、危险点、判断题和拖拽贴纸。</p>
+          <p>主要配置场景热点、危险点和任务链。</p>
         </article>
-        <article className="surface-card stat-card admin-summary-card">
-          <span>路线判断关卡</span>
-          <strong>{routeNodeCount}</strong>
-          <p>这类关卡配置地图节点、事件卡、选项和安全值反馈。</p>
+        <article className="surface-card stat-card stat-card--compact admin-summary-card">
+          <span>路线判断</span>
+          <strong>{routeCount}</strong>
+          <p>重点维护地图节点、事件卡与安全值反馈。</p>
         </article>
-        <article className="surface-card stat-card admin-summary-card">
-          <span>操作守护关卡</span>
+        <article className="surface-card stat-card stat-card--compact admin-summary-card">
+          <span>操作守护</span>
           <strong>{guardianCount}</strong>
-          <p>这类关卡配置公交车、私家车、电动车等分场景守护任务。</p>
+          <p>围绕公交车、私家车、电动车三段任务组织场景。</p>
         </article>
       </section>
 
@@ -204,8 +287,8 @@ export function AdminLevelsPage() {
               type="button"
               className={
                 level.id === selectedLevel?.id
-                  ? "management-list-card management-list-card--active"
-                  : "management-list-card"
+                  ? "management-list-card management-list-card--compact management-list-card--active"
+                  : "management-list-card management-list-card--compact"
               }
               onClick={() => setSelectedId(level.id)}
             >
@@ -213,7 +296,9 @@ export function AdminLevelsPage() {
                 <strong>{level.title}</strong>
                 <span className="surface-tag">{level.gameplayMode ?? "observation"}</span>
               </div>
-              <p>{level.focus}</p>
+              <p className="compact-copy compact-copy--two-line" title={level.focus}>
+                {level.focus}
+              </p>
               <span className="inline-note">{level.rewardLabel}</span>
             </button>
           ))}
@@ -221,38 +306,24 @@ export function AdminLevelsPage() {
 
         {selectedLevel ? (
           <div className="page-stack">
-            <article className="surface-card editor-panel">
+            <article className="surface-card editor-panel editor-panel--compact">
               <span className="section-block__eyebrow">基础字段</span>
               <h2>{selectedLevel.title}</h2>
               <div className="editor-grid">
                 <label className="form-field">
                   <span>关卡标题</span>
-                  <input
-                    value={selectedLevel.title}
-                    onChange={(event) =>
-                      updateLevel(selectedLevel.id, "title", event.target.value)
-                    }
-                  />
+                  <input value={selectedLevel.title} onChange={(event) => updateLevel(selectedLevel.id, "title", event.target.value)} />
                 </label>
                 <label className="form-field">
                   <span>学习焦点</span>
-                  <input
-                    value={selectedLevel.focus}
-                    onChange={(event) =>
-                      updateLevel(selectedLevel.id, "focus", event.target.value)
-                    }
-                  />
+                  <input value={selectedLevel.focus} onChange={(event) => updateLevel(selectedLevel.id, "focus", event.target.value)} />
                 </label>
                 <label className="form-field">
                   <span>玩法模式</span>
                   <select
                     value={selectedLevel.gameplayMode ?? "observation"}
                     onChange={(event) =>
-                      updateLevel(
-                        selectedLevel.id,
-                        "gameplayMode",
-                        event.target.value as LevelGameplayMode,
-                      )
+                      updateLevel(selectedLevel.id, "gameplayMode", event.target.value as LevelGameplayMode)
                     }
                   >
                     <option value="observation">observation</option>
@@ -262,256 +333,374 @@ export function AdminLevelsPage() {
                 </label>
                 <label className="form-field">
                   <span>预计时长</span>
-                  <input
-                    value={selectedLevel.duration}
-                    onChange={(event) =>
-                      updateLevel(selectedLevel.id, "duration", event.target.value)
-                    }
-                  />
+                  <input value={selectedLevel.duration} onChange={(event) => updateLevel(selectedLevel.id, "duration", event.target.value)} />
                 </label>
                 <label className="form-field">
                   <span>场景素材标识</span>
-                  <input
-                    value={selectedLevel.sceneAssetLabel}
-                    onChange={(event) =>
-                      updateLevel(selectedLevel.id, "sceneAssetLabel", event.target.value)
-                    }
-                  />
+                  <input value={selectedLevel.sceneAssetLabel} onChange={(event) => updateLevel(selectedLevel.id, "sceneAssetLabel", event.target.value)} />
                 </label>
                 <label className="form-field">
                   <span>奖励文案</span>
-                  <input
-                    value={selectedLevel.rewardLabel}
-                    onChange={(event) =>
-                      updateLevel(selectedLevel.id, "rewardLabel", event.target.value)
-                    }
-                  />
+                  <input value={selectedLevel.rewardLabel} onChange={(event) => updateLevel(selectedLevel.id, "rewardLabel", event.target.value)} />
                 </label>
                 <label className="form-field form-field--wide">
                   <span>反馈风格</span>
-                  <input
-                    value={selectedLevel.feedbackStyle}
-                    onChange={(event) =>
-                      updateLevel(selectedLevel.id, "feedbackStyle", event.target.value)
-                    }
-                  />
+                  <input value={selectedLevel.feedbackStyle} onChange={(event) => updateLevel(selectedLevel.id, "feedbackStyle", event.target.value)} />
                 </label>
                 <label className="form-field form-field--wide">
                   <span>反馈说明</span>
-                  <textarea
-                    className="text-area"
-                    rows={3}
-                    value={selectedLevel.feedbackCopy}
-                    onChange={(event) =>
-                      updateLevel(selectedLevel.id, "feedbackCopy", event.target.value)
-                    }
-                  />
+                  <textarea rows={3} value={selectedLevel.feedbackCopy} onChange={(event) => updateLevel(selectedLevel.id, "feedbackCopy", event.target.value)} />
                 </label>
               </div>
             </article>
 
-            <article className="surface-card editor-panel">
+            <article className="surface-card editor-panel editor-panel--compact">
               <span className="section-block__eyebrow">概要列表</span>
-              <h2>编辑任务说明、热点、道具和目标区域</h2>
+              <h2>快速维护任务、热点、道具和目标区</h2>
               <div className="editor-grid">
                 <label className="form-field form-field--wide">
                   <span>任务链（每行一条）</span>
-                  <textarea
-                    className="text-area"
-                    rows={4}
-                    value={linesToText(selectedLevel.taskOutline)}
-                    onChange={(event) =>
-                      updateLevel(selectedLevel.id, "taskOutline", textToLines(event.target.value))
-                    }
-                  />
+                  <textarea rows={4} value={linesToText(selectedLevel.taskOutline)} onChange={(event) => updateLevel(selectedLevel.id, "taskOutline", textToLines(event.target.value))} />
                 </label>
                 <label className="form-field form-field--wide">
                   <span>热点或节点（每行一条）</span>
-                  <textarea
-                    className="text-area"
-                    rows={4}
-                    value={linesToText(selectedLevel.hotspotItems)}
-                    onChange={(event) =>
-                      updateLevel(selectedLevel.id, "hotspotItems", textToLines(event.target.value))
-                    }
-                  />
+                  <textarea rows={4} value={linesToText(selectedLevel.hotspotItems)} onChange={(event) => updateLevel(selectedLevel.id, "hotspotItems", textToLines(event.target.value))} />
                 </label>
                 <label className="form-field form-field--wide">
                   <span>道具列表（每行一条）</span>
-                  <textarea
-                    className="text-area"
-                    rows={4}
-                    value={linesToText(selectedLevel.propItems)}
-                    onChange={(event) =>
-                      updateLevel(selectedLevel.id, "propItems", textToLines(event.target.value))
-                    }
-                  />
+                  <textarea rows={4} value={linesToText(selectedLevel.propItems)} onChange={(event) => updateLevel(selectedLevel.id, "propItems", textToLines(event.target.value))} />
                 </label>
                 <label className="form-field form-field--wide">
                   <span>目标区域说明（每行一条）</span>
-                  <textarea
-                    className="text-area"
-                    rows={4}
-                    value={linesToText(selectedLevel.targetAreaNotes)}
-                    onChange={(event) =>
-                      updateLevel(
-                        selectedLevel.id,
-                        "targetAreaNotes",
-                        textToLines(event.target.value),
-                      )
-                    }
-                  />
+                  <textarea rows={4} value={linesToText(selectedLevel.targetAreaNotes)} onChange={(event) => updateLevel(selectedLevel.id, "targetAreaNotes", textToLines(event.target.value))} />
                 </label>
               </div>
             </article>
 
-            <article className="surface-card editor-panel">
-              <span className="section-block__eyebrow">玩法配置</span>
-              <h2>按当前模式编辑详细 JSON 配置</h2>
+            {(selectedLevel.gameplayMode ?? "observation") === "observation" && observationScene ? (
+              <article className="surface-card editor-panel editor-panel--compact">
+                <span className="section-block__eyebrow">观察识别表单</span>
+                <h2>先维护场景，再维护任务步骤</h2>
+                <div className="editor-grid">
+                  <label className="form-field">
+                    <span>背景素材</span>
+                    <input
+                      value={observationScene.backgroundAsset}
+                      onChange={(event) =>
+                        patchSelected((current) => ({
+                          ...current,
+                          observationScene: { ...observationScene, backgroundAsset: event.target.value },
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className="form-field">
+                    <span>参考标签</span>
+                    <input
+                      value={observationScene.referenceLabel}
+                      onChange={(event) =>
+                        patchSelected((current) => ({
+                          ...current,
+                          observationScene: { ...observationScene, referenceLabel: event.target.value },
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className="form-field form-field--wide">
+                    <span>场景说明</span>
+                    <textarea
+                      rows={3}
+                      value={observationScene.sceneCaption}
+                      onChange={(event) =>
+                        patchSelected((current) => ({
+                          ...current,
+                          observationScene: { ...observationScene, sceneCaption: event.target.value },
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
 
-              {(selectedLevel.gameplayMode ?? "observation") === "observation" ? (
                 <div className="page-stack page-stack--compact">
-                  <label className="form-field form-field--wide">
-                    <span>Observation Scene JSON</span>
-                    <textarea
-                      className="text-area"
-                      rows={14}
-                      value={jsonDrafts.observationScene}
-                      onChange={(event) =>
-                        setJsonDrafts((current) => ({
-                          ...current,
-                          observationScene: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  {jsonErrors.observationScene ? (
-                    <p className="form-error">{jsonErrors.observationScene}</p>
-                  ) : null}
-                  <div className="button-row">
-                    <button
-                      type="button"
-                      className="ghost-button"
-                      onClick={() => applyJsonField("observationScene")}
-                    >
-                      应用场景配置
-                    </button>
-                  </div>
+                  {taskSteps.map((step, index) => (
+                    <article key={step.id} className="surface-card admin-inline-editor-card">
+                      <div className="editor-grid">
+                        <label className="form-field">
+                          <span>步骤标题</span>
+                          <input
+                            value={step.title}
+                            onChange={(event) =>
+                              patchSelected((current) => ({
+                                ...current,
+                                taskSteps: taskSteps.map((item, itemIndex) =>
+                                  itemIndex === index ? { ...item, title: event.target.value } : item,
+                                ),
+                              }))
+                            }
+                          />
+                        </label>
+                        <label className="form-field">
+                          <span>交互类型</span>
+                          <select
+                            value={step.interactionType}
+                            onChange={(event) =>
+                              patchSelected((current) => ({
+                                ...current,
+                                taskSteps: taskSteps.map((item, itemIndex) =>
+                                  itemIndex === index
+                                    ? { ...item, interactionType: event.target.value as ObservationTaskStep["interactionType"] }
+                                    : item,
+                                ),
+                              }))
+                            }
+                          >
+                            <option value="hotspot">hotspot</option>
+                            <option value="danger_mark">danger_mark</option>
+                            <option value="state_judge">state_judge</option>
+                            <option value="drag_marker">drag_marker</option>
+                          </select>
+                        </label>
+                        <label className="form-field form-field--wide">
+                          <span>任务说明</span>
+                          <input
+                            value={step.instruction}
+                            onChange={(event) =>
+                              patchSelected((current) => ({
+                                ...current,
+                                taskSteps: taskSteps.map((item, itemIndex) =>
+                                  itemIndex === index ? { ...item, instruction: event.target.value } : item,
+                                ),
+                              }))
+                            }
+                          />
+                        </label>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </article>
+            ) : null}
 
-                  <label className="form-field form-field--wide">
-                    <span>Observation Task Steps JSON</span>
-                    <textarea
-                      className="text-area"
-                      rows={16}
-                      value={jsonDrafts.taskSteps}
-                      onChange={(event) =>
-                        setJsonDrafts((current) => ({
-                          ...current,
-                          taskSteps: event.target.value,
-                        }))
-                      }
-                    />
+            {(selectedLevel.gameplayMode ?? "observation") === "route" && routeConfig ? (
+              <article className="surface-card editor-panel editor-panel--compact">
+                <span className="section-block__eyebrow">路线判断表单</span>
+                <h2>地图信息、节点事件和安全值反馈</h2>
+                <div className="editor-grid">
+                  <label className="form-field">
+                    <span>地图标题</span>
+                    <input value={routeConfig.mapTitle} onChange={(event) => patchSelected((current) => ({ ...current, routeChallengeConfig: { ...routeConfig, mapTitle: event.target.value } }))} />
                   </label>
-                  {jsonErrors.taskSteps ? (
-                    <p className="form-error">{jsonErrors.taskSteps}</p>
-                  ) : null}
+                  <label className="form-field">
+                    <span>路线标签</span>
+                    <input value={routeConfig.routeLabel} onChange={(event) => patchSelected((current) => ({ ...current, routeChallengeConfig: { ...routeConfig, routeLabel: event.target.value } }))} />
+                  </label>
+                  <label className="form-field">
+                    <span>安全值标签</span>
+                    <input value={routeConfig.safetyLabel} onChange={(event) => patchSelected((current) => ({ ...current, routeChallengeConfig: { ...routeConfig, safetyLabel: event.target.value } }))} />
+                  </label>
+                  <label className="form-field">
+                    <span>角色标签</span>
+                    <input value={routeConfig.currentRoleLabel} onChange={(event) => patchSelected((current) => ({ ...current, routeChallengeConfig: { ...routeConfig, currentRoleLabel: event.target.value } }))} />
+                  </label>
+                  <label className="form-field form-field--wide">
+                    <span>地图说明</span>
+                    <textarea rows={3} value={routeConfig.mapDescription} onChange={(event) => patchSelected((current) => ({ ...current, routeChallengeConfig: { ...routeConfig, mapDescription: event.target.value } }))} />
+                  </label>
+                  <label className="form-field form-field--wide">
+                    <span>完成提示</span>
+                    <textarea rows={3} value={routeConfig.completionCopy} onChange={(event) => patchSelected((current) => ({ ...current, routeChallengeConfig: { ...routeConfig, completionCopy: event.target.value } }))} />
+                  </label>
+                </div>
+
+                <div className="page-stack page-stack--compact">
+                  {routeConfig.nodes.map((node, index) => (
+                    <article key={node.id} className="surface-card admin-inline-editor-card">
+                      <div className="row-between">
+                        <strong>{node.title}</strong>
+                        <button
+                          type="button"
+                          className="ghost-button"
+                          onClick={() =>
+                            patchSelected((current) => ({
+                              ...current,
+                              routeChallengeConfig: {
+                                ...routeConfig,
+                                nodes: routeConfig.nodes.filter((_, nodeIndex) => nodeIndex !== index),
+                              },
+                            }))
+                          }
+                        >
+                          删除节点
+                        </button>
+                      </div>
+                      <div className="editor-grid">
+                        <label className="form-field">
+                          <span>节点标题</span>
+                          <input value={node.title} onChange={(event) => updateRouteNode(index, (current) => ({ ...current, title: event.target.value }))} />
+                        </label>
+                        <label className="form-field">
+                          <span>地图标签</span>
+                          <input value={node.mapLabel} onChange={(event) => updateRouteNode(index, (current) => ({ ...current, mapLabel: event.target.value }))} />
+                        </label>
+                        <label className="form-field form-field--wide">
+                          <span>事件描述</span>
+                          <textarea rows={3} value={node.scenario} onChange={(event) => updateRouteNode(index, (current) => ({ ...current, scenario: event.target.value }))} />
+                        </label>
+                        <label className="form-field form-field--wide">
+                          <span>提示说明</span>
+                          <input value={node.hint} onChange={(event) => updateRouteNode(index, (current) => ({ ...current, hint: event.target.value }))} />
+                        </label>
+                      </div>
+                    </article>
+                  ))}
                   <div className="button-row">
                     <button
                       type="button"
                       className="ghost-button"
-                      onClick={() => applyJsonField("taskSteps")}
+                      onClick={() =>
+                        patchSelected((current) => ({
+                          ...current,
+                          routeChallengeConfig: {
+                            ...routeConfig,
+                            nodes: [...routeConfig.nodes, createRouteNode(routeConfig.nodes.length)],
+                          },
+                        }))
+                      }
                     >
-                      应用任务链配置
+                      新增路线节点
                     </button>
                   </div>
                 </div>
-              ) : null}
+              </article>
+            ) : null}
 
-              {(selectedLevel.gameplayMode ?? "observation") === "route" ? (
+            {(selectedLevel.gameplayMode ?? "observation") === "guardian" && guardianConfig ? (
+              <article className="surface-card editor-panel editor-panel--compact">
+                <span className="section-block__eyebrow">操作守护表单</span>
+                <h2>场景步骤、任务类型和完成反馈</h2>
+                <label className="form-field form-field--wide">
+                  <span>完成提示</span>
+                  <textarea rows={3} value={guardianConfig.completionCopy} onChange={(event) => patchSelected((current) => ({ ...current, guardianChallengeConfig: { ...guardianConfig, completionCopy: event.target.value } }))} />
+                </label>
+
                 <div className="page-stack page-stack--compact">
-                  <label className="form-field form-field--wide">
-                    <span>Route Challenge Config JSON</span>
-                    <textarea
-                      className="text-area"
-                      rows={18}
-                      value={jsonDrafts.routeChallengeConfig}
-                      onChange={(event) =>
-                        setJsonDrafts((current) => ({
-                          ...current,
-                          routeChallengeConfig: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  {jsonErrors.routeChallengeConfig ? (
-                    <p className="form-error">{jsonErrors.routeChallengeConfig}</p>
-                  ) : null}
+                  {guardianConfig.stages.map((stage, index) => (
+                    <article key={stage.id} className="surface-card admin-inline-editor-card">
+                      <div className="row-between">
+                        <strong>{stage.title}</strong>
+                        <button
+                          type="button"
+                          className="ghost-button"
+                          onClick={() =>
+                            patchSelected((current) => ({
+                              ...current,
+                              guardianChallengeConfig: {
+                                ...guardianConfig,
+                                stages: guardianConfig.stages.filter((_, stageIndex) => stageIndex !== index),
+                              },
+                            }))
+                          }
+                        >
+                          删除任务
+                        </button>
+                      </div>
+                      <div className="editor-grid">
+                        <label className="form-field">
+                          <span>任务标题</span>
+                          <input value={stage.title} onChange={(event) => updateGuardianStage(index, (current) => ({ ...current, title: event.target.value }))} />
+                        </label>
+                        <label className="form-field">
+                          <span>阶段标签</span>
+                          <input value={stage.stageLabel} onChange={(event) => updateGuardianStage(index, (current) => ({ ...current, stageLabel: event.target.value }))} />
+                        </label>
+                        <label className="form-field">
+                          <span>任务类型</span>
+                          <select
+                            value={stage.taskType}
+                            onChange={(event) => updateGuardianStage(index, (current) => ({ ...current, taskType: event.target.value as GuardianTaskType }))}
+                          >
+                            <option value="drag">drag</option>
+                            <option value="tap">tap</option>
+                            <option value="sequence">sequence</option>
+                          </select>
+                        </label>
+                        <label className="form-field form-field--wide">
+                          <span>任务说明</span>
+                          <textarea rows={3} value={stage.detail} onChange={(event) => updateGuardianStage(index, (current) => ({ ...current, detail: event.target.value }))} />
+                        </label>
+                        <label className="form-field form-field--wide">
+                          <span>操作提示</span>
+                          <input value={stage.actionHint} onChange={(event) => updateGuardianStage(index, (current) => ({ ...current, actionHint: event.target.value }))} />
+                        </label>
+                      </div>
+                    </article>
+                  ))}
                   <div className="button-row">
                     <button
                       type="button"
                       className="ghost-button"
-                      onClick={() => applyJsonField("routeChallengeConfig")}
-                    >
-                      应用路线配置
-                    </button>
-                  </div>
-                </div>
-              ) : null}
-
-              {(selectedLevel.gameplayMode ?? "observation") === "guardian" ? (
-                <div className="page-stack page-stack--compact">
-                  <label className="form-field form-field--wide">
-                    <span>Guardian Challenge Config JSON</span>
-                    <textarea
-                      className="text-area"
-                      rows={18}
-                      value={jsonDrafts.guardianChallengeConfig}
-                      onChange={(event) =>
-                        setJsonDrafts((current) => ({
+                      onClick={() =>
+                        patchSelected((current) => ({
                           ...current,
-                          guardianChallengeConfig: event.target.value,
+                          guardianChallengeConfig: {
+                            ...guardianConfig,
+                            stages: [...guardianConfig.stages, createGuardianStage(guardianConfig.stages.length)],
+                          },
                         }))
                       }
-                    />
-                  </label>
-                  {jsonErrors.guardianChallengeConfig ? (
-                    <p className="form-error">{jsonErrors.guardianChallengeConfig}</p>
-                  ) : null}
-                  <div className="button-row">
-                    <button
-                      type="button"
-                      className="ghost-button"
-                      onClick={() => applyJsonField("guardianChallengeConfig")}
                     >
-                      应用守护配置
+                      新增守护任务
                     </button>
                   </div>
                 </div>
-              ) : null}
-            </article>
+              </article>
+            ) : null}
 
-            <section className="card-grid card-grid--three">
-              <article className="surface-card admin-preview-card">
-                <span className="section-block__eyebrow">玩法模式</span>
-                <strong>{selectedLevel.gameplayMode ?? "observation"}</strong>
-                <p>学生端会根据这个模式切换成观察识别、路线判断或操作守护页面。</p>
-              </article>
-              <article className="surface-card admin-preview-card">
-                <span className="section-block__eyebrow">任务数</span>
-                <strong>{selectedLevel.taskOutline.length}</strong>
-                <p>当前配置稿中的任务链条数，用于主题页和关卡壳层展示。</p>
-              </article>
-              <article className="surface-card admin-preview-card">
-                <span className="section-block__eyebrow">热点 / 节点数</span>
-                <strong>{selectedLevel.hotspotItems.length}</strong>
-                <p>当前配置稿中的热点、地图节点或场景焦点数量。</p>
-              </article>
-            </section>
+            <details className="surface-card admin-json-panel">
+              <summary>高级 JSON 配置</summary>
+              <div className="page-stack">
+                {[
+                  ["observationScene", "Observation Scene JSON"],
+                  ["taskSteps", "Observation Task Steps JSON"],
+                  ["routeChallengeConfig", "Route Challenge JSON"],
+                  ["guardianChallengeConfig", "Guardian Challenge JSON"],
+                ].map(([field, label]) => (
+                  <article key={field} className="page-stack page-stack--compact">
+                    <label className="form-field form-field--wide">
+                      <span>{label}</span>
+                      <textarea
+                        className="text-area"
+                        rows={14}
+                        value={jsonDrafts[field as JsonField]}
+                        onChange={(event) =>
+                          setJsonDrafts((current) => ({
+                            ...current,
+                            [field]: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    {jsonErrors[field as JsonField] ? (
+                      <p className="form-error">{jsonErrors[field as JsonField]}</p>
+                    ) : null}
+                    <div className="button-row">
+                      <button
+                        type="button"
+                        className="ghost-button"
+                        onClick={() => applyJsonField(field as JsonField)}
+                      >
+                        应用 {label}
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </details>
           </div>
         ) : (
           <article className="surface-card empty-state-card">
-            <strong>请选择一个关卡</strong>
-            <p>左侧选中关卡后，就可以编辑它的玩法模式和详细配置。</p>
+            <strong>当前没有关卡数据</strong>
+            <p>请先恢复最近版本，或等待关卡配置同步后再继续编辑。</p>
           </article>
         )}
       </section>

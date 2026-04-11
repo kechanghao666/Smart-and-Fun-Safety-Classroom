@@ -1,4 +1,5 @@
 import type {
+  PaginatedResponse,
   StudentClassMembershipResponse,
   TeacherClassApplicationItem,
   TeacherClassManagementItem,
@@ -15,9 +16,24 @@ export interface TeacherDashboardResponse {
 }
 
 export interface TeacherStudentFilters {
+  query?: string;
   className?: string;
   completionStatus?: "completed" | "incomplete" | "all";
   examStatus?: "completed" | "pending" | "all";
+  page?: number;
+  pageSize?: number;
+}
+
+export interface TeacherClassFilters {
+  query?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface TeacherClassApplicationFilters {
+  query?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export function fetchTeacherDashboard(token: string) {
@@ -26,10 +42,66 @@ export function fetchTeacherDashboard(token: string) {
   });
 }
 
-export function fetchTeacherClasses(token: string) {
-  return requestJson<TeacherClassManagementItem[]>("/teacher/classes", {
-    token,
+function buildTeacherQuery(filters: Record<string, string | number | undefined>) {
+  const params = new URLSearchParams();
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "" || value === "all") {
+      return;
+    }
+
+    params.set(key, String(value));
   });
+
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
+export function fetchTeacherClasses(token: string, filters?: TeacherClassFilters) {
+  return requestJson<PaginatedResponse<TeacherClassManagementItem>>(
+    `/teacher/classes${buildTeacherQuery({
+      query: filters?.query,
+      page: filters?.page,
+      pageSize: filters?.pageSize,
+    })}`,
+    {
+      token,
+    },
+  );
+}
+
+export function fetchTeacherClassStudents(
+  token: string,
+  classId: string,
+  filters?: TeacherClassFilters,
+) {
+  return requestJson<PaginatedResponse<TeacherStudentSummary>>(
+    `/teacher/classes/${classId}/students${buildTeacherQuery({
+      query: filters?.query,
+      page: filters?.page,
+      pageSize: filters?.pageSize,
+    })}`,
+    {
+      token,
+    },
+  );
+}
+
+export function fetchTeacherClassApplications(
+  token: string,
+  classId: string,
+  filters?: TeacherClassApplicationFilters,
+) {
+  return requestJson<PaginatedResponse<TeacherClassApplicationItem>>(
+    `/teacher/classes/${classId}/applications${buildTeacherQuery({
+      query: filters?.query,
+      page: filters?.page,
+      pageSize: filters?.pageSize,
+    })}`,
+    {
+      token,
+    },
+  );
 }
 
 export function createTeacherClass(
@@ -37,8 +109,8 @@ export function createTeacherClass(
   payload: { name: string; description: string },
 ) {
   return requestJson<TeacherClassManagementItem>("/teacher/classes", {
-    method: "POST",
     token,
+    method: "POST",
     body: payload,
   });
 }
@@ -66,15 +138,6 @@ export function inviteStudentToTeacherClass(
       method: "POST",
       token,
       body: { studentNo },
-    },
-  );
-}
-
-export function fetchTeacherClassApplications(token: string, classId: string) {
-  return requestJson<TeacherClassApplicationItem[]>(
-    `/teacher/classes/${classId}/applications`,
-    {
-      token,
     },
   );
 }
@@ -108,23 +171,15 @@ export function rejectTeacherClassApplication(
 }
 
 export function fetchTeacherStudents(token: string, filters?: TeacherStudentFilters) {
-  const params = new URLSearchParams();
-
-  if (filters?.className && filters.className !== "all") {
-    params.set("className", filters.className);
-  }
-
-  if (filters?.completionStatus && filters.completionStatus !== "all") {
-    params.set("completionStatus", filters.completionStatus);
-  }
-
-  if (filters?.examStatus && filters.examStatus !== "all") {
-    params.set("examStatus", filters.examStatus);
-  }
-
-  const query = params.toString();
-  return requestJson<TeacherStudentSummary[]>(
-    query ? `/teacher/students?${query}` : "/teacher/students",
+  return requestJson<PaginatedResponse<TeacherStudentSummary>>(
+    `/teacher/students${buildTeacherQuery({
+      query: filters?.query,
+      className: filters?.className,
+      completionStatus: filters?.completionStatus,
+      examStatus: filters?.examStatus,
+      page: filters?.page,
+      pageSize: filters?.pageSize,
+    })}`,
     {
       token,
     },

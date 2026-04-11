@@ -31,6 +31,23 @@ export type GrowthEventSourceType =
   | "wrong_question_review"
   | "streak_bonus";
 
+export interface PaginationQuery {
+  page?: number;
+  pageSize?: number;
+  query?: string;
+}
+
+export interface PaginationMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedResponse<T> extends PaginationMeta {
+  items: T[];
+}
+
 export interface ThemeCard {
   id: string;
   title: string;

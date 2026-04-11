@@ -5,9 +5,13 @@ import { EmptyState } from "../../components/EmptyState";
 import { MetricCard } from "../../components/MetricCard";
 import { PageHero } from "../../components/PageHero";
 import { PaginationControls } from "../../components/PaginationControls";
-import { fetchTeacherStudents } from "../../services/teacher";
+import {
+  fetchTeacherClasses,
+  fetchTeacherStudents,
+  type TeacherClassFilters,
+} from "../../services/teacher";
 import { useAppState } from "../../state/AppState";
-import type { TeacherStudentSummary } from "../../types";
+import type { TeacherClassManagementItem, TeacherStudentSummary } from "../../types";
 import {
   getTeacherAttentionLabel,
   getTeacherAttentionLevel,
@@ -28,6 +32,7 @@ export function TeacherStudentsPage() {
   const { state } = useAppState();
   const canUseApi = state.authSource === "api" && Boolean(state.authToken);
   const [students, setStudents] = useState<TeacherStudentSummary[]>([]);
+  const [classes, setClasses] = useState<TeacherClassManagementItem[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(canUseApi);
   const [query, setQuery] = useState("");
@@ -35,6 +40,44 @@ export function TeacherStudentsPage() {
   const [examFilter, setExamFilter] = useState<ExamFilter>("all");
   const [completionFilter, setCompletionFilter] = useState<CompletionFilter>("all");
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalStudents, setTotalStudents] = useState(0);
+
+  useEffect(() => {
+    if (!canUseApi || !state.authToken) {
+      setClasses([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadClasses() {
+      try {
+        const result = await fetchTeacherClasses(state.authToken ?? "", {
+          page: 1,
+          pageSize: 200,
+        } satisfies TeacherClassFilters);
+
+        if (!cancelled) {
+          setClasses(result.items);
+        }
+      } catch {
+        if (!cancelled) {
+          setClasses([]);
+        }
+      }
+    }
+
+    void loadClasses();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canUseApi, state.authToken]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, classFilter, examFilter, completionFilter]);
 
   useEffect(() => {
     let cancelled = false;
@@ -42,6 +85,8 @@ export function TeacherStudentsPage() {
     async function loadStudents() {
       if (!canUseApi || !state.authToken) {
         setStudents([]);
+        setTotalPages(1);
+        setTotalStudents(0);
         setIsLoading(false);
         return;
       }
@@ -51,13 +96,18 @@ export function TeacherStudentsPage() {
 
       try {
         const result = await fetchTeacherStudents(state.authToken, {
+          query,
           className: classFilter,
           completionStatus: completionFilter,
           examStatus: examFilter,
+          page,
+          pageSize: STUDENTS_PER_PAGE,
         });
 
         if (!cancelled) {
-          setStudents(result);
+          setStudents(result.items);
+          setTotalPages(result.totalPages);
+          setTotalStudents(result.total);
         }
       } catch (requestError) {
         if (!cancelled) {
@@ -79,45 +129,28 @@ export function TeacherStudentsPage() {
     return () => {
       cancelled = true;
     };
-  }, [canUseApi, classFilter, completionFilter, examFilter, state.authToken]);
+  }, [
+    canUseApi,
+    classFilter,
+    completionFilter,
+    examFilter,
+    page,
+    query,
+    state.authToken,
+  ]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [query, classFilter, examFilter, completionFilter]);
-
-  const classOptions = Array.from(new Set(students.map((student) => student.className)));
-  const filteredStudents = useMemo(
-    () =>
-      students.filter((student) => {
-        const keyword = query.trim();
-        return (
-          keyword.length === 0 ||
-          student.name.includes(keyword) ||
-          student.weakSpot.includes(keyword)
-        );
-      }),
-    [query, students],
+  const classOptions = useMemo(
+    () => classes.map((item) => item.name),
+    [classes],
   );
-
-  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / STUDENTS_PER_PAGE));
-
-  useEffect(() => {
-    setPage((current) => Math.min(current, totalPages));
-  }, [totalPages]);
-
-  const paginatedStudents = useMemo(() => {
-    const start = (page - 1) * STUDENTS_PER_PAGE;
-    return filteredStudents.slice(start, start + STUDENTS_PER_PAGE);
-  }, [filteredStudents, page]);
-
-  const urgentCount = filteredStudents.filter(
+  const urgentCount = students.filter(
     (student) => getTeacherAttentionLevel(student) === "urgent",
   ).length;
-  const pendingExamCount = filteredStudents.filter((student) => student.score === null).length;
-  const fullyCompletedCount = filteredStudents.filter(
+  const pendingExamCount = students.filter((student) => student.score === null).length;
+  const fullyCompletedCount = students.filter(
     (student) => student.completedLevels === 3,
   ).length;
-  const priorityStudents = filteredStudents
+  const priorityStudents = students
     .slice()
     .sort((left, right) => {
       const leftLevel = getTeacherAttentionLevel(left);
@@ -139,33 +172,33 @@ export function TeacherStudentsPage() {
     <div className="page-stack">
       <PageHero
         eyebrow="学生总览"
-        title="先筛出要关注的人，再决定点开哪一位"
-        description="搜索、班级、完成状态和考试状态放在同一层，先快速筛，再进入学生详情看完整闭环。"
+        title="先筛出要关注的人，再决定点开谁"
+        description="搜索、班级、三关完成状态和考试状态放在同一层，先缩小范围，再进入学生详情处理具体问题。"
         tone="teacher"
         stats={[
-          { label: "当前筛出", value: `${filteredStudents.length} 人` },
-          { label: "需优先跟进", value: `${urgentCount} 人` },
-          { label: "待考试", value: `${pendingExamCount} 人` },
+          { label: "当前筛出", value: `${totalStudents} 人` },
+          { label: "本页优先跟进", value: `${urgentCount} 人` },
+          { label: "本页待考试", value: `${pendingExamCount} 人` },
         ]}
       />
 
       <section className="card-grid card-grid--three">
         <MetricCard
           label="当前筛出"
-          value={`${filteredStudents.length}`}
-          description="根据搜索词、班级、完成状态和考试状态综合筛选后的学生数量。"
+          value={`${totalStudents}`}
+          description="按照当前筛选条件命中的学生总数。"
           tone="teacher"
         />
         <MetricCard
-          label="三关已完成"
+          label="本页三关已完成"
           value={`${fullyCompletedCount}`}
-          description="快速判断哪些学生已经走完整个主题主链路。"
+          description="帮助你快速看出本页哪些学生已经走完主题主链路。"
           tone="teacher"
         />
         <MetricCard
-          label="待考试"
+          label="本页待考试"
           value={`${pendingExamCount}`}
-          description="优先发现还没进入考试和收口阶段的学生。"
+          description="优先发现还没进入考试收口阶段的学生。"
           tone="teacher"
         />
       </section>
@@ -173,7 +206,7 @@ export function TeacherStudentsPage() {
       <DataWorkbench
         eyebrow="筛选台"
         title="用四个条件快速收紧范围"
-        description="先把人筛准，再去看详情页，教师工作节奏会更稳。"
+        description="搜索支持姓名、学号和薄弱点；班级选项独立加载，不会因为当前筛选结果自己缩窄。"
         tone="teacher"
         toolbar={
           hasFilters ? (
@@ -198,7 +231,7 @@ export function TeacherStudentsPage() {
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="搜索姓名或薄弱点"
+              placeholder="搜索姓名、学号或薄弱点"
             />
           </label>
 
@@ -261,7 +294,9 @@ export function TeacherStudentsPage() {
                     <div className="row-between">
                       <div>
                         <strong>{student.name}</strong>
-                        <p className="teacher-analysis-card__meta">{student.className}</p>
+                        <p className="teacher-analysis-card__meta">
+                          {student.className} · 学号 {student.studentNo ?? "--"}
+                        </p>
                       </div>
                       <span
                         className={`teacher-attention-pill teacher-attention-pill--${attentionLevel}`}
@@ -279,20 +314,20 @@ export function TeacherStudentsPage() {
           ) : (
             <EmptyState
               title="当前没有需要优先跟进的学生"
-              description="可以先看下方总表，或调整筛选条件重新缩小范围。"
+              description="可以先调整筛选条件，或者查看本页学生详情。"
             />
           )}
         </DataWorkbench>
 
         <DataWorkbench
           eyebrow="列表总览"
-          title="固定密度查看整班学生"
+          title="固定密度查看当前结果"
           tone="teacher"
         >
-          {paginatedStudents.length > 0 ? (
+          {students.length > 0 ? (
             <>
               <div className="teacher-student-list">
-                {paginatedStudents.map((student) => {
+                {students.map((student) => {
                   const attentionLevel = getTeacherAttentionLevel(student);
 
                   return (
@@ -343,7 +378,7 @@ export function TeacherStudentsPage() {
                 page={page}
                 totalPages={totalPages}
                 onPageChange={setPage}
-                label={`共 ${filteredStudents.length} 名学生`}
+                label={`共 ${totalStudents} 名学生`}
               />
             </>
           ) : (
@@ -360,7 +395,7 @@ export function TeacherStudentsPage() {
         <p>
           {isLoading
             ? "正在同步学生列表..."
-            : error || "筛选条件、优先名单和学生总览都会跟随真实数据自动刷新。"}
+            : error || "筛选条件、优先名单和学生列表都会跟随后端分页结果自动更新。"}
         </p>
       </article>
     </div>

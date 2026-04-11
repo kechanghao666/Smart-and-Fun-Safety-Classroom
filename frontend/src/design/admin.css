@@ -44,3 +44,78 @@
   border-color: rgba(29, 45, 61, 0.16);
   box-shadow: 0 14px 28px rgba(17, 43, 73, 0.08);
 }
+
+.admin-table-shell {
+  overflow-x: auto;
+}
+
+.table-note-clamp {
+  margin: 0;
+  max-width: 220px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.5;
+}
+
+.admin-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.admin-preset-card,
+.admin-preview-option,
+.admin-inline-editor-card,
+.admin-threshold-group {
+  border-radius: 18px;
+  border: 1px solid rgba(17, 43, 73, 0.08);
+  background: rgba(250, 251, 252, 0.92);
+}
+
+.admin-preset-card {
+  padding: 16px;
+  text-align: left;
+}
+
+.admin-preset-card--active {
+  border-color: rgba(29, 45, 61, 0.18);
+  box-shadow: 0 10px 24px rgba(17, 43, 73, 0.08);
+}
+
+.admin-preview-option {
+  padding: 14px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.admin-preview-option--correct {
+  border-color: rgba(31, 156, 124, 0.18);
+  background: rgba(237, 248, 242, 0.95);
+}
+
+.admin-inline-editor-card,
+.admin-threshold-group {
+  padding: 18px;
+}
+
+.admin-json-panel {
+  padding: 24px;
+}
+
+.admin-json-panel summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--admin-accent);
+}
+
+.admin-json-panel[open] summary {
+  margin-bottom: 18px;
+}
+
+.management-list-panel--question-bank {
+  max-height: 680px;
+  overflow: auto;
+}

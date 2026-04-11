@@ -8,7 +8,8 @@ import {
 } from "../services/classMembershipService";
 import {
   createTeacherClass,
-  getTeacherClasses,
+  getTeacherClassesPage,
+  getTeacherClassStudents,
   getTeacherDashboard,
   getTeacherStudentDetail,
   getTeacherStudents,
@@ -22,7 +23,17 @@ teacherRouter.use(requireRole("teacher"));
 
 teacherRouter.get("/classes", async (request, response, next) => {
   try {
-    response.json(await getTeacherClasses(request.authUser!.id));
+    response.json(
+      await getTeacherClassesPage(request.authUser!.id, {
+        page:
+          typeof request.query.page === "string" ? Number(request.query.page) : undefined,
+        pageSize:
+          typeof request.query.pageSize === "string"
+            ? Number(request.query.pageSize)
+            : undefined,
+        query: typeof request.query.query === "string" ? request.query.query : undefined,
+      }),
+    );
   } catch (error) {
     next(error);
   }
@@ -71,7 +82,33 @@ teacherRouter.post("/classes/:classId/invite-student", async (request, response,
 teacherRouter.get("/classes/:classId/applications", async (request, response, next) => {
   try {
     response.json(
-      await getTeacherClassApplications(request.authUser!.id, request.params.classId),
+      await getTeacherClassApplications(request.authUser!.id, request.params.classId, {
+        page:
+          typeof request.query.page === "string" ? Number(request.query.page) : undefined,
+        pageSize:
+          typeof request.query.pageSize === "string"
+            ? Number(request.query.pageSize)
+            : undefined,
+        query: typeof request.query.query === "string" ? request.query.query : undefined,
+      }),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+teacherRouter.get("/classes/:classId/students", async (request, response, next) => {
+  try {
+    response.json(
+      await getTeacherClassStudents(request.authUser!.id, request.params.classId, {
+        page:
+          typeof request.query.page === "string" ? Number(request.query.page) : undefined,
+        pageSize:
+          typeof request.query.pageSize === "string"
+            ? Number(request.query.pageSize)
+            : undefined,
+        query: typeof request.query.query === "string" ? request.query.query : undefined,
+      }),
     );
   } catch (error) {
     next(error);
@@ -124,6 +161,7 @@ teacherRouter.get("/students", async (request, response, next) => {
   try {
     response.json(
       await getTeacherStudents(request.authUser!.id, {
+        query: typeof request.query.query === "string" ? request.query.query : undefined,
         className:
           typeof request.query.className === "string"
             ? request.query.className
@@ -135,6 +173,12 @@ teacherRouter.get("/students", async (request, response, next) => {
         examStatus:
           typeof request.query.examStatus === "string"
             ? request.query.examStatus
+            : undefined,
+        page:
+          typeof request.query.page === "string" ? Number(request.query.page) : undefined,
+        pageSize:
+          typeof request.query.pageSize === "string"
+            ? Number(request.query.pageSize)
             : undefined,
       }),
     );

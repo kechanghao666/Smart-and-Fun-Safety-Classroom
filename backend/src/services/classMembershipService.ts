@@ -2,6 +2,8 @@ import { randomUUID } from "crypto";
 import { getDb } from "../db/connection";
 import type {
   ClassJoinRequestStatus,
+  PaginatedResponse,
+  PaginationQuery,
   StudentClassMembershipResponse,
   StudentProfileRow,
   TeacherClassApplicationItem,
@@ -9,6 +11,7 @@ import type {
 } from "../types/contracts";
 import { HttpError } from "../utils/httpError";
 import { ensureUniqueClassCode } from "../utils/identityCodes";
+import { paginateItems, resolvePaginationQuery } from "../utils/pagination";
 
 async function getTeacherOwnedClass(teacherUserId: string, classId: string) {
   const db = await getDb();
@@ -312,9 +315,10 @@ export async function inviteStudentToClassByStudentNo(
   return buildMembershipResponse(student.user_id);
 }
 
-export async function getTeacherClassApplications(
+async function listTeacherClassApplications(
   teacherUserId: string,
   classId: string,
+  query?: string,
 ): Promise<TeacherClassApplicationItem[]> {
   await getTeacherOwnedClass(teacherUserId, classId);
   const db = await getDb();
@@ -348,7 +352,8 @@ export async function getTeacherClassApplications(
     classId,
   );
 
-  return rows.map((row) => ({
+  return rows
+    .map((row) => ({
     id: row.id,
     studentId: row.student_user_id,
     studentNo: row.student_no,
@@ -356,7 +361,29 @@ export async function getTeacherClassApplications(
     requestedAt: row.requested_at,
     currentClassName: row.current_class_name,
     status: row.status,
-  }));
+    }))
+    .filter((item) => {
+      if (!query) {
+        return true;
+      }
+
+      const normalizedQuery = query.toLowerCase();
+      return (
+        item.studentName.toLowerCase().includes(normalizedQuery) ||
+        item.studentNo.toLowerCase().includes(normalizedQuery) ||
+        (item.currentClassName ?? "").toLowerCase().includes(normalizedQuery)
+      );
+    });
+}
+
+export async function getTeacherClassApplications(
+  teacherUserId: string,
+  classId: string,
+  query?: PaginationQuery,
+): Promise<PaginatedResponse<TeacherClassApplicationItem>> {
+  const pagination = resolvePaginationQuery(query, { pageSize: 10 });
+  const items = await listTeacherClassApplications(teacherUserId, classId, pagination.query);
+  return paginateItems(items, pagination);
 }
 
 async function reviewClassApplication(
@@ -424,7 +451,7 @@ async function reviewClassApplication(
     );
   }
 
-  return getTeacherClassApplications(teacherUserId, classId);
+  return listTeacherClassApplications(teacherUserId, classId);
 }
 
 export async function approveTeacherClassApplication(

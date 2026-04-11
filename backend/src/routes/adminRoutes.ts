@@ -40,7 +40,17 @@ adminRouter.get("/modules", async (_request, response, next) => {
 
 adminRouter.get("/themes", async (_request, response, next) => {
   try {
-    response.json(await getAdminThemesFromDb());
+    response.json(
+      await getAdminThemesFromDb({
+        page:
+          typeof _request.query.page === "string" ? Number(_request.query.page) : undefined,
+        pageSize:
+          typeof _request.query.pageSize === "string"
+            ? Number(_request.query.pageSize)
+            : undefined,
+        query: typeof _request.query.query === "string" ? _request.query.query : undefined,
+      }),
+    );
   } catch (error) {
     next(error);
   }
@@ -64,7 +74,19 @@ adminRouter.get("/levels", async (_request, response, next) => {
 
 adminRouter.get("/question-bank", async (_request, response, next) => {
   try {
-    response.json(await getAdminQuestionBankFromDb());
+    response.json(
+      await getAdminQuestionBankFromDb({
+        page:
+          typeof _request.query.page === "string" ? Number(_request.query.page) : undefined,
+        pageSize:
+          typeof _request.query.pageSize === "string"
+            ? Number(_request.query.pageSize)
+            : undefined,
+        query: typeof _request.query.query === "string" ? _request.query.query : undefined,
+        themeId:
+          typeof _request.query.themeId === "string" ? _request.query.themeId : undefined,
+      }),
+    );
   } catch (error) {
     next(error);
   }
@@ -80,7 +102,19 @@ adminRouter.post("/question-bank", async (request, response, next) => {
 
 adminRouter.get("/ai-copy", async (_request, response, next) => {
   try {
-    response.json(await getAdminAiCopyFromDb());
+    response.json(
+      await getAdminAiCopyFromDb({
+        page:
+          typeof _request.query.page === "string" ? Number(_request.query.page) : undefined,
+        pageSize:
+          typeof _request.query.pageSize === "string"
+            ? Number(_request.query.pageSize)
+            : undefined,
+        query: typeof _request.query.query === "string" ? _request.query.query : undefined,
+        category:
+          typeof _request.query.category === "string" ? _request.query.category : undefined,
+      }),
+    );
   } catch (error) {
     next(error);
   }
@@ -111,6 +145,12 @@ adminRouter.get("/users", async (request, response, next) => {
         status:
           typeof request.query.status === "string" ? request.query.status : undefined,
         role: typeof request.query.role === "string" ? request.query.role : undefined,
+        page:
+          typeof request.query.page === "string" ? Number(request.query.page) : undefined,
+        pageSize:
+          typeof request.query.pageSize === "string"
+            ? Number(request.query.pageSize)
+            : undefined,
       }),
     );
   } catch (error) {
