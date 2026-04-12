@@ -35,20 +35,28 @@ function looksCorruptedText(value: string | null | undefined) {
   return /^\?+$/.test(trimmed) || /\?{2,}/.test(trimmed);
 }
 
-function getReadableClassName(value: string | null | undefined) {
-  if (looksCorruptedText(value)) {
-    return "待补充班级";
+function sanitizeVisibleText(value: string | null | undefined, fallback: string) {
+  const cleaned = (value ?? "")
+    .replace(/\?/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  if (!cleaned || looksCorruptedText(cleaned)) {
+    return fallback;
   }
 
-  return (value ?? "").trim();
+  return cleaned;
+}
+
+function getReadableClassName(value: string | null | undefined) {
+  return sanitizeVisibleText(value, "待补充班级");
 }
 
 function getReadableFocusLabel(value: string | null | undefined) {
-  if (looksCorruptedText(value)) {
-    return "当前暂无清晰的班级跟进摘要，请先进入班级概览补充班级说明。";
-  }
-
-  return (value ?? "").trim();
+  return sanitizeVisibleText(
+    value,
+    "当前还没有清晰的班级摘要，建议先进入班级概览补充班级说明。",
+  );
 }
 
 export function TeacherDashboardPage() {
@@ -61,6 +69,7 @@ export function TeacherDashboardPage() {
     dependencies: [state.authToken],
     fallbackMessage: "教师总览暂时无法同步，请稍后再试。",
   });
+
   const [selectedClassId, setSelectedClassId] = usePersistedState<string>(
     "teacher-dashboard-current-class",
     "all",
@@ -79,15 +88,18 @@ export function TeacherDashboardPage() {
     selectedClassId === "all"
       ? null
       : data.classSummaries.find((classroom) => classroom.id === selectedClassId) ?? null;
+
   const filteredStudents = selectedClass
     ? data.students.filter((student) => student.className === selectedClass.name)
     : data.students;
   const filteredClasses = selectedClass ? [selectedClass] : data.classSummaries;
+
   const completedAll = filteredStudents.filter((student) => student.completedLevels === 3).length;
   const examCompleted = filteredStudents.filter((student) => student.score !== null).length;
   const urgentStudents = filteredStudents.filter(
     (student) => getTeacherAttentionLevel(student) === "urgent",
   );
+
   const priorityStudents = filteredStudents
     .slice()
     .sort((left, right) => {
@@ -96,12 +108,14 @@ export function TeacherDashboardPage() {
       return leftRank - rightRank || left.completedLevels - right.completedLevels;
     })
     .slice(0, 4);
+
   const dashboardActions = buildTeacherDashboardActions(filteredStudents, filteredClasses).slice(
     0,
     3,
   );
-  const teacherDisplayName = state.sessionAccount ?? "当前教师";
-  const classLabel = selectedClass ? selectedClass.name : "全部班级";
+
+  const teacherDisplayName = sanitizeVisibleText(state.sessionAccount, "当前教师");
+  const classLabel = selectedClass ? getReadableClassName(selectedClass.name) : "全部班级";
   const completedRate =
     filteredStudents.length > 0
       ? Math.round((completedAll / filteredStudents.length) * 100)
@@ -110,6 +124,7 @@ export function TeacherDashboardPage() {
     filteredStudents.length > 0
       ? Math.round((examCompleted / filteredStudents.length) * 100)
       : 0;
+
   const weakestClass =
     filteredClasses
       .slice()
@@ -118,6 +133,7 @@ export function TeacherDashboardPage() {
     filteredClasses
       .slice()
       .sort((left, right) => right.completedRate - left.completedRate)[0] ?? null;
+
   const weakestClassName = getReadableClassName(weakestClass?.name);
   const weakestClassFocusLabel = getReadableFocusLabel(weakestClass?.focusLabel);
   const bestClassName = getReadableClassName(bestClass?.name);
@@ -137,7 +153,7 @@ export function TeacherDashboardPage() {
       <PageHero
         eyebrow="教师工作台"
         title="先看整体，再决定今天优先跟进谁"
-        description="把班级进度、考试收口、优先学生和建议动作收成同一块工作台，老师不用在多个页面里重复判断。"
+        description="把班级进度、考试收口、优先学生和建议动作收成同一块工作台，老师不用在多个页面里反复判断。"
         tone="teacher"
         stats={[
           { label: "当前查看", value: classLabel },
@@ -146,8 +162,8 @@ export function TeacherDashboardPage() {
         ]}
         actions={
           <>
-            <Link className="primary-button link-button" to="/teacher/students">
-              进入学生列表
+            <Link className="ghost-button link-button teacher-neutral-button" to="/teacher/students">
+              打开学生列表
             </Link>
             <Link className="ghost-button link-button" to="/teacher/classes">
               打开班级管理
@@ -164,7 +180,7 @@ export function TeacherDashboardPage() {
               <option value="all">全部班级</option>
               {data.classSummaries.map((classroom) => (
                 <option key={classroom.id} value={classroom.id}>
-                  {classroom.name}
+                  {getReadableClassName(classroom.name)}
                 </option>
               ))}
             </select>
@@ -212,48 +228,54 @@ export function TeacherDashboardPage() {
         </p>
       </article>
 
-      <section className="teacher-dashboard-grid">
+      <section className="teacher-dashboard-sections">
         <DataWorkbench
           eyebrow="优先跟进"
-          title="先点开这些学生"
-          description="老师最需要先处理的是风险高、进度停滞或考试未收口的学生。"
+          title="老师最需要先处理的是这些学生"
+          description="老师最先需要处理的是风险高、进度停滞或者考试还没有完成收口的学生。"
           tone="teacher"
         >
           {priorityStudents.length > 0 ? (
-            <div className="teacher-attention-grid">
+            <div className="teacher-attention-list">
               {priorityStudents.map((student) => {
                 const attentionLevel = getTeacherAttentionLevel(student);
+                const readableClassName = getReadableClassName(student.className);
+                const readableWeakSpot = sanitizeVisibleText(
+                  student.weakSpot,
+                  "当前建议优先加强道路安全判断。",
+                );
+                const readableExamStatus = sanitizeVisibleText(student.examStatus, "待完成考试");
+
                 return (
-                  <article
-                    key={student.id}
-                    className="teacher-analysis-card teacher-analysis-card--compact"
-                  >
-                    <div className="row-between">
+                  <article key={student.id} className="teacher-priority-student-card">
+                    <div className="teacher-priority-student-card__identity">
                       <div>
                         <strong>{student.name}</strong>
                         <p className="teacher-analysis-card__meta">
-                          {student.className} · 学号 {student.studentNo ?? "--"}
+                          {readableClassName} · 学号 {student.studentNo ?? "--"}
                         </p>
                       </div>
+                    </div>
+                    <div className="teacher-priority-student-card__summary">
+                      <p className="compact-copy compact-copy--two-line" title={readableWeakSpot}>
+                        {readableWeakSpot}
+                      </p>
+                      <div className="teacher-student-row__metrics">
+                        <span className="surface-tag">三关 {student.completedLevels}/3</span>
+                        <span className="surface-tag">考试 {readableExamStatus}</span>
+                        <span className="surface-tag">
+                          {student.score === null ? "未出成绩" : `${student.score} 分`}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="teacher-priority-student-card__actions">
                       <span
                         className={`teacher-attention-pill teacher-attention-pill--${attentionLevel}`}
                       >
                         {getTeacherAttentionLabel(attentionLevel)}
                       </span>
-                    </div>
-                    <p className="compact-copy compact-copy--two-line" title={student.weakSpot}>
-                      {student.weakSpot}
-                    </p>
-                    <div className="teacher-student-row__metrics">
-                      <span className="surface-tag">三关 {student.completedLevels}/3</span>
-                      <span className="surface-tag">考试 {student.examStatus}</span>
-                      <span className="surface-tag">
-                        {student.score === null ? "未出成绩" : `${student.score} 分`}
-                      </span>
-                    </div>
-                    <div className="button-row button-row--tight">
                       <Link className="ghost-button link-button" to={`/teacher/students/${student.id}`}>
-                        查看详情
+                        查看学生详情
                       </Link>
                     </div>
                   </article>
@@ -263,12 +285,12 @@ export function TeacherDashboardPage() {
           ) : (
             <EmptyState
               title="当前没有需要优先处理的学生"
-              description="可以先看下方建议动作，或者切换到其它班级继续观察。"
+              description="可以先查看下方建议动作，或者切换到其他班级继续观察。"
             />
           )}
         </DataWorkbench>
 
-        <div className="teacher-dashboard-stack">
+        <div className="teacher-dashboard-grid teacher-dashboard-grid--secondary">
           <DataWorkbench
             eyebrow="建议动作"
             title="今天先做这三件事"
@@ -287,17 +309,13 @@ export function TeacherDashboardPage() {
             </div>
           </DataWorkbench>
 
-          <DataWorkbench
-            eyebrow="班级对比"
-            title="先补哪里，先夸哪里"
-            tone="teacher"
-          >
+          <DataWorkbench eyebrow="班级对比" title="先补哪里，先夯哪里" tone="teacher">
             <div className="teacher-dashboard-pair">
               <article className="teacher-risk-panel">
                 <strong>需补强班级</strong>
                 <p>
                   {weakestClass
-                    ? `${weakestClassName} 当前完成率最低，建议优先围绕三关未完成和考试未收口学生安排复盘。`
+                    ? `${weakestClassName} 当前完成率相对更低，建议优先补强路线判断和盲区复习。`
                     : "当前暂无班级统计数据。"}
                 </p>
               </article>
@@ -305,7 +323,7 @@ export function TeacherDashboardPage() {
                 <strong>亮点班级</strong>
                 <p>
                   {bestClass
-                    ? `${bestClassName} 当前推进最快，可以作为课堂分享或同伴示范案例。`
+                    ? `${bestClassName} 当前推进更快，可以作为课堂分享或同伴示范案例。`
                     : "当前暂无亮点班级数据。"}
                 </p>
               </article>

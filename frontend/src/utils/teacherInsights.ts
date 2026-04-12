@@ -12,6 +12,40 @@ export interface TeacherActionItem {
   detail: string;
 }
 
+function looksCorruptedText(value: string | null | undefined) {
+  if (!value) {
+    return true;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return true;
+  }
+
+  return /^\?+$/.test(trimmed) || /\?{2,}/.test(trimmed);
+}
+
+function sanitizeVisibleText(value: string | null | undefined, fallback: string) {
+  const cleaned = (value ?? "")
+    .replace(/\?/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  if (!cleaned || looksCorruptedText(cleaned)) {
+    return fallback;
+  }
+
+  return cleaned;
+}
+
+function getReadableClassName(value: string | null | undefined) {
+  return sanitizeVisibleText(value, "待补充班级");
+}
+
+function getReadableWeakSpot(value: string | null | undefined) {
+  return sanitizeVisibleText(value, "道路判断和盲区复习");
+}
+
 export function getTeacherAttentionLevel(
   student:
     | TeacherStudentSummary
@@ -58,6 +92,8 @@ export function buildTeacherDashboardActions(
     .slice()
     .sort((left, right) => left.completedRate - right.completedRate)[0];
 
+  const lowCompletionClassName = getReadableClassName(lowCompletionClass?.name);
+
   return [
     {
       id: "urgent",
@@ -69,9 +105,9 @@ export function buildTeacherDashboardActions(
     },
     {
       id: "class",
-      title: "优先补弱班级",
+      title: "优先补强班级",
       detail: lowCompletionClass
-        ? `${lowCompletionClass.name} 的完成率相对更低，建议优先补强路口判断和盲区复习。`
+        ? `${lowCompletionClassName} 的完成率相对更低，建议优先补强路线判断和盲区复习。`
         : "当前所有班级都已建立基础学习节奏。",
     },
     {
@@ -90,11 +126,15 @@ export function buildTeacherStudentActions(student: TeacherStudentDetail) {
     .filter((level) => level.status !== "completed")
     .map((level) => `优先推进 ${level.title}`);
 
+  const readableWeakSpot = getReadableWeakSpot(student.weakSpot);
+  const examPending =
+    student.examStatus.includes("未考试") || student.examStatus.includes("未解锁");
+
   const followUpActions = [
-    `围绕“${student.weakSpot}”安排一次课后口头追问`,
-    student.examStatus.includes("未考试") || student.examStatus.includes("未解锁")
-      ? "提醒尽快完成剩余任务，形成完整“三关 + 考试”闭环"
-      : "引导回看错题与薄弱点，继续巩固已完成的主题内容",
+    `围绕“${readableWeakSpot}”安排一次课后口头追问。`,
+    examPending
+      ? "提醒尽快完成剩余任务，形成完整“三关 + 考试”闭环。"
+      : "引导回看错题与薄弱点，继续巩固已完成的主题内容。",
   ];
 
   return [...levelActions, ...followUpActions].slice(0, 3);

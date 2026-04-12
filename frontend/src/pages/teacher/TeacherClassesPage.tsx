@@ -541,7 +541,7 @@ export function TeacherClassesPage() {
         ]}
         actions={
           <>
-            <Link className="primary-button link-button" to="/teacher/students">
+            <Link className="ghost-button link-button teacher-neutral-button" to="/teacher/students">
               打开学生列表
             </Link>
             <button

@@ -106,11 +106,15 @@ export function LoginPage() {
     <div className="login-page">
       <div className="auth-shell auth-shell--immersive">
         <section className="hero-panel hero-panel--auth">
-          <div className="auth-stage">
-            <div className="hero-panel__content auth-stage__copy">
+          <div className="auth-stage auth-stage--framed">
+            <div className="hero-panel__content auth-stage__header">
               <h1>智趣安全学堂</h1>
-              <p>
-                本项目以游戏化闯关教学为核心，融合AI大模型智能问答与学习反馈能力，构建了一个兼具趣味性、智能性、教育性和可推广性的中小学生安全教育数字化平台。
+            </div>
+
+            <div className="auth-stage__feature-column">
+              <p className="auth-stage__feature-copy">
+                本项目以游戏化闯关教学为核心，融合AI大模型智能问答与学习反馈能力，
+                构建了一个兼具趣味性、智能性、教育性和可推广性的中小学生安全教育数字化平台。
               </p>
               <ul className="hero-panel__feature-list">
                 <li className="hero-panel__feature-item">趣味互动</li>

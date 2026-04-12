@@ -20,6 +20,42 @@ const fallbackStats = {
   classSummaries: [],
 };
 
+function looksCorruptedText(value?: string | null) {
+  const content = String(value ?? "").trim();
+  if (!content) {
+    return false;
+  }
+
+  const questionCount = [...content].filter((char) => char === "?").length;
+  const replacementCount = [...content].filter((char) => char === "锟?").length;
+
+  return replacementCount > 0 || questionCount >= Math.max(2, Math.ceil(content.length / 3));
+}
+
+function sanitizeVisibleText(value: string | null | undefined, fallback: string) {
+  const cleaned = (value ?? "")
+    .replace(/\?/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  if (!cleaned || looksCorruptedText(cleaned)) {
+    return fallback;
+  }
+
+  return cleaned;
+}
+
+function getReadableClassName(name: string | null | undefined) {
+  return sanitizeVisibleText(name, "待补充班级");
+}
+
+function getReadableFocusLabel(label: string | null | undefined, studentCount: number) {
+  return sanitizeVisibleText(
+    label,
+    studentCount > 0 ? "当前建议优先补强道路判断与盲区复习。" : "暂无学生数据",
+  );
+}
+
 function toNumber(value: string, fallback: number) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -68,12 +104,17 @@ export function AdminStatsPage() {
   });
 
   const trackedClassCount = data.classSummaries.length;
+  const classSummaries = data.classSummaries.map((item) => ({
+    ...item,
+    name: getReadableClassName(item.name),
+    focusLabel: getReadableFocusLabel(item.focusLabel, item.studentCount),
+  }));
   const topClass =
-    data.classSummaries
+    classSummaries
       .slice()
       .sort((left, right) => right.completedRate - left.completedRate)[0] ?? null;
   const watchClass =
-    data.classSummaries
+    classSummaries
       .slice()
       .sort((left, right) => left.examCompletionRate - right.examCompletionRate)[0] ?? null;
   const growthConfig = growthEditor.draftData;
@@ -192,9 +233,9 @@ export function AdminStatsPage() {
               </div>
             </div>
 
-            {data.classSummaries.length > 0 ? (
+            {classSummaries.length > 0 ? (
               <div className="trend-bars">
-                {data.classSummaries.map((classroom) => (
+                {classSummaries.map((classroom) => (
                   <article key={classroom.id} className="trend-bars__item trend-bars__item--compact">
                     <div className="row-between">
                       <div>

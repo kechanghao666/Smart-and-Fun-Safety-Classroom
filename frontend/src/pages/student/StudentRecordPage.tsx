@@ -306,46 +306,54 @@ export function StudentRecordPage() {
           </div>
 
           {state.progress.exam.status === "completed" ? (
-            <>
-              <div className="student-mini-card-grid">
-                <div className="student-mini-card student-mini-card--orange">
-                  <span>考试成绩</span>
-                  <strong>{state.progress.exam.score ?? 0} 分</strong>
-                </div>
-                <div className="student-mini-card student-mini-card--sky">
-                  <span>错题数量</span>
-                  <strong>{wrongCount} 道</strong>
-                </div>
+            <div className="student-mini-card-grid">
+              <div className="student-mini-card student-mini-card--orange">
+                <span>考试成绩</span>
+                <strong>{state.progress.exam.score ?? 0} 分</strong>
               </div>
-              <div className="button-row">
-                <Link
-                  className="primary-button link-button"
-                  to="/student/theme/road-safety/exam/result"
-                >
-                  看考试结果
-                </Link>
-                <Link
-                  className="ghost-button link-button"
-                  to="/student/theme/road-safety/wrong-questions"
-                >
-                  去错题回看
-                </Link>
+              <div className="student-mini-card student-mini-card--sky">
+                <span>错题数量</span>
+                <strong>{wrongCount} 道</strong>
               </div>
-            </>
+            </div>
           ) : state.progress.exam.status === "available" ? (
-            <button
-              type="button"
-              className="primary-button primary-button--playful"
-              onClick={() => navigate("/student/theme/road-safety/exam")}
-            >
-              立刻进入考试
-            </button>
+            <article className="student-empty-panel">
+              <strong>考试入口已经打开</strong>
+              <p>现在可以先参加考试，完成后这里会同步开放错题和结果入口。</p>
+            </article>
           ) : (
             <article className="student-empty-panel">
               <strong>考试宝箱还没打开</strong>
               <p>先把三关走完，考试入口才会出现。</p>
             </article>
           )}
+
+          <div className="button-row student-record-focus-card__actions">
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => navigate("/student/theme/road-safety/exam")}
+              disabled={state.progress.exam.status === "locked"}
+            >
+              考试
+            </button>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => navigate("/student/theme/road-safety/wrong-questions")}
+              disabled={state.progress.exam.status !== "completed"}
+            >
+              错题
+            </button>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => navigate("/student/theme/road-safety/exam/result")}
+              disabled={state.progress.exam.status !== "completed"}
+            >
+              结果
+            </button>
+          </div>
         </article>
 
         <article className="surface-card student-record-focus-card">

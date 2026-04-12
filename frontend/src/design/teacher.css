@@ -198,6 +198,12 @@
   line-height: 1.6;
 }
 
+.teacher-dashboard-sections {
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
 .teacher-dashboard-pair {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -209,6 +215,10 @@
   grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
   gap: 20px;
   align-items: start;
+}
+
+.teacher-dashboard-grid--secondary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .teacher-dashboard-grid > * {
@@ -226,6 +236,48 @@
   gap: 16px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: start;
+}
+
+.teacher-attention-list {
+  display: grid;
+  gap: 14px;
+}
+
+.teacher-priority-student-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.5fr) minmax(220px, 0.7fr);
+  gap: 18px;
+  align-items: center;
+  padding: 18px 20px;
+  border-radius: 22px;
+  border: 1px solid rgba(17, 43, 73, 0.06);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: var(--shadow-sm);
+}
+
+.teacher-priority-student-card__identity,
+.teacher-priority-student-card__summary,
+.teacher-priority-student-card__actions {
+  min-width: 0;
+}
+
+.teacher-priority-student-card__identity {
+  display: grid;
+  gap: 8px;
+  align-content: center;
+}
+
+.teacher-priority-student-card__summary {
+  display: grid;
+  gap: 12px;
+  align-content: center;
+}
+
+.teacher-priority-student-card__actions {
+  display: grid;
+  gap: 12px;
+  justify-items: end;
+  align-content: center;
 }
 
 .teacher-students-sections {
@@ -424,6 +476,17 @@
   justify-content: flex-start;
 }
 
+.teacher-neutral-button {
+  color: #000000;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(17, 43, 73, 0.1);
+}
+
+.teacher-neutral-button:hover {
+  color: #000000;
+  background: rgba(255, 255, 255, 1);
+}
+
 @media (max-width: 1280px) {
   .app-shell--teacher .card-grid--four {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -455,6 +518,15 @@
 
   .teacher-class-detail__chips {
     justify-content: flex-start;
+  }
+
+  .teacher-priority-student-card {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .teacher-priority-student-card__actions {
+    justify-items: start;
   }
 }
 
