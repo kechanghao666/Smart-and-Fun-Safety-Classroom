@@ -339,6 +339,10 @@ button {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.auth-form__actions--triple > * {
+  min-width: 0;
+}
+
 .hero-panel--auth .auth-card,
 .hero-panel--auth .auth-form {
   min-height: 0;
@@ -387,11 +391,13 @@ button {
 }
 
 .hero-panel--auth .auth-form__actions .ghost-button,
-.hero-panel--auth .auth-form__actions .primary-button {
+.hero-panel--auth .auth-form__actions .primary-button,
+.hero-panel--auth .auth-form__actions .link-button {
   min-height: 64px;
   padding: 0 24px;
   font-size: 18px;
   font-weight: 800;
+  border-radius: 999px;
 }
 
 .auth-link-button {
@@ -427,7 +433,7 @@ button {
   width: 100%;
   min-height: 64px;
   padding: 0 24px;
-  border-radius: 24px;
+  border-radius: 999px;
   background: rgba(20, 50, 74, 0.08);
   color: #163853;
   font-size: 18px;
@@ -2539,6 +2545,32 @@ button {
   color: rgba(249, 252, 255, 0.86);
 }
 
+.admin-theme-preview-card {
+  min-height: 248px;
+  align-content: start;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.22), transparent 34%),
+    linear-gradient(135deg, #1a9d67 0%, #22b07b 45%, #45d3a3 100%);
+}
+
+.admin-theme-preview-card__top .surface-tag {
+  background: rgba(255, 255, 255, 0.18);
+  color: #f9fcff;
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.admin-theme-preview-card__button {
+  justify-self: start;
+  min-width: 168px;
+  margin-top: auto;
+}
+
+.admin-theme-preview-card__button--muted {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #f9fcff;
+}
+
 .theme-cover-preview--sky {
   background:
     radial-gradient(circle at top right, rgba(255, 255, 255, 0.2), transparent 34%),
@@ -2555,6 +2587,14 @@ button {
   background:
     radial-gradient(circle at top right, rgba(255, 255, 255, 0.2), transparent 34%),
     linear-gradient(135deg, #f0932b, #f7b35e);
+}
+
+.admin-theme-preview-card.theme-cover-preview--sky,
+.admin-theme-preview-card.theme-cover-preview--mint,
+.admin-theme-preview-card.theme-cover-preview--orange {
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.22), transparent 34%),
+    linear-gradient(135deg, #1a9d67 0%, #22b07b 45%, #45d3a3 100%);
 }
 
 .cover-preset-grid {

@@ -319,7 +319,7 @@ function WorkspaceHeader({
       </div>
 
       <div className="workspace-header__actions">
-        <span className="surface-tag">
+        <span className="ghost-button workspace-header__status" aria-hidden="true">
           在线同步
         </span>
         <button type="button" className="ghost-button" onClick={onSignOut}>

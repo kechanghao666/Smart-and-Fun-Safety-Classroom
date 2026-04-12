@@ -25,6 +25,13 @@ import type {
 import { getTeacherAttentionLabel, getTeacherAttentionLevel } from "../../utils/teacherInsights";
 
 type TeacherClassTab = "info" | "invite" | "applications" | "students";
+type TeacherClassLike = {
+  name: string;
+  studentCount: number;
+  focusLabel: string;
+  classCode?: string;
+  description?: string;
+};
 
 const CLASS_PAGE_SIZE = 10;
 const APPLICATION_PAGE_SIZE = 10;
@@ -34,6 +41,60 @@ const fallbackDashboard: TeacherDashboardResponse = {
   classSummaries: [],
   students: [],
 };
+
+function looksCorruptedText(value?: string | null) {
+  const content = String(value ?? "").trim();
+  if (!content) {
+    return false;
+  }
+
+  const questionCount = [...content].filter((char) => char === "?").length;
+  const replacementCount = [...content].filter((char) => char === "�").length;
+
+  return replacementCount > 0 || questionCount >= Math.max(2, Math.ceil(content.length / 3));
+}
+
+function getReadableClassName(name: string, classCode?: string) {
+  if (looksCorruptedText(name)) {
+    return classCode ? `班级 ${classCode}` : "未命名班级";
+  }
+
+  return name;
+}
+
+function getReadableClassDescription(description?: string) {
+  const content = String(description ?? "").trim();
+  if (!content || looksCorruptedText(content)) {
+    return "请补充班级说明，方便老师和学生快速识别这个班级。";
+  }
+
+  return content;
+}
+
+function getReadableFocusLabel(label: string, studentCount: number) {
+  if (looksCorruptedText(label)) {
+    return studentCount > 0 ? "请补充班级学习重点" : "暂无学生数据";
+  }
+
+  return label;
+}
+
+function sanitizeTeacherClassLike<T extends TeacherClassLike>(item: T): T {
+  const nextItem = {
+    ...item,
+    name: getReadableClassName(item.name, item.classCode),
+    focusLabel: getReadableFocusLabel(item.focusLabel, item.studentCount),
+  } as T;
+
+  if ("description" in item) {
+    return {
+      ...nextItem,
+      description: getReadableClassDescription(item.description),
+    } as T;
+  }
+
+  return nextItem;
+}
 
 export function TeacherClassesPage() {
   const { state } = useAppState();
@@ -113,8 +174,13 @@ export function TeacherClassesPage() {
           return;
         }
 
-        setDashboard(nextDashboard);
-        setClasses(nextClasses.items);
+        setDashboard({
+          ...nextDashboard,
+          classSummaries: nextDashboard.classSummaries.map((item) =>
+            sanitizeTeacherClassLike(item),
+          ),
+        });
+        setClasses(nextClasses.items.map((item) => sanitizeTeacherClassLike(item)));
         setClassTotal(nextClasses.total);
         setClassTotalPages(nextClasses.totalPages);
         setSelectedClassId((current) => {
@@ -158,7 +224,7 @@ export function TeacherClassesPage() {
     }
 
     return {
-      ...summary,
+      ...sanitizeTeacherClassLike(summary),
       description: "",
       createdAt: "",
       classCode: undefined,
@@ -311,8 +377,13 @@ export function TeacherClassesPage() {
       pageSize: CLASS_PAGE_SIZE,
     });
 
-    setDashboard(nextDashboard);
-    setClasses(nextClasses.items);
+    setDashboard({
+      ...nextDashboard,
+      classSummaries: nextDashboard.classSummaries.map((item) =>
+        sanitizeTeacherClassLike(item),
+      ),
+    });
+    setClasses(nextClasses.items.map((item) => sanitizeTeacherClassLike(item)));
     setClassTotal(nextClasses.total);
     setClassTotalPages(nextClasses.totalPages);
 
@@ -605,24 +676,29 @@ export function TeacherClassesPage() {
                     type="button"
                     className={
                       classroom.id === selectedClass?.id
-                        ? "management-list-card management-list-card--compact management-list-card--active"
-                        : "management-list-card management-list-card--compact"
+                        ? "management-list-card management-list-card--compact management-list-card--active teacher-class-list-card"
+                        : "management-list-card management-list-card--compact teacher-class-list-card"
                     }
                     onClick={() => setSelectedClassId(classroom.id)}
                   >
-                    <div className="row-between">
-                      <div>
+                    <div className="teacher-class-list-card__head">
+                      <div className="teacher-class-list-card__summary">
                         <strong>{classroom.name}</strong>
                         <p className="management-list-card__meta">
                           {classroom.studentCount} 人 · 班级号 {classroom.classCode ?? "--"}
                         </p>
                       </div>
-                      <span className="surface-tag">{classroom.focusLabel}</span>
+                      <span className="surface-tag teacher-class-list-card__focus">
+                        {classroom.focusLabel}
+                      </span>
                     </div>
-                    <p className="compact-copy compact-copy--two-line" title={classroom.description}>
+                    <p
+                      className="compact-copy compact-copy--two-line teacher-class-list-card__description"
+                      title={classroom.description}
+                    >
                       {classroom.description}
                     </p>
-                    <div className="chip-row">
+                    <div className="chip-row teacher-class-list-card__chips">
                       <span className="surface-tag">三关 {classroom.completedRate}%</span>
                       <span className="surface-tag">考试 {classroom.examCompletionRate}%</span>
                       <span className="surface-tag">待审批 {classroom.pendingApplications ?? 0}</span>
@@ -654,7 +730,7 @@ export function TeacherClassesPage() {
                   <span className="section-block__eyebrow">当前班级</span>
                   <h2>{selectedClass.name}</h2>
                 </div>
-                <div className="chip-row">
+                <div className="chip-row teacher-class-detail__chips">
                   <span className="surface-tag">班级号 {selectedClass.classCode ?? "--"}</span>
                   <span className="surface-tag">待审批 {selectedClass.pendingApplications ?? 0}</span>
                   <span className="surface-tag">{selectedClass.focusLabel}</span>

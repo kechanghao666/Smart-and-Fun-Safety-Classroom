@@ -129,6 +129,20 @@ body {
   align-content: start;
 }
 
+.workspace-header__actions > * {
+  justify-self: end;
+  min-width: 132px;
+}
+
+.workspace-header__status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  color: var(--text-primary);
+  box-shadow: none;
+}
+
 .workspace-breadcrumbs {
   display: flex;
   flex-wrap: wrap;

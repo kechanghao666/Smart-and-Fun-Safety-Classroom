@@ -65,6 +65,12 @@
   align-self: start;
 }
 
+.app-shell--teacher .card-grid--four > .metric-card {
+  height: 100%;
+  min-height: 192px;
+  align-self: stretch;
+}
+
 .hero-banner--teacher,
 .page-hero--teacher {
   background:
@@ -222,6 +228,12 @@
   align-items: start;
 }
 
+.teacher-students-sections {
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
 .teacher-attention-grid > * {
   min-width: 0;
   align-self: start;
@@ -269,10 +281,11 @@
 
 .teacher-student-row {
   display: grid;
-  gap: 12px;
-  align-items: center;
+  gap: 20px;
+  align-items: start;
   min-height: 0;
-  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1fr) minmax(220px, 1fr) auto;
+  grid-template-columns: minmax(240px, 0.9fr) minmax(0, 1.4fr) minmax(220px, 0.8fr);
+  padding: 24px 22px;
 }
 
 .teacher-student-row__identity,
@@ -283,19 +296,27 @@
 
 .teacher-student-row__identity {
   display: grid;
-  gap: 4px;
+  gap: 10px;
+  align-content: start;
+}
+
+.teacher-student-row__main {
+  display: grid;
+  gap: 14px;
+  align-content: start;
 }
 
 .teacher-student-row__weakspot {
   margin: 0;
+  line-height: 1.65;
 }
 
 .teacher-student-row__actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 10px;
-  align-items: center;
-  justify-content: flex-end;
+  align-items: flex-end;
+  justify-content: center;
 }
 
 .teacher-student-row__action-link {
@@ -335,6 +356,70 @@
   overflow: auto;
 }
 
+.teacher-class-list-card {
+  display: grid;
+  gap: 14px;
+  text-align: left;
+  align-content: start;
+}
+
+.teacher-class-list-card__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.teacher-class-list-card__summary {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.teacher-class-list-card__summary strong,
+.teacher-class-detail__chips .surface-tag {
+  overflow-wrap: anywhere;
+}
+
+.teacher-class-list-card__focus {
+  max-width: 168px;
+  text-align: center;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.teacher-class-list-card__description {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.teacher-class-list-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.teacher-class-detail__chips {
+  justify-content: flex-end;
+}
+
+.teacher-detail-shell .section-block__header {
+  gap: 16px;
+  align-items: start;
+}
+
+.teacher-detail-shell .section-block__header > div:first-child {
+  min-width: 0;
+}
+
+.teacher-detail-shell .section-block__header h2 {
+  overflow-wrap: anywhere;
+}
+
+.teacher-editor-panel .editor-grid {
+  align-items: start;
+}
+
 .button-row--tight {
   justify-content: flex-start;
 }
@@ -363,6 +448,14 @@
   .teacher-attention-grid {
     grid-template-columns: 1fr;
   }
+
+  .teacher-class-list-card__head {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-class-detail__chips {
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 900px) {
@@ -383,10 +476,12 @@
 
   .teacher-student-row {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .teacher-student-row__actions {
     justify-content: flex-start;
+    align-items: flex-start;
   }
 
   .teacher-student-row--class {

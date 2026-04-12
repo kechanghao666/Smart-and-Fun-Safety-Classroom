@@ -275,7 +275,7 @@ export function TeacherStudentsPage() {
         </section>
       </DataWorkbench>
 
-      <section className="card-grid card-grid--two">
+      <section className="teacher-students-sections">
         <DataWorkbench
           eyebrow="优先名单"
           title="这三位建议先看"
@@ -341,6 +341,7 @@ export function TeacherStudentsPage() {
                         </div>
                       </div>
 
+                      <div className="teacher-student-row__main">
                       <div className="teacher-student-row__metrics">
                         <span className="surface-tag">三关 {student.completedLevels} / 3</span>
                         <span className="surface-tag">
@@ -355,6 +356,7 @@ export function TeacherStudentsPage() {
                       >
                         {student.weakSpot}
                       </p>
+                      </div>
 
                       <div className="teacher-student-row__actions">
                         <span

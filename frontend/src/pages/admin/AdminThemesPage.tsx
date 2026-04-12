@@ -368,21 +368,28 @@ export function AdminThemesPage() {
               </div>
             </article>
 
-            <article className="surface-card admin-preview-card admin-preview-card--compact">
+            <article className="surface-card admin-preview-card admin-preview-card--compact admin-preview-card--theme">
               <span className="section-block__eyebrow">学生端预览</span>
               <h3>{draft.title}</h3>
               <div className={`theme-cover-preview theme-cover-preview--${draft.coverAccent}`}>
                 <strong>{draft.coverLabel}</strong>
                 <p>{draft.coverIllustration}</p>
               </div>
-              <div className={`theme-card theme-card--${draft.coverAccent}`}>
-                <div className="theme-card__top">
+              <div className={`theme-cover-preview theme-cover-preview--${draft.coverAccent} admin-theme-preview-card`}>
+                <div className="theme-card__top admin-theme-preview-card__top">
                   <span className="surface-tag">{draft.isOpen ? "当前开放主题" : "正在筹备中"}</span>
                   <span className="surface-tag">排序 {draft.sortOrder}</span>
                 </div>
-                <h3>{draft.title}</h3>
+                <strong>{draft.title}</strong>
                 <p>{draft.description}</p>
-                <button type="button" className={draft.isOpen ? "primary-button" : "ghost-button"}>
+                <button
+                  type="button"
+                  className={
+                    draft.isOpen
+                      ? "primary-button admin-theme-preview-card__button"
+                      : "ghost-button admin-theme-preview-card__button admin-theme-preview-card__button--muted"
+                  }
+                >
                   {draft.isOpen ? "进入主题" : "敬请期待"}
                 </button>
               </div>

@@ -22,6 +22,35 @@ const fallbackDashboard: TeacherDashboardResponse = {
   students: [],
 };
 
+function looksCorruptedText(value: string | null | undefined) {
+  if (!value) {
+    return true;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return true;
+  }
+
+  return /^\?+$/.test(trimmed) || /\?{2,}/.test(trimmed);
+}
+
+function getReadableClassName(value: string | null | undefined) {
+  if (looksCorruptedText(value)) {
+    return "待补充班级";
+  }
+
+  return (value ?? "").trim();
+}
+
+function getReadableFocusLabel(value: string | null | undefined) {
+  if (looksCorruptedText(value)) {
+    return "当前暂无清晰的班级跟进摘要，请先进入班级概览补充班级说明。";
+  }
+
+  return (value ?? "").trim();
+}
+
 export function TeacherDashboardPage() {
   const { state } = useAppState();
   const canUseApi = Boolean(state.authToken);
@@ -89,6 +118,9 @@ export function TeacherDashboardPage() {
     filteredClasses
       .slice()
       .sort((left, right) => right.completedRate - left.completedRate)[0] ?? null;
+  const weakestClassName = getReadableClassName(weakestClass?.name);
+  const weakestClassFocusLabel = getReadableFocusLabel(weakestClass?.focusLabel);
+  const bestClassName = getReadableClassName(bestClass?.name);
 
   const actionCards = useMemo(
     () =>
@@ -161,8 +193,12 @@ export function TeacherDashboardPage() {
         />
         <MetricCard
           label="当前优先班级"
-          value={weakestClass?.name ?? "--"}
-          description={weakestClass?.focusLabel ?? "当前暂无班级摘要。"}
+          value={weakestClass ? weakestClassName : "--"}
+          description={
+            weakestClass
+              ? weakestClassFocusLabel
+              : "当前暂无班级摘要，待有学生数据后会自动显示需要优先跟进的班级。"
+          }
           tone="teacher"
         />
       </section>
@@ -261,7 +297,7 @@ export function TeacherDashboardPage() {
                 <strong>需补强班级</strong>
                 <p>
                   {weakestClass
-                    ? `${weakestClass.name} 当前完成率最低，建议优先围绕三关未完成和考试未收口学生安排复盘。`
+                    ? `${weakestClassName} 当前完成率最低，建议优先围绕三关未完成和考试未收口学生安排复盘。`
                     : "当前暂无班级统计数据。"}
                 </p>
               </article>
@@ -269,7 +305,7 @@ export function TeacherDashboardPage() {
                 <strong>亮点班级</strong>
                 <p>
                   {bestClass
-                    ? `${bestClass.name} 当前推进最快，可以作为课堂分享或同伴示范案例。`
+                    ? `${bestClassName} 当前推进最快，可以作为课堂分享或同伴示范案例。`
                     : "当前暂无亮点班级数据。"}
                 </p>
               </article>

@@ -62,7 +62,7 @@ export function AdminDashboardPage() {
         actions={
           topPriorityModule ? (
             <Link
-              className="primary-button link-button"
+              className="primary-button link-button admin-priority-button"
               to={routeByModule[topPriorityModule.id]}
             >
               先打开 {topPriorityModule.title}
