@@ -23,11 +23,6 @@ export function StudentMascotBubble({
 }: StudentMascotBubbleProps) {
   return (
     <article className={`student-mascot-bubble student-mascot-bubble--${accent}`}>
-      <div className="student-mascot-bubble__icon">
-        <span />
-        <span />
-        <span />
-      </div>
       <div
         className={`student-mascot-bubble__layout${
           visual ? " student-mascot-bubble__layout--with-visual" : ""

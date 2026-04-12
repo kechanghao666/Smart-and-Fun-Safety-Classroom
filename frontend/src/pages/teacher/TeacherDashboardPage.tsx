@@ -176,7 +176,7 @@ export function TeacherDashboardPage() {
         </p>
       </article>
 
-      <section className="card-grid card-grid--two">
+      <section className="teacher-dashboard-grid">
         <DataWorkbench
           eyebrow="优先跟进"
           title="先点开这些学生"
@@ -232,7 +232,7 @@ export function TeacherDashboardPage() {
           )}
         </DataWorkbench>
 
-        <div className="page-stack">
+        <div className="teacher-dashboard-stack">
           <DataWorkbench
             eyebrow="建议动作"
             title="今天先做这三件事"

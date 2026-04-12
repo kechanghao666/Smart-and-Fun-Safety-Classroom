@@ -198,11 +198,6 @@ export function StudentAiPage() {
                   ))
                 ) : (
                   <>
-                    <div className="student-ai-repair-stage__empty-icon">
-                      <span />
-                      <span />
-                      <span />
-                    </div>
                     <p className="student-ai-repair-stage__empty-copy">
                       当前没有错题推荐，先从上面的快速提问卡开始和 AI 复习吧。
                     </p>

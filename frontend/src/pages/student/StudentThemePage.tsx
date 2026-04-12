@@ -333,11 +333,11 @@ export function StudentThemePage() {
                   <span className="surface-tag">{guide.label}</span>
                   <StatusBadge status={level.status} />
                 </div>
-                <h3>{level.title}</h3>
-                <p>{guide.shortGoal}</p>
+                <h3 title={level.title}>{level.title}</h3>
+                <p title={guide.shortGoal}>{guide.shortGoal}</p>
                 <div className="student-level-entry-card__meta">
-                  <span>{level.duration}</span>
-                  <span>{guide.cardHint}</span>
+                  <span title={level.duration}>{level.duration}</span>
+                  <span title={guide.cardHint}>{guide.cardHint}</span>
                 </div>
                 <div className="button-row">
                   <button

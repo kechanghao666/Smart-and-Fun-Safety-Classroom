@@ -1,0 +1,228 @@
+:is(.login-page, .page-shell, .student-shell, .shell-main) {
+  padding-inline: var(--align-page-inline);
+}
+
+.login-page,
+.page-shell,
+.student-shell,
+.shell-main,
+.page-stack,
+.content-area,
+.student-shell__main,
+.card-grid,
+.student-card-grid,
+.data-workbench__content,
+.insight-list,
+.insight-list__items,
+.teacher-compact-priority-grid,
+.student-adventure-hero__stats,
+.student-home-class-card__grid,
+.student-growth-board__quickline,
+.student-report-reward-visual__grid,
+.student-report-reward-visual__summary {
+  gap: var(--align-grid-gap-y);
+}
+
+:is(.page-shell__inner, .auth-shell, .student-shell__main, .shell-main, .student-shell__header) {
+  width: min(100%, var(--app-shell-max-width));
+  margin-inline: auto;
+}
+
+.student-shell__header {
+  margin-bottom: 0;
+}
+
+.student-shell__main,
+.shell-main,
+.page-stack {
+  padding-block: 0;
+}
+
+:is(
+  .surface-card,
+  .workspace-header,
+  .page-hero,
+  .metric-card,
+  .data-workbench,
+  .empty-state,
+  .insight-list__item,
+  .student-shell__header,
+  .student-shell__titlebar,
+  .auth-card,
+  .student-page .student-mini-link,
+  .student-page .student-theme-card,
+  .student-page .student-level-entry-card,
+  .student-page .student-reward-board,
+  .student-page .student-link-board,
+  .student-page .student-celebration-card,
+  .student-page .student-growth-dimension-card,
+  .student-adventure-bubble,
+  .student-adventure-hero__aside,
+  .student-hero-sidekick,
+  .student-theme-hero-card,
+  .student-growth-stage,
+  .student-home-class-card,
+  .student-record-hero-card,
+  .student-growth-board__preview--showcase,
+  .student-report-spotlight,
+  .teacher-analysis-card,
+  .teacher-action-card,
+  .teacher-student-row,
+  .module-link-card,
+  .module-status-card,
+  .management-list-card,
+  .editor-panel
+) {
+  padding: var(--align-card-padding);
+}
+
+:is(.workspace-header, .page-hero, .student-shell__titlebar) {
+  gap: var(--align-grid-gap-x);
+}
+
+:is(.student-page .card-grid, .student-card-grid, .page-hero__stats) {
+  align-items: stretch;
+}
+
+:is(.student-page .card-grid, .student-card-grid, .page-hero__stats) > * {
+  min-width: 0;
+  height: 100%;
+}
+
+:is(.card-grid--two, .auth-layout, .student-card-grid--two, .profile-card-grid) {
+  grid-template-columns:
+    minmax(0, var(--align-two-col-primary))
+    minmax(0, var(--align-two-col-secondary));
+  gap: var(--align-grid-gap-x);
+  align-items: stretch;
+}
+
+:is(.card-grid--three, .student-card-grid--three) {
+  gap: var(--align-grid-gap-x);
+  align-items: stretch;
+}
+
+.card-grid--four {
+  gap: var(--align-grid-gap-x);
+  align-items: stretch;
+}
+
+.student-adventure-hero__copy,
+.student-adventure-hero__scene {
+  padding: var(--align-card-padding);
+}
+
+.student-adventure-hero__scene-grid {
+  grid-template-columns:
+    minmax(0, var(--align-scene-visual))
+    minmax(0, var(--align-scene-aside));
+  gap: var(--align-grid-gap-x);
+  align-items: stretch;
+}
+
+.student-adventure-hero__scene-grid > * {
+  min-width: 0;
+}
+
+.student-adventure-hero__scene-grid > :nth-child(n + 2) {
+  height: 100%;
+}
+
+.student-adventure-hero__visual,
+.student-adventure-hero__aside,
+.student-adventure-bubble,
+.student-hero-sidekick,
+.student-theme-hero-card,
+.student-growth-stage {
+  min-height: 100%;
+}
+
+.student-adventure-hero__aside,
+.student-adventure-bubble,
+.student-hero-sidekick,
+.student-theme-hero-card,
+.student-growth-stage,
+.student-home-class-card,
+.student-record-hero-card,
+.student-growth-board__preview--showcase,
+.student-report-spotlight {
+  padding: var(--align-card-padding);
+}
+
+.page-hero__aside,
+.workspace-header__actions,
+.student-shell__titlebar-actions {
+  gap: 12px;
+}
+
+.student-adventure-hero__actions,
+.page-hero__actions,
+.student-shell__nav,
+.student-shell__status,
+.student-shell__titlebar-actions {
+  gap: 12px;
+}
+
+.auth-card,
+.auth-form {
+  min-height: 100%;
+}
+
+.auth-card {
+  grid-template-rows: auto 1fr;
+}
+
+.auth-form {
+  align-content: stretch;
+}
+
+.auth-form .field-group,
+.auth-form .support-copy,
+.auth-form .form-error {
+  margin: 0;
+}
+
+.auth-form .primary-button--wide {
+  margin-top: auto;
+}
+
+.data-workbench__content > * {
+  min-width: 0;
+}
+
+.app-shell--teacher :is(.card-grid, .teacher-dashboard-grid, .teacher-attention-grid, .teacher-dashboard-pair),
+.app-shell--admin :is(.card-grid, .admin-dashboard-grid, .admin-module-grid, .admin-guideline-grid) {
+  align-items: start;
+}
+
+.app-shell--teacher :is(.card-grid, .teacher-dashboard-grid, .teacher-attention-grid, .teacher-dashboard-pair) > *,
+.app-shell--admin :is(.card-grid, .admin-dashboard-grid, .admin-module-grid, .admin-guideline-grid) > * {
+  min-width: 0;
+  height: auto;
+}
+
+.app-shell--teacher :is(.teacher-student-row, .teacher-analysis-card, .teacher-action-card, .data-workbench),
+.app-shell--admin :is(.module-link-card, .module-status-card, .management-list-card, .editor-panel, .admin-preview-card, .data-workbench) {
+  min-height: 0;
+  height: auto;
+}
+
+@media (max-width: 1100px) {
+  :is(.card-grid--two, .auth-layout, .student-card-grid--two, .profile-card-grid) {
+    grid-template-columns: 1fr;
+  }
+
+  .student-adventure-hero__scene-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  :is(.login-page, .page-shell, .student-shell, .shell-main) {
+    padding-inline: 16px;
+  }
+
+  :is(.page-shell__inner, .auth-shell, .student-shell__main, .shell-main, .student-shell__header) {
+    width: min(100%, var(--app-shell-max-width));
+  }
+}

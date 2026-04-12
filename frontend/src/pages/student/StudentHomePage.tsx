@@ -71,6 +71,11 @@ export function StudentHomePage() {
     classMembership?.currentClass?.classCode?.trim() ||
     classMembership?.pendingRequest?.classCode?.trim() ||
     "";
+  const classStatusLabel = classMembership?.pendingRequest
+    ? "待审批"
+    : classMembership?.currentClass
+      ? "已加入"
+      : "可申请";
   const canApplyToClass = apiEnabled && Boolean(state.authToken);
 
   const fallbackGrowthData: StudentGrowthResponse = {
@@ -250,6 +255,71 @@ export function StudentHomePage() {
             </button>
           </>
         }
+        footer={
+          <article className="student-home-class-card student-home-class-card--interactive">
+            <div className="student-home-class-card__header">
+              <span>班级身份</span>
+              <strong>{classMembership?.currentClass?.name ?? "暂未加入班级"}</strong>
+            </div>
+            <div className="student-home-class-card__grid">
+              <div className="student-home-class-card__item">
+                <span>学号</span>
+                <strong>
+                  {classMembership?.studentNo ?? state.studentProfile?.studentNo ?? "待生成"}
+                </strong>
+              </div>
+              <div className="student-home-class-card__item">
+                <span>班级号</span>
+                <strong>{currentClassCode || "待同步"}</strong>
+              </div>
+              <div className="student-home-class-card__item">
+                <span>状态</span>
+                <strong>{classStatusLabel}</strong>
+              </div>
+            </div>
+            <div className="student-home-class-card__note">
+              <span className="student-home-class-card__dot" />
+              <p>
+                {classMembership?.currentClass
+                  ? currentClassCode
+                    ? `当前班级号：${currentClassCode}`
+                    : "当前班级号正在同步生成，请稍后刷新查看。"
+                  : classMembership?.pendingRequest
+                    ? `申请加入 ${classMembership.pendingRequest.className}，等待老师审批。`
+                    : `老师可以通过学号 ${classMembership?.studentNo ?? state.studentProfile?.studentNo ?? "--"} 直接邀请你入班。`}
+              </p>
+            </div>
+            <div className="student-home-class-card__actions">
+              <input
+                className="text-input"
+                value={classCodeInput}
+                onChange={(event) => setClassCodeInput(event.target.value.toUpperCase())}
+                placeholder="输入班级号"
+                disabled={!canApplyToClass || isApplyingClass}
+              />
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => void handleApplyClassMembership()}
+                disabled={
+                  !canApplyToClass ||
+                  isApplyingClass ||
+                  classCodeInput.trim().length === 0
+                }
+              >
+                {isApplyingClass
+                  ? "提交中..."
+                  : classMembership?.currentClass
+                    ? "申请更换班级"
+                    : "申请加入班级"}
+              </button>
+            </div>
+            {isClassMembershipLoading ? (
+              <p className="inline-note">正在同步班级状态...</p>
+            ) : null}
+            {classMembershipError ? <p className="form-error">{classMembershipError}</p> : null}
+          </article>
+        }
         aside={
           <div className="student-hero-sidekick">
             <span className="student-hero-sidekick__label">角色卡</span>
@@ -258,6 +328,66 @@ export function StudentHomePage() {
           </div>
         }
       />
+      <section className="student-theme-choice">
+        <div className="student-section-heading">
+          <span className="section-block__eyebrow">主题入口</span>
+          <h2>选一张大地图开始冒险</h2>
+        </div>
+
+        <div className="student-card-grid student-card-grid--three">
+          {themeCards.map((theme) => {
+            const isCurrentTheme = theme.id === "road-safety";
+
+            return (
+              <article
+                key={theme.id}
+                className={`surface-card student-theme-card student-theme-card--${theme.accent}`}
+              >
+                <div className="student-theme-card__top">
+                  <span className="surface-tag">{theme.progressLabel}</span>
+                  {isCurrentTheme ? (
+                    <StatusBadge
+                      status={
+                        state.progress.exam.status === "completed"
+                          ? "completed"
+                          : "available"
+                      }
+                    />
+                  ) : null}
+                </div>
+                <div className="student-theme-card__art">
+                  <span className="student-theme-card__badge">
+                    {theme.title.slice(0, 2)}
+                  </span>
+                </div>
+                <h3>{theme.title}</h3>
+                <p>
+                  {theme.id === "road-safety"
+                    ? "先闯三关，再去打开考试宝箱。"
+                    : "这张地图还在准备中。"}
+                </p>
+                <button
+                  type="button"
+                  className={
+                    theme.isOpen
+                      ? "primary-button primary-button--playful"
+                      : "ghost-button"
+                  }
+                  onClick={() =>
+                    theme.isOpen
+                      ? navigate("/student/theme/road-safety")
+                      : setUnavailableThemeNotice(
+                          "这个主题还在准备中，先试试道路安全地图吧。",
+                        )
+                  }
+                >
+                  {theme.cta}
+                </button>
+              </article>
+            );
+          })}
+        </div>
+      </section>
 
       <section className="student-card-grid student-card-grid--three">
         <article className="surface-card student-adventure-card student-adventure-card--sky">
@@ -289,7 +419,7 @@ export function StudentHomePage() {
         </article>
       </section>
 
-      <section className="student-card-grid student-card-grid--two">
+      <section className="student-card-grid student-home-single-row">
         <article className="surface-card student-home-stage-board">
           <div className="student-section-heading">
             <span className="section-block__eyebrow">今日路线</span>
@@ -366,94 +496,8 @@ export function StudentHomePage() {
         />
       </section>
 
-      <section className="student-card-grid student-card-grid--two">
-        <article className="surface-card student-reward-board">
-          <div className="student-section-heading">
-            <span className="section-block__eyebrow">班级身份</span>
-            <h2>确认学号，并加入班级</h2>
-          </div>
-
-          <div className="student-mini-card-grid">
-            <article className="student-mini-card student-mini-card--sky">
-              <span>我的学号</span>
-              <strong>
-                {classMembership?.studentNo ??
-                  state.studentProfile?.studentNo ??
-                  "加载中"}
-              </strong>
-            </article>
-            <article className="student-mini-card student-mini-card--mint">
-              <span>当前班级</span>
-              <strong>{classMembership?.currentClass?.name ?? "暂未加入"}</strong>
-            </article>
-            <article className="student-mini-card student-mini-card--orange">
-              <span>申请状态</span>
-              <strong>
-                {classMembership?.pendingRequest
-                  ? "待审批"
-                  : classMembership?.currentClass
-                    ? "已加入"
-                    : "可申请"}
-              </strong>
-            </article>
-          </div>
-
-          <div className="student-checklist">
-            <div className="student-checklist__item">
-              <span className="student-checklist__dot" />
-              <span>
-                老师可以通过学号
-                {classMembership?.studentNo ?? state.studentProfile?.studentNo ?? "--"}
-                直接邀请你入班。
-              </span>
-            </div>
-            <div className="student-checklist__item">
-              <span className="student-checklist__dot" />
-              <span>
-                {classMembership?.currentClass
-                  ? currentClassCode
-                    ? `当前班级号：${currentClassCode}`
-                    : "当前班级号正在同步生成，请稍后刷新查看。"
-                  : classMembership?.pendingRequest
-                    ? `申请加入 ${classMembership.pendingRequest.className}，等待老师审批。`
-                    : "输入班级号后，可以主动向老师提交入班申请。"}
-              </span>
-            </div>
-          </div>
-
-          <div className="button-row">
-            <input
-              className="text-input"
-              value={classCodeInput}
-              onChange={(event) => setClassCodeInput(event.target.value.toUpperCase())}
-              placeholder="输入班级号"
-              disabled={!canApplyToClass || isApplyingClass}
-            />
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => void handleApplyClassMembership()}
-              disabled={
-                !canApplyToClass ||
-                isApplyingClass ||
-                classCodeInput.trim().length === 0
-              }
-            >
-              {isApplyingClass
-                ? "提交中..."
-                : classMembership?.currentClass
-                  ? "申请更换班级"
-                  : "申请加入班级"}
-            </button>
-          </div>
-
-          {isClassMembershipLoading ? (
-            <p className="inline-note">正在同步班级状态...</p>
-          ) : null}
-          {classMembershipError ? <p className="form-error">{classMembershipError}</p> : null}
-        </article>
-
-        <article className="surface-card student-link-board">
+      <section className="student-card-grid student-home-single-row">
+        <article className="surface-card student-link-board student-link-board--full">
           <div className="student-section-heading">
             <span className="section-block__eyebrow">三关说明</span>
             <h2>现在的关卡分成这三种玩法</h2>
@@ -591,67 +635,6 @@ export function StudentHomePage() {
           <p>{unavailableThemeNotice}</p>
         </article>
       ) : null}
-
-      <section className="student-theme-choice">
-        <div className="student-section-heading">
-          <span className="section-block__eyebrow">主题入口</span>
-          <h2>选一张大地图开始冒险</h2>
-        </div>
-
-        <div className="student-card-grid student-card-grid--three">
-          {themeCards.map((theme) => {
-            const isCurrentTheme = theme.id === "road-safety";
-
-            return (
-              <article
-                key={theme.id}
-                className={`surface-card student-theme-card student-theme-card--${theme.accent}`}
-              >
-                <div className="student-theme-card__top">
-                  <span className="surface-tag">{theme.progressLabel}</span>
-                  {isCurrentTheme ? (
-                    <StatusBadge
-                      status={
-                        state.progress.exam.status === "completed"
-                          ? "completed"
-                          : "available"
-                      }
-                    />
-                  ) : null}
-                </div>
-                <div className="student-theme-card__art">
-                  <span className="student-theme-card__badge">
-                    {theme.title.slice(0, 2)}
-                  </span>
-                </div>
-                <h3>{theme.title}</h3>
-                <p>
-                  {theme.id === "road-safety"
-                    ? "先闯三关，再去打开考试宝箱。"
-                    : "这张地图还在准备中。"}
-                </p>
-                <button
-                  type="button"
-                  className={
-                    theme.isOpen
-                      ? "primary-button primary-button--playful"
-                      : "ghost-button"
-                  }
-                  onClick={() =>
-                    theme.isOpen
-                      ? navigate("/student/theme/road-safety")
-                      : setUnavailableThemeNotice(
-                          "这个主题还在准备中，先试试道路安全地图吧。",
-                        )
-                  }
-                >
-                  {theme.cta}
-                </button>
-              </article>
-            );
-          })}
-        </div>
-      </section>
     </div>
   );
 }

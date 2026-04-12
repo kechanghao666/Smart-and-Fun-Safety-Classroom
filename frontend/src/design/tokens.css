@@ -1,6 +1,17 @@
 :root {
   --app-max-width: 1240px;
   --app-shell-max-width: 1360px;
+  --align-page-inline: 24px;
+  --align-page-block: 24px;
+  --align-grid-gap-x: 20px;
+  --align-grid-gap-y: 20px;
+  --align-card-padding: 24px;
+  --align-two-col-primary: 1.02fr;
+  --align-two-col-secondary: 0.98fr;
+  --align-hero-copy: 1.08fr;
+  --align-hero-scene: 0.92fr;
+  --align-scene-visual: 1fr;
+  --align-scene-aside: 1fr;
   --radius-12: 12px;
   --radius-16: 16px;
   --radius-20: 20px;

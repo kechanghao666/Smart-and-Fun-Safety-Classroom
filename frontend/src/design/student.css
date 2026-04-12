@@ -229,6 +229,16 @@
   text-shadow: none;
 }
 
+.student-adventure-hero--home .student-adventure-hero__copy h1 {
+  max-width: 16ch;
+}
+
+.student-adventure-hero--theme .student-adventure-hero__copy h1 {
+  max-width: none;
+  white-space: nowrap;
+  font-size: clamp(34px, 4vw, 52px);
+}
+
 .student-adventure-hero__copy p,
 .student-adventure-bubble p {
   margin: 0;
@@ -294,6 +304,10 @@
   gap: 12px;
 }
 
+.student-adventure-hero__footer {
+  margin-top: 4px;
+}
+
 .student-adventure-hero__scene {
   position: relative;
   display: grid;
@@ -306,6 +320,10 @@
   grid-template-columns: minmax(220px, 0.9fr) minmax(220px, 1.1fr);
   gap: 18px;
   align-items: end;
+}
+
+.student-adventure-hero__scene-grid > .student-adventure-bubble {
+  grid-column: 1 / -1;
 }
 
 .student-adventure-hero__visual,
@@ -330,6 +348,11 @@
 .student-adventure-bubble,
 .student-adventure-hero__aside {
   padding: 18px 20px;
+}
+
+.student-adventure-hero__aside {
+  display: grid;
+  align-content: center;
 }
 
 .student-adventure-bubble strong,
@@ -359,8 +382,364 @@
   padding: 18px 20px;
 }
 
+.student-adventure-hero--home .student-adventure-hero__visual,
+.student-adventure-hero--home .student-adventure-hero__aside {
+  min-height: 252px;
+}
+
+.student-adventure-hero--home .student-adventure-hero__copy h1 {
+  max-width: none;
+  white-space: nowrap;
+}
+
+.student-adventure-hero--home .student-adventure-bubble {
+  min-height: 188px;
+}
+
+.student-home-class-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(245, 250, 255, 0.94)),
+    linear-gradient(135deg, rgba(66, 143, 255, 0.12), rgba(62, 201, 162, 0.12));
+  border: 1px solid rgba(86, 163, 255, 0.18);
+  box-shadow: 0 18px 34px rgba(19, 49, 75, 0.1);
+}
+
+.student-home-class-card__header,
+.student-home-class-card__item {
+  display: grid;
+  gap: 6px;
+}
+
+.student-home-class-card__header span,
+.student-home-class-card__item span {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.student-home-class-card__header strong {
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.student-home-class-card--interactive .student-home-class-card__header {
+  grid-template-columns: auto 1fr;
+  align-items: end;
+  column-gap: 14px;
+}
+
+.student-home-class-card__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.student-home-class-card__item {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(248, 251, 255, 0.88);
+}
+
+.student-home-class-card__item:nth-child(1) {
+  background: linear-gradient(135deg, rgba(69, 145, 255, 0.14), rgba(117, 205, 255, 0.08));
+}
+
+.student-home-class-card__item:nth-child(2) {
+  background: linear-gradient(135deg, rgba(76, 207, 169, 0.16), rgba(131, 229, 198, 0.08));
+}
+
+.student-home-class-card__item:nth-child(3) {
+  background: linear-gradient(135deg, rgba(255, 183, 77, 0.18), rgba(255, 222, 153, 0.1));
+}
+
+.student-home-class-card__item strong {
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.student-home-class-card__note {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.student-home-class-card__dot {
+  width: 12px;
+  height: 12px;
+  margin-top: 5px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2a9cf4, #32c98f);
+  box-shadow: 0 0 0 4px rgba(42, 156, 244, 0.12);
+}
+
+.student-home-class-card__note p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.student-home-class-card__actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.student-home-class-card__actions .primary-button {
+  min-width: 170px;
+}
+
+.student-home-single-row {
+  grid-template-columns: 1fr;
+}
+
+.student-link-board--full {
+  min-height: 100%;
+}
+
+.student-record-hero-card,
+.student-growth-board__preview,
+.student-report-spotlight {
+  color: var(--text);
+}
+
+.student-record-hero-card,
+.student-growth-board__preview--showcase,
+.student-report-spotlight {
+  border-radius: 26px;
+  border: 1px solid rgba(58, 124, 188, 0.12);
+  box-shadow: 0 18px 34px rgba(19, 49, 75, 0.1);
+}
+
+.student-record-hero-card {
+  min-height: 170px;
+  padding: 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(241, 248, 255, 0.92)),
+    linear-gradient(135deg, rgba(83, 174, 255, 0.1), rgba(82, 215, 189, 0.1));
+}
+
+.student-record-hero-card span,
+.student-growth-board__preview > span,
+.student-report-spotlight > span {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(226, 239, 255, 0.92);
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.student-record-hero-card strong,
+.student-growth-board__preview strong,
+.student-report-spotlight strong {
+  color: var(--text);
+}
+
+.student-record-hero-card p,
+.student-growth-board__preview p,
+.student-report-spotlight p {
+  color: var(--text-secondary);
+}
+
+.student-growth-board__preview--showcase {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(239, 248, 255, 0.94)),
+    linear-gradient(160deg, rgba(74, 156, 255, 0.08), rgba(97, 224, 191, 0.08));
+}
+
+.student-report-spotlight--sky {
+  background: linear-gradient(160deg, rgba(236, 246, 255, 0.96), rgba(248, 252, 255, 0.94));
+}
+
+.student-report-spotlight--mint {
+  background: linear-gradient(160deg, rgba(236, 255, 248, 0.96), rgba(248, 255, 252, 0.94));
+}
+
+.student-report-spotlight--orange {
+  background: linear-gradient(160deg, rgba(255, 247, 235, 0.96), rgba(255, 252, 246, 0.94));
+}
+
+.student-page--growth .student-growth-stage {
+  min-height: 214px;
+  gap: 6px;
+  padding: 16px 18px;
+  align-content: center;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(242, 248, 255, 0.92)),
+    linear-gradient(160deg, rgba(83, 174, 255, 0.08), rgba(82, 215, 189, 0.08));
+  border: 1px solid rgba(58, 124, 188, 0.12);
+  box-shadow: 0 18px 34px rgba(19, 49, 75, 0.1);
+  color: var(--text);
+}
+
+.student-page--growth .student-adventure-hero__copy h1 {
+  max-width: none;
+  white-space: nowrap;
+  font-size: clamp(34px, 4vw, 52px);
+}
+
+.student-page--growth .student-card-grid--two {
+  align-items: stretch;
+}
+
+.student-page--growth .student-growth-board,
+.student-page--growth .student-mascot-bubble {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 100%;
+}
+
+.student-page--growth .student-growth-board__layout {
+  grid-template-columns: 1fr;
+  height: 100%;
+}
+
+.student-page--growth .student-growth-board__preview--showcase {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.95fr) minmax(0, 1.05fr);
+  grid-template-areas:
+    "headline headline"
+    "showcase meta"
+    "showcase footer";
+  gap: 18px;
+  min-height: 100%;
+}
+
+.student-page--growth .student-growth-board__headline {
+  grid-area: headline;
+}
+
+.student-page--growth .student-growth-showcase {
+  grid-area: showcase;
+  min-height: 244px;
+  height: 100%;
+  align-self: stretch;
+}
+
+.student-page--growth .student-growth-board__meta {
+  grid-area: meta;
+  display: grid;
+  gap: 10px;
+  align-content: end;
+  min-width: 0;
+}
+
+.student-page--growth .student-growth-board__footer {
+  grid-area: footer;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-content: start;
+}
+
+.student-page--growth .student-growth-board__footer span {
+  display: grid;
+  align-content: center;
+  min-height: 60px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(248, 251, 255, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(18, 61, 99, 0.08);
+}
+
+.student-page--growth .student-growth-board__facts {
+  display: none;
+}
+
+.student-page--growth .student-mascot-bubble__layout--with-visual {
+  grid-template-columns: 1fr;
+  align-content: start;
+  height: 100%;
+}
+
+.student-page--ai .student-adventure-hero__copy h1 {
+  max-width: none;
+  white-space: nowrap;
+  font-size: clamp(28px, 3.2vw, 44px);
+}
+
+.student-page--home .student-adventure-hero__copy h1,
+.student-page--theme .student-adventure-hero__copy h1,
+.student-page--records .student-adventure-hero__copy h1,
+.student-page--growth .student-adventure-hero__copy h1,
+.student-page--ai .student-adventure-hero__copy h1 {
+  font-size: clamp(34px, 4vw, 52px);
+}
+
+.student-page--growth .student-growth-stage strong {
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.student-page--growth .student-growth-stage p {
+  margin: 0;
+}
+
+.student-page--growth .student-growth-stage__eyebrow,
+.student-page--growth .student-growth-stage span {
+  color: var(--blue);
+}
+
+.student-page--growth .student-growth-stage strong {
+  color: var(--text);
+}
+
+.student-page--growth .student-growth-stage p {
+  color: var(--text-secondary);
+}
+
+.student-page--theme .student-theme-hero-card {
+  min-height: 212px;
+  align-content: space-between;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(242, 248, 255, 0.92)),
+    linear-gradient(160deg, rgba(83, 174, 255, 0.08), rgba(82, 215, 189, 0.08));
+  border: 1px solid rgba(58, 124, 188, 0.12);
+  box-shadow: 0 18px 34px rgba(19, 49, 75, 0.1);
+  color: var(--text);
+}
+
+.student-page--theme .student-theme-hero-card span {
+  color: var(--blue);
+}
+
+.student-page--theme .student-theme-hero-card strong {
+  color: var(--text);
+}
+
+.student-page--theme .student-theme-hero-card p {
+  color: var(--text-secondary);
+}
+
 .student-card-grid {
   align-items: start;
+}
+
+@media (max-width: 960px) {
+  .student-adventure-hero--home .student-adventure-hero__copy h1 {
+    white-space: normal;
+  }
+
+  .student-home-class-card__grid,
+  .student-home-class-card__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .student-home-class-card--interactive .student-home-class-card__header {
+    grid-template-columns: 1fr;
+  }
 }
 
 .student-adventure-card,

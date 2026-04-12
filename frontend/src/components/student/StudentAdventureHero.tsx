@@ -21,6 +21,7 @@ interface StudentAdventureHeroProps {
   variant?: StudentHeroVariant;
   stats?: StudentHeroStat[];
   actions?: ReactNode;
+  footer?: ReactNode;
   aside?: ReactNode;
 }
 
@@ -36,6 +37,7 @@ export function StudentAdventureHero({
   variant = "home",
   stats = [],
   actions,
+  footer,
   aside,
 }: StudentAdventureHeroProps) {
   return (
@@ -62,6 +64,7 @@ export function StudentAdventureHero({
         ) : null}
 
         {actions ? <div className="student-adventure-hero__actions">{actions}</div> : null}
+        {footer ? <div className="student-adventure-hero__footer">{footer}</div> : null}
       </div>
 
       <div className="student-adventure-hero__scene">
@@ -74,6 +77,12 @@ export function StudentAdventureHero({
         <div className="student-adventure-hero__sign" />
 
         <div className="student-adventure-hero__scene-grid">
+          <article className="student-adventure-bubble">
+            <span className="student-adventure-bubble__eyebrow">{bubbleTitle}</span>
+            <strong>{bubbleText}</strong>
+            {mascotHint ? <p>{mascotHint}</p> : null}
+          </article>
+
           <div className="student-adventure-hero__visual">
             <div className={`student-mascot student-mascot--${accent}`}>
               <div className="student-mascot__head">
@@ -87,15 +96,7 @@ export function StudentAdventureHero({
             </div>
           </div>
 
-          <div className="student-adventure-hero__panel-stack">
-            <article className="student-adventure-bubble">
-              <span className="student-adventure-bubble__eyebrow">{bubbleTitle}</span>
-              <strong>{bubbleText}</strong>
-              {mascotHint ? <p>{mascotHint}</p> : null}
-            </article>
-
-            {aside ? <div className="student-adventure-hero__aside">{aside}</div> : null}
-          </div>
+          {aside ? <div className="student-adventure-hero__aside">{aside}</div> : null}
         </div>
       </div>
     </section>

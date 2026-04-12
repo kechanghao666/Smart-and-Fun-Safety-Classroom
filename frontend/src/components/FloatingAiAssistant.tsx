@@ -57,7 +57,7 @@ export function FloatingAiAssistant() {
       {isOpen ? (
         <section className="ai-panel">
           <header className="ai-panel__header">
-            <div>
+            <div className="ai-panel__header-copy">
               <strong>AI 学习助手</strong>
               <p>道路安全主题轻量问答、提示与回看</p>
             </div>
@@ -75,6 +75,7 @@ export function FloatingAiAssistant() {
               <article
                 key={message.id}
                 className={`chat-bubble chat-bubble--${message.role}`}
+                title={message.text}
               >
                 {message.text}
               </article>
@@ -87,6 +88,7 @@ export function FloatingAiAssistant() {
                 key={prompt.id}
                 type="button"
                 className="quick-chip"
+                title={prompt.label}
                 disabled={isAsking}
                 onClick={() => {
                   void ask(prompt.question);

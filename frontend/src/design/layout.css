@@ -277,6 +277,13 @@ body {
 .data-workbench__content {
   display: grid;
   gap: 20px;
+  align-content: start;
+}
+
+.management-list-panel {
+  display: grid;
+  gap: 16px;
+  align-content: start;
 }
 
 .primary-button,

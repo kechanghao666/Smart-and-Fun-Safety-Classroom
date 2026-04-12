@@ -114,7 +114,7 @@ export function AdminDashboardPage() {
         </p>
       </article>
 
-      <section className="card-grid card-grid--two">
+      <section className="admin-dashboard-grid">
         <DataWorkbench
           eyebrow="模块工作台"
           title="先看模块职责，再决定点哪一块"
@@ -150,7 +150,7 @@ export function AdminDashboardPage() {
           )}
         </DataWorkbench>
 
-        <div className="page-stack">
+        <div className="admin-dashboard-stack">
           <InsightList
             eyebrow="工作建议"
             title="这一轮先这样推进最稳"

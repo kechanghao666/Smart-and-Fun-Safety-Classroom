@@ -304,8 +304,8 @@ export function StudentGrowthPage() {
               </div>
 
               <div className="student-growth-board__meta">
-                <strong>{appearanceShowcase.title}</strong>
-                <p>{sceneShowcase.title}</p>
+                <strong title={appearanceShowcase.title}>{appearanceShowcase.title}</strong>
+                <p title={sceneShowcase.title}>{sceneShowcase.title}</p>
                 <small className="student-growth-board__caption">
                   {appearanceShowcase.detail}
                 </small>
@@ -442,7 +442,7 @@ export function StudentGrowthPage() {
                   }}
                 >
                   <span>{isSelected ? "当前使用" : "点我换上"}</span>
-                  <strong>{option}</strong>
+                  <strong title={option}>{option}</strong>
                   <em>已解锁外观</em>
                 </button>
               );
@@ -476,7 +476,7 @@ export function StudentGrowthPage() {
                   }}
                 >
                   <span>{isSelected ? "当前使用" : "点我换上"}</span>
-                  <strong>{option}</strong>
+                  <strong title={option}>{option}</strong>
                   <em>已解锁场景</em>
                 </button>
               );
@@ -498,10 +498,10 @@ export function StudentGrowthPage() {
                 <div className="student-journey-item__marker">{index + 1}</div>
                 <div className="student-journey-item__content">
                   <div className="student-journey-item__row">
-                    <strong>{item.title}</strong>
+                    <strong title={item.title}>{item.title}</strong>
                     <span>{item.points > 0 ? `+${item.points}` : "已记录"}</span>
                   </div>
-                  <p>{item.description}</p>
+                  <p title={item.description}>{item.description}</p>
                   <em>
                     {item.createdAt.startsWith("/student")
                       ? getStudentRouteLabel(item.createdAt, state.progress.levels)

@@ -155,7 +155,7 @@ export function StudentRecordPage() {
             ? "记录册有一点延迟，但现在的内容已经可以继续用了。"
             : "点一下大按钮，就能回到最该继续的地方。"
         }
-        mascotLabel={`${completedLevels}`}
+        mascotLabel="勇"
         mascotHint={`当前记录来源：${sourceLabel}`}
         accent="mint"
         variant="home"
