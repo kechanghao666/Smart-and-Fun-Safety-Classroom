@@ -28,3 +28,13 @@ export function registerWithPassword(input: {
     body: input,
   });
 }
+
+export function resetPasswordWithAccount(input: {
+  account: string;
+  password: string;
+}) {
+  return requestJson<{ message: string }>("/auth/reset-password", {
+    method: "POST",
+    body: input,
+  });
+}

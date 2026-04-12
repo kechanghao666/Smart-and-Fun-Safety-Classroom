@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { loginWithPassword, registerWithPassword } from "../services/authService";
+import {
+  loginWithPassword,
+  registerWithPassword,
+  resetPasswordWithAccount,
+} from "../services/authService";
 import { HttpError } from "../utils/httpError";
 
 export const authRouter = Router();
@@ -37,6 +41,26 @@ authRouter.post("/register", async (request, response, next) => {
         password,
         displayName,
         role,
+      }),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+authRouter.post("/reset-password", async (request, response, next) => {
+  try {
+    const account = String(request.body?.account ?? "").trim();
+    const password = String(request.body?.password ?? "");
+
+    if (!account || !password) {
+      throw new HttpError(400, "请填写账号和新密码。");
+    }
+
+    response.json(
+      await resetPasswordWithAccount({
+        account,
+        password,
       }),
     );
   } catch (error) {

@@ -97,6 +97,10 @@
   align-items: stretch;
 }
 
+.login-page .auth-layout {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 :is(.card-grid--three, .student-card-grid--three) {
   gap: var(--align-grid-gap-x);
   align-items: stretch;
@@ -173,13 +177,18 @@
 }
 
 .auth-form {
-  align-content: stretch;
+  align-content: start;
+  grid-auto-rows: max-content;
 }
 
 .auth-form .field-group,
 .auth-form .support-copy,
 .auth-form .form-error {
   margin: 0;
+}
+
+.auth-form .field-group {
+  align-content: start;
 }
 
 .auth-form .primary-button--wide {

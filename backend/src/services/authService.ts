@@ -168,6 +168,47 @@ export async function registerWithPassword(input: {
   return loginWithPassword(account, password);
 }
 
+export async function resetPasswordWithAccount(input: {
+  account: string;
+  password: string;
+}): Promise<{ message: string }> {
+  const account = input.account.trim();
+  const password = input.password;
+
+  validateAccount(account);
+  validatePassword(password);
+
+  const db = await getDb();
+  const existing = await db.get<{ id: string }>(
+    "SELECT id FROM users WHERE account = ?",
+    account,
+  );
+
+  if (!existing) {
+    throw new HttpError(404, "未找到对应账号，请确认后重试。");
+  }
+
+  const passwordSalt = randomBytes(16).toString("hex");
+  const passwordHash = hashPassword(password, passwordSalt).toString("hex");
+  const now = new Date().toISOString();
+
+  await db.run(
+    `
+      UPDATE users
+      SET password_hash = ?, password_salt = ?, updated_at = ?
+      WHERE account = ?
+    `,
+    passwordHash,
+    passwordSalt,
+    now,
+    account,
+  );
+
+  return {
+    message: "密码已重置，请使用新密码登录。",
+  };
+}
+
 export async function authenticateToken(token: string): Promise<AuthenticatedUser> {
   const db = await getDb();
   const row = await db.get<{

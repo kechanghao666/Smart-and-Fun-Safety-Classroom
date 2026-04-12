@@ -25,6 +25,44 @@
   color: var(--admin-accent);
 }
 
+.app-shell--admin .page-stack,
+.app-shell--admin .data-workbench__content,
+.app-shell--admin .surface-card,
+.app-shell--admin .data-workbench,
+.app-shell--admin .editor-panel {
+  min-width: 0;
+}
+
+.app-shell--admin .page-stack {
+  align-content: start;
+}
+
+.app-shell--admin .card-grid--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.app-shell--admin .card-grid--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.app-shell--admin .card-grid--four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.app-shell--admin .card-grid--two > *,
+.app-shell--admin .card-grid--three > *,
+.app-shell--admin .card-grid--four > * {
+  min-width: 0;
+  height: auto;
+  align-self: start;
+}
+
 .hero-banner--admin,
 .page-hero--admin {
   background:
@@ -46,6 +84,8 @@
 }
 
 .management-layout {
+  grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
+  gap: 20px;
   align-items: start;
 }
 
@@ -88,11 +128,21 @@
   align-items: start;
 }
 
+.admin-module-grid > * {
+  min-width: 0;
+  align-self: start;
+}
+
 .admin-guideline-grid {
   display: grid;
   gap: 16px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: start;
+}
+
+.admin-guideline-grid > * {
+  min-width: 0;
+  align-self: start;
 }
 
 .module-link-card--compact,
@@ -114,10 +164,21 @@
   min-height: 0;
   height: auto;
   align-content: start;
+  overflow: hidden;
 }
 
 .admin-preview-card--compact {
   padding: 20px;
+}
+
+.module-link-card,
+.module-status-card,
+.management-list-card,
+.admin-inline-editor-card,
+.admin-threshold-group,
+.editor-panel {
+  overflow: hidden;
+  align-content: start;
 }
 
 .admin-table-shell {
@@ -195,13 +256,27 @@
   overflow: auto;
 }
 
+@media (max-width: 1280px) {
+  .app-shell--admin .card-grid--four,
+  .admin-guideline-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 1180px) {
+  .app-shell--admin .card-grid--three,
+  .management-layout,
   .admin-dashboard-grid {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 900px) {
+  .app-shell--admin .card-grid--two,
+  .app-shell--admin .card-grid--four {
+    grid-template-columns: 1fr;
+  }
+
   .admin-module-grid,
   .admin-guideline-grid {
     grid-template-columns: 1fr;
