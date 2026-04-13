@@ -1,6 +1,5 @@
 import { randomUUID } from "crypto";
 import { env } from "../config/env";
-import { THEME_TITLE, hintSuggestionMap, welcomeSuggestions } from "../constants/content";
 import { getDb } from "../db/connection";
 import { getAiPromptByScene, getExamQuestionsFromDb } from "./courseContentService";
 import type {
@@ -30,6 +29,42 @@ interface SparkCallOptions {
 }
 
 const PRODUCT_NAME = "智趣安全学堂";
+const THEME_TITLE = "道路安全教育";
+
+const welcomeSuggestions = [
+  "进入道路安全主题",
+  "查看当前学习进度",
+  "继续上次学习",
+];
+
+const themeKeywords = [
+  "道路安全",
+  "交通",
+  "斑马线",
+  "红绿灯",
+  "信号灯",
+  "过马路",
+  "路口",
+  "公交车",
+  "私家车",
+  "电动车",
+  "头盔",
+  "安全带",
+  "盲区",
+  "候车",
+  "上车",
+  "下车",
+  "放学",
+  "路线",
+  "闯红灯",
+  "护栏",
+];
+
+const hintSuggestionMap: Record<NonNullable<AiChatRequest["levelId"]>, string[]> = {
+  "level-1": ["先找斑马线", "先看信号灯", "先识别危险行为"],
+  "level-2": ["先看路线节点", "先避开车辆盲区", "先做安全选择"],
+  "level-3": ["先做好防护准备", "先检查上车位置", "先纠正危险动作"],
+};
 
 const identitySuggestions = [
   "这个系统能做什么？",
@@ -41,7 +76,7 @@ function normalizeText(value: string) {
   return value
     .trim()
     .toLowerCase()
-    .replace(/[\s，。！？?、,.!;；:：“”"'‘’（）()《》【】\[\]<>—\-_/\\]+/g, "");
+    .replace(/[\s,，。！？；:：“”"'‘’（）()【】\[\]<>《》—\-_/\\?？]+/g, "");
 }
 
 function toBigrams(value: string) {
@@ -128,14 +163,22 @@ function matchesIdentityQuestion(message: string) {
     "你是谁",
     "你叫什么",
     "你是做什么的",
-    "你是干什么的",
-    "你是什么",
-    "这是什么软件",
-    "这个软件是什么",
+    "这是个什么软件",
     "这个系统是什么",
-    "你是哪个系统",
     "介绍一下你自己",
   ].some((pattern) => normalized.includes(normalizeText(pattern)));
+}
+
+function isRoadSafetyQuestion(message: string) {
+  const normalized = normalizeText(message);
+
+  if (!normalized) {
+    return false;
+  }
+
+  return themeKeywords.some((keyword) =>
+    normalized.includes(normalizeText(keyword)),
+  );
 }
 
 function buildIdentityReply(): AiChatResponse {
@@ -143,7 +186,7 @@ function buildIdentityReply(): AiChatResponse {
     reply:
       `${PRODUCT_NAME}的 AI 学习助手。` +
       `我会在这个系统里陪你学习、答疑、做题复盘，还会根据你的学习进度给出提示和总结。` +
-      `目前系统以${THEME_TITLE}为首发主题，你也可以把我当成这个课堂里的智能小伙伴。`,
+      `目前系统以${THEME_TITLE}为首发主题，你也可以把我当成课堂里的智能小伙伴。`,
     suggestions: identitySuggestions,
   };
 }
@@ -158,6 +201,14 @@ function buildRecordedQuestionReply(question: ExamQuestion): AiChatResponse {
       "继续问我相关问题",
       "回到当前学习任务",
     ],
+  };
+}
+
+function buildOffTopicReply(): AiChatResponse {
+  return {
+    reply:
+      "我主要回答道路安全教育相关问题，比如过马路、看红绿灯、乘车安全、头盔和安全带这些内容。你可以把问题换成道路安全主题，我会继续帮你。",
+    suggestions: ["过马路前要注意什么？", "为什么乘车要系安全带？", "公交车盲区为什么危险？"],
   };
 }
 
@@ -245,7 +296,7 @@ async function buildFallbackReply(input: AiChatRequest): Promise<AiChatResponse>
 
   if (!input.message?.trim()) {
     return {
-      reply: "你可以直接问我问题，我会先查系统里的现有答案，命中不了再帮你调用智能问答服务。",
+      reply: "你可以直接问我道路安全相关问题，我会先查系统里的现有答案，命中不了再帮你调用智能问答服务。",
       suggestions: ["我接下来学哪一关？", "过马路前要注意什么？", "这个系统能做什么？"],
     };
   }
@@ -254,6 +305,10 @@ async function buildFallbackReply(input: AiChatRequest): Promise<AiChatResponse>
 
   if (recordedReply) {
     return recordedReply;
+  }
+
+  if (input.scene === "qa" && !isRoadSafetyQuestion(input.message)) {
+    return buildOffTopicReply();
   }
 
   return {
@@ -279,14 +334,15 @@ async function callSpark(
 
   const systemPrompt = [
     `你是${PRODUCT_NAME}里的 AI 学习助手。`,
-    "回答时请使用自然、清楚、友好的中文。",
-    "面对学生提问时，优先用短句说明重点，再补一个简短提醒或例子。",
-    "如果用户问你是谁、这个系统是什么，请说明你是智趣安全学堂里的 AI 学习助手，负责学习陪伴、答疑和总结。",
+    "请始终使用自然、清晰、友好的中文回答。",
+    "你只能回答道路安全教育主题相关内容；如果问题明显无关，请礼貌拒答并把话题引回道路安全学习。",
+    "面对学生提问时，优先用短句说明重点，再补一个简单提醒或例子。",
+    "如果用户问你是谁或这个系统是什么，请说明你是智趣安全学堂里的 AI 学习助手，负责学习陪伴、答疑和总结。",
     input.scene === "hint"
-      ? "当前是关卡提示场景，请只给方向、观察点和思考步骤，不要直接把答案完整说出来。"
+      ? "当前是关卡提示场景，只给方向、观察点和思考步骤，不要直接把完整答案说出来。"
       : "",
     input.scene === "welcome" || input.scene === "hint"
-      ? "欢迎语和提醒语必须自然、有变化，不能每次都重复同一句。"
+      ? "欢迎语和提示语必须自然、有变化，不要每次都重复同一句。"
       : "",
     options.forceDifferent
       ? "这一次必须明显换一种说法，语气和措辞都不要与最近一次回答相同。"
@@ -398,6 +454,12 @@ export async function chatWithAi(
     if (recordedReply) {
       await logAiReply(user.id, input, recordedReply.reply, "template");
       return recordedReply;
+    }
+
+    if (!isRoadSafetyQuestion(input.message?.trim() ?? "")) {
+      const offTopicReply = buildOffTopicReply();
+      await logAiReply(user.id, input, offTopicReply.reply, "fallback");
+      return offTopicReply;
     }
   }
 
