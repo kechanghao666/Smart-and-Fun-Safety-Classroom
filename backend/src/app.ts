@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import compression from "compression";
 import cors from "cors";
 import express from "express";
 import { env } from "./config/env";
@@ -16,6 +17,7 @@ const configuredOrigins = env.corsOrigin
   .filter(Boolean);
 const localDevOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
 const frontendDistDir = path.resolve(__dirname, "../../frontend/dist");
+const frontendAssetsDir = path.join(frontendDistDir, "assets");
 const frontendIndexPath = path.join(frontendDistDir, "index.html");
 const hasFrontendBuild = fs.existsSync(frontendIndexPath);
 
@@ -46,6 +48,7 @@ app.use(
     credentials: false,
   }),
 );
+app.use(compression());
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/api/health", (_request, response) => {
@@ -59,7 +62,28 @@ app.use("/api/admin", adminRouter);
 app.use("/api/ai", aiRouter);
 
 if (hasFrontendBuild) {
-  app.use(express.static(frontendDistDir));
+  if (fs.existsSync(frontendAssetsDir)) {
+    app.use(
+      "/assets",
+      express.static(frontendAssetsDir, {
+        immutable: true,
+        maxAge: "7d",
+      }),
+    );
+  }
+
+  app.use(
+    express.static(frontendDistDir, {
+      setHeaders(response, servedPath) {
+        if (servedPath.endsWith(".html")) {
+          response.setHeader("Cache-Control", "no-cache");
+          return;
+        }
+
+        response.setHeader("Cache-Control", "public, max-age=0, must-revalidate");
+      },
+    }),
+  );
 
   app.get("*", (request, response, next) => {
     if (request.path.startsWith("/api")) {

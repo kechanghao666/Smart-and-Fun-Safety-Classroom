@@ -354,12 +354,15 @@ async function callSpark(
     .join(" ");
 
   const userPrompt =
-    input.scene === "welcome" || input.scene === "hint"
-      ? input.message?.trim() ||
-        (input.scene === "welcome"
-          ? "请给学生一句新的欢迎提醒。"
-          : `请给当前关卡一句新的方向提示，当前关卡：${input.levelId ?? "unknown"}。`)
-      : input.message?.trim() ?? "";
+    input.scene === "welcome"
+      ? input.message?.trim() || "请给学生一句新的欢迎提醒。"
+      : input.scene === "hint"
+        ? [
+            `当前关卡：${input.levelId ?? "unknown"}`,
+            `学生当前卡点：${input.message?.trim() || "我需要一点方向提示。"}`,
+            "请只给下一步观察方向或思考步骤，不要直接给完整答案。",
+          ].join("；")
+        : input.message?.trim() ?? "";
 
   const response = await fetch(env.sparkApiUrl, {
     method: "POST",
