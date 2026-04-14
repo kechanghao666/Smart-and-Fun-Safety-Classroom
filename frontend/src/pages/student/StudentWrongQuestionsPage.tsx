@@ -193,8 +193,8 @@ export function StudentWrongQuestionsPage() {
     <div className="page-stack student-page student-page--repair">
       <StudentAdventureHero
         eyebrow="错题修补站"
-        title="把这几道题修一修，奖励会继续往上涨"
-        description="每一张错题卡都只保留最关键的信息：你当时怎么选、正确答案是什么、下一步该回看哪一关。"
+        title="错题修一修，奖励继续涨"
+        description="这里会帮你把每道错题的关键信息整理好：当时怎么选、正确答案是什么、下一步该回看哪一关。先把最关键的一题补好，再把奖励稳稳拿回来。"
         bubbleTitle="修补顺序"
         bubbleText={reviewData.suggestion}
         mascotLabel={`${reviewData.totalWrongQuestions}`}

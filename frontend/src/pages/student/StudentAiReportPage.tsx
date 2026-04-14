@@ -238,29 +238,41 @@ export function StudentAiReportPage() {
           </div>
 
           <div className="student-growth-board__layout student-growth-board__layout--rich">
-            <div className={`student-growth-board__preview student-growth-board__preview--showcase ${sceneVisualClass}`}>
-              <div className="student-growth-board__headline">
-                <div className="student-growth-board__chips">
-                  <span>{stageLabel}</span>
-                  <span>{linkedAiRole}</span>
+            <div className="student-growth-board__column student-growth-board__column--showcase">
+              <div className={`student-growth-board__preview student-growth-board__preview--showcase ${sceneVisualClass}`}>
+                <div className="student-growth-board__headline">
+                  <div className="student-growth-board__chips">
+                    <span>{stageLabel}</span>
+                    <span>{linkedAiRole}</span>
+                  </div>
+                  <strong>{currentAppearance}</strong>
+                  <p>{currentScene}</p>
                 </div>
-                <strong>{currentAppearance}</strong>
-                <p>{currentScene}</p>
+
+                <div className="student-growth-board__meta">
+                  <span>当前展示角色</span>
+                  <strong>{characterName}</strong>
+                  <p>{growthSummary}</p>
+                </div>
+
+                <div className="student-growth-board__footer">
+                  <span>能力：{currentAbilityTag}</span>
+                  <span>{currentScene}</span>
+                </div>
               </div>
 
-              <div className="student-growth-board__meta">
-                <span>当前展示角色</span>
-                <strong>{characterName}</strong>
-                <p>{growthSummary}</p>
-              </div>
-
-              <div className="student-growth-board__footer">
-                <span>能力：{currentAbilityTag}</span>
-                <span>{currentScene}</span>
-              </div>
+              <article className="student-growth-board__summary-card student-growth-board__summary-card--highlight student-growth-board__summary-card--goal">
+                <span className="section-block__eyebrow">下一步目标</span>
+                <strong>{nextGoalTitle}</strong>
+                <p className="student-growth-board__note">{nextGoalSummary}</p>
+                <div className="student-growth-board__chips">
+                  <span>场景：{unlockedScenes[0]}</span>
+                  <span>能力标签：{unlockedAbilityTags[0]}</span>
+                </div>
+              </article>
             </div>
 
-            <div className="student-growth-board__facts student-growth-board__facts--compact">
+            <div className="student-growth-board__column student-growth-board__column--details">
               <div className="student-growth-board__quickline">
                 <article className="student-growth-board__quick-card student-growth-board__quick-card--sky">
                   <span>成长值</span>
@@ -276,7 +288,7 @@ export function StudentAiReportPage() {
                 </article>
               </div>
 
-              <article className="student-growth-board__summary-card">
+              <article className="student-growth-board__summary-card student-growth-board__summary-card--spotlight">
                 <span className="section-block__eyebrow">这轮点亮</span>
                 <div className="student-checklist">
                   <div className="student-checklist__item">
@@ -295,16 +307,6 @@ export function StudentAiReportPage() {
                     <span className="student-checklist__dot" />
                     <span>累计星级：{totalStars} 星</span>
                   </div>
-                </div>
-              </article>
-
-              <article className="student-growth-board__summary-card student-growth-board__summary-card--highlight">
-                <span className="section-block__eyebrow">下一步目标</span>
-                <strong>{nextGoalTitle}</strong>
-                <p className="student-growth-board__note">{nextGoalSummary}</p>
-                <div className="student-growth-board__chips">
-                  <span>场景：{unlockedScenes[0]}</span>
-                  <span>能力标签：{unlockedAbilityTags[0]}</span>
                 </div>
               </article>
             </div>

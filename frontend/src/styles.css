@@ -4204,6 +4204,38 @@ button {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
 }
 
+.student-growth-stage.scene-visual--campus,
+.student-growth-board__preview.scene-visual--campus {
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.42), transparent 34%),
+    linear-gradient(180deg, rgba(78, 169, 255, 0.18), rgba(112, 211, 166, 0.22)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(239, 249, 255, 0.98));
+}
+
+.student-growth-stage.scene-visual--route,
+.student-growth-board__preview.scene-visual--route {
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.36), transparent 28%),
+    linear-gradient(135deg, rgba(255, 197, 107, 0.18), rgba(69, 153, 243, 0.18)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 250, 255, 0.98));
+}
+
+.student-growth-stage.scene-visual--city,
+.student-growth-board__preview.scene-visual--city {
+  background:
+    radial-gradient(circle at center top, rgba(255, 255, 255, 0.28), transparent 24%),
+    linear-gradient(135deg, rgba(72, 129, 255, 0.2), rgba(24, 160, 111, 0.22)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(236, 248, 244, 0.98));
+}
+
+.student-growth-stage[class*="scene-visual--"],
+.student-growth-board__preview[class*="scene-visual--"] {
+  color: #173550;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.34),
+    0 16px 28px rgba(31, 93, 145, 0.1);
+}
+
 .student-growth-stage__eyebrow,
 .student-growth-board__badge,
 .student-record-hero-card span {
@@ -4217,12 +4249,25 @@ button {
   letter-spacing: 0.06em;
 }
 
+.student-growth-stage[class*="scene-visual--"] .student-growth-stage__eyebrow,
+.student-growth-board__preview[class*="scene-visual--"] .student-growth-board__badge {
+  background: rgba(255, 255, 255, 0.76);
+  color: #25597e;
+  box-shadow: inset 0 0 0 1px rgba(37, 89, 126, 0.08);
+}
+
 .student-growth-stage strong,
 .student-growth-board__preview strong,
 .student-record-hero-card strong,
 .student-report-spotlight strong {
   font-size: 24px;
   line-height: 1.2;
+}
+
+.student-growth-stage[class*="scene-visual--"] strong,
+.student-growth-board__preview[class*="scene-visual--"] strong {
+  color: #173550;
+  text-shadow: none;
 }
 
 .student-growth-stage p,
@@ -4233,6 +4278,12 @@ button {
 .student-repair-note span,
 .student-repair-tip p {
   margin: 0;
+}
+
+.student-growth-stage[class*="scene-visual--"] p,
+.student-growth-stage[class*="scene-visual--"] span:not(.student-growth-stage__eyebrow),
+.student-growth-board__preview[class*="scene-visual--"] p {
+  color: #4b6479;
 }
 
 .student-growth-board,
@@ -4260,6 +4311,22 @@ button {
 .student-growth-board__layout--rich {
   grid-template-columns: minmax(280px, 0.95fr) minmax(0, 1.05fr);
   align-items: stretch;
+}
+
+.student-growth-board__column {
+  display: grid;
+  gap: 14px;
+  min-height: 100%;
+}
+
+.student-growth-board__column--showcase {
+  grid-template-rows: auto auto;
+  align-content: start;
+}
+
+.student-growth-board__column--details {
+  grid-template-rows: auto 1fr;
+  align-content: stretch;
 }
 
 .student-growth-board__preview--showcase {
@@ -4568,8 +4635,18 @@ button {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(243, 250, 255, 0.96));
 }
 
+.student-growth-board__summary-card--spotlight {
+  height: 100%;
+  padding: 22px 24px;
+  align-content: start;
+}
+
 .student-growth-board__summary-card--highlight {
   background: linear-gradient(180deg, rgba(255, 247, 231, 0.98), rgba(255, 255, 255, 0.98));
+}
+
+.student-growth-board__summary-card--goal {
+  gap: 12px;
 }
 
 .student-growth-board__summary-card strong {
@@ -4580,9 +4657,11 @@ button {
 }
 
 .student-report-reward-visual {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
-  align-content: start;
+  width: 100%;
+  min-height: 100%;
 }
 
 .student-report-reward-visual__hero {
@@ -4704,6 +4783,7 @@ button {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  margin-top: auto;
 }
 
 .student-report-reward-visual__summary-card {
@@ -4742,15 +4822,18 @@ button {
 .student-page--report .student-mascot-bubble__layout--with-visual {
   grid-template-columns: 1fr;
   align-items: start;
-  gap: 18px;
+  grid-template-rows: auto 1fr;
+  gap: 16px;
+  min-height: 100%;
 }
 
 .student-page--report .student-mascot-bubble__content {
-  gap: 12px;
+  gap: 10px;
 }
 
 .student-page--report .student-mascot-bubble__visual {
-  min-height: auto;
+  display: flex;
+  min-height: 0;
 }
 
 .student-growth-dimension-card {
@@ -5097,6 +5180,127 @@ button {
     linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 255, 0.96));
 }
 
+.student-page--exam-result .student-adventure-hero,
+.student-page--result .student-adventure-hero {
+  grid-template-columns: minmax(0, 1.24fr) minmax(300px, 0.76fr);
+  gap: 20px;
+}
+
+.student-page--exam-result .student-adventure-hero__copy,
+.student-page--result .student-adventure-hero__copy {
+  gap: 12px;
+}
+
+.student-page--exam-result .student-adventure-hero__copy h1,
+.student-page--result .student-adventure-hero__copy h1 {
+  max-width: none;
+  white-space: nowrap;
+}
+
+.student-page--exam-result .student-adventure-hero__copy > p,
+.student-page--result .student-adventure-hero__copy > p {
+  max-width: 42rem;
+}
+
+.student-page--exam-result .student-adventure-hero__stats,
+.student-page--result .student-adventure-hero__stats {
+  margin-top: 4px;
+}
+
+.student-page--exam-result .student-adventure-hero__actions,
+.student-page--result .student-adventure-hero__actions {
+  margin-top: 2px;
+}
+
+.student-page--exam-result .student-adventure-hero__scene,
+.student-page--result .student-adventure-hero__scene {
+  min-height: 300px;
+}
+
+.student-page--exam-result .student-adventure-hero__scene-grid,
+.student-page--result .student-adventure-hero__scene-grid {
+  padding-top: 42px;
+}
+
+.student-page--exam-result .student-adventure-hero__visual,
+.student-page--result .student-adventure-hero__visual {
+  min-height: 228px;
+  padding-bottom: 18px;
+}
+
+.student-page--repair .student-adventure-hero {
+  grid-template-columns: minmax(0, 1.32fr) minmax(300px, 0.68fr);
+  gap: 20px;
+}
+
+.student-page--repair .student-adventure-hero__copy {
+  gap: 16px;
+}
+
+.student-page--repair .student-adventure-hero__copy h1 {
+  max-width: none;
+  white-space: nowrap;
+  font-size: clamp(28px, 2.85vw, 40px);
+  line-height: 1.06;
+  letter-spacing: -0.05em;
+}
+
+.student-page--repair .student-adventure-hero__copy > p {
+  max-width: 46rem;
+}
+
+.student-page--repair .student-adventure-hero__stats {
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
+  max-width: 54rem;
+}
+
+.student-page--repair .student-adventure-stat {
+  min-height: 112px;
+  align-content: start;
+}
+
+.student-page--repair .student-adventure-hero__actions {
+  margin-top: 2px;
+}
+
+.student-page--repair .student-adventure-hero__scene {
+  min-height: 300px;
+}
+
+.student-page--repair .student-adventure-hero__scene-grid {
+  grid-template-columns: minmax(180px, 1fr) minmax(220px, 260px);
+  gap: 16px;
+  padding-top: 44px;
+}
+
+.student-page--repair .student-adventure-bubble,
+.student-page--repair .student-adventure-hero__aside {
+  padding: 16px 18px;
+}
+
+.student-page--repair .student-adventure-bubble strong {
+  font-size: clamp(18px, 2vw, 22px);
+  line-height: 1.34;
+}
+
+.student-page--repair .student-adventure-bubble p {
+  font-size: 15px;
+}
+
+.student-page--repair .student-adventure-hero__visual {
+  min-height: 226px;
+  padding: 0 12px 18px;
+}
+
+.student-page--repair .student-card-grid--two {
+  align-items: stretch;
+}
+
+.student-page--repair .student-repair-summary-card,
+.student-page--repair .student-mascot-bubble {
+  min-height: 100%;
+}
+
 @media (max-width: 1100px) {
   .student-adventure-hero,
   .student-setup-grid,
@@ -5158,6 +5362,12 @@ button {
   .student-adventure-hero__panel-stack {
     padding-bottom: 0;
   }
+
+  .student-page--exam-result .student-adventure-hero__copy h1,
+  .student-page--result .student-adventure-hero__copy h1,
+  .student-page--repair .student-adventure-hero__copy h1 {
+    font-size: clamp(26px, 3.2vw, 34px);
+  }
 }
 
 @media (max-width: 720px) {
@@ -5193,6 +5403,12 @@ button {
     bottom: 86px;
     transform: scale(0.88);
     transform-origin: right bottom;
+  }
+
+  .student-page--exam-result .student-adventure-hero__copy h1,
+  .student-page--result .student-adventure-hero__copy h1,
+  .student-page--repair .student-adventure-hero__copy h1 {
+    white-space: normal;
   }
 
   .student-exam-nav {
