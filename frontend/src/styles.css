@@ -2112,8 +2112,14 @@ button {
 }
 
 .student-shell__nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
-  padding: 12px 18px;
+  padding: 12px 22px;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
   color: #24425c;
   background: rgba(20, 50, 74, 0.05);
   transition: transform 0.16s ease, background 0.16s ease;
