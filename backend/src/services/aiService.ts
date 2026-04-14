@@ -204,10 +204,10 @@ function buildRecordedQuestionReply(question: ExamQuestion): AiChatResponse {
   };
 }
 
-function buildOffTopicReply(): AiChatResponse {
+function buildOffTopicFallbackReply(): AiChatResponse {
   return {
     reply:
-      "我主要回答道路安全教育相关问题，比如过马路、看红绿灯、乘车安全、头盔和安全带这些内容。你可以把问题换成道路安全主题，我会继续帮你。",
+      "这个问题我也愿意陪你聊一聊，不过我更擅长道路安全教育相关内容。等会儿如果你愿意，我们也可以继续聊过马路、乘车安全、头盔和安全带这些知识。",
     suggestions: ["过马路前要注意什么？", "为什么乘车要系安全带？", "公交车盲区为什么危险？"],
   };
 }
@@ -307,13 +307,15 @@ async function buildFallbackReply(input: AiChatRequest): Promise<AiChatResponse>
     return recordedReply;
   }
 
-  if (input.scene === "qa" && !isRoadSafetyQuestion(input.message)) {
-    return buildOffTopicReply();
-  }
-
   return {
-    reply: "我现在暂时没有连上智能问答服务，请稍后再试一次。",
-    suggestions: ["换个问题再试", "回到当前学习任务", "查看学习记录"],
+    reply:
+      input.scene === "qa" && input.message?.trim() && !isRoadSafetyQuestion(input.message)
+        ? buildOffTopicFallbackReply().reply
+        : "我现在暂时没有连上智能问答服务，请稍后再试一次。",
+    suggestions:
+      input.scene === "qa" && input.message?.trim() && !isRoadSafetyQuestion(input.message)
+        ? buildOffTopicFallbackReply().suggestions
+        : ["换个问题再试", "回到当前学习任务", "查看学习记录"],
   };
 }
 
@@ -335,7 +337,9 @@ async function callSpark(
   const systemPrompt = [
     `你是${PRODUCT_NAME}里的 AI 学习助手。`,
     "请始终使用自然、清晰、友好的中文回答。",
-    "你只能回答道路安全教育主题相关内容；如果问题明显无关，请礼貌拒答并把话题引回道路安全学习。",
+    "你主要服务于道路安全教育学习场景，尤其擅长道路安全、交通规则和乘车防护相关内容。",
+    "如果用户问的是道路安全主题，请优先给出准确、简洁、适合中小学生理解的回答。",
+    "如果用户问的是无关话题，也可以先简短、友好地回答 1 到 2 句，再自然地把话题引回道路安全学习。",
     "面对学生提问时，优先用短句说明重点，再补一个简单提醒或例子。",
     "如果用户问你是谁或这个系统是什么，请说明你是智趣安全学堂里的 AI 学习助手，负责学习陪伴、答疑和总结。",
     input.scene === "hint"
@@ -458,12 +462,6 @@ export async function chatWithAi(
       await logAiReply(user.id, input, recordedReply.reply, "template");
       return recordedReply;
     }
-
-    if (!isRoadSafetyQuestion(input.message?.trim() ?? "")) {
-      const offTopicReply = buildOffTopicReply();
-      await logAiReply(user.id, input, offTopicReply.reply, "fallback");
-      return offTopicReply;
-    }
   }
 
   try {
@@ -487,6 +485,8 @@ export async function chatWithAi(
           ? welcomeSuggestions
           : input.scene === "hint" && input.levelId
             ? hintSuggestionMap[input.levelId]
+            : input.scene === "qa" && !isRoadSafetyQuestion(input.message?.trim() ?? "")
+              ? ["过马路前要注意什么？", "为什么乘车要系安全带？", "公交车盲区为什么危险？"]
             : ["继续提问", "回到当前学习任务", "查看学习记录"],
     };
 
