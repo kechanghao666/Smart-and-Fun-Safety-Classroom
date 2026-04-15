@@ -362,7 +362,10 @@ export function StudentWrongQuestionsPage() {
           <strong>这一轮没有错题，太棒了</strong>
           <p>可以直接去看 AI 结果卡，把这一轮学习收个尾。</p>
           <div className="button-row">
-            <Link className="primary-button link-button" to="/student/ai-report">
+            <Link
+              className="primary-button link-button student-empty-panel__ai-link"
+              to="/student/ai-report"
+            >
               查看 AI 结果卡
             </Link>
             <Link

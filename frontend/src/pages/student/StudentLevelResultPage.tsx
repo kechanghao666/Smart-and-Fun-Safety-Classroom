@@ -63,6 +63,7 @@ export function StudentLevelResultPage() {
       : nextLevel?.status && nextLevel.status !== "locked"
         ? `/student/theme/road-safety/level/${nextLevel.id}`
         : null;
+  const shouldShowThemeButton = Boolean(nextRoute) || state.progress.exam.status === "available";
 
   return (
     <div className="page-stack student-page student-page--result">
@@ -229,13 +230,15 @@ export function StudentLevelResultPage() {
               {state.progress.exam.status === "available" ? "进入主题考试" : "返回主题页"}
             </button>
           )}
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => navigate("/student/theme/road-safety")}
-          >
-            返回主题页
-          </button>
+          {shouldShowThemeButton ? (
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => navigate("/student/theme/road-safety")}
+            >
+              返回主题页
+            </button>
+          ) : null}
           <button
             type="button"
             className="ghost-button"

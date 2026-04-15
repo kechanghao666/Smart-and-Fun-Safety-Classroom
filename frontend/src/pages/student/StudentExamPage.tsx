@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { StudentAdventureHero } from "../../components/student/StudentAdventureHero";
 import { examQuestions } from "../../data/mockData";
 import { ApiError } from "../../services/http";
@@ -35,27 +35,7 @@ export function StudentExamPage() {
   }
 
   if (state.progress.exam.status === "completed") {
-    return (
-      <section className="surface-card empty-state-card">
-        <span className="section-block__eyebrow">主题考试</span>
-        <h2>这一轮考试已经完成</h2>
-        <p>去看结果页和错题页，继续把这一轮学习收口吧。</p>
-        <div className="button-row">
-          <Link
-            className="primary-button link-button"
-            to="/student/theme/road-safety/exam/result"
-          >
-            看考试结果
-          </Link>
-          <Link
-            className="ghost-button link-button"
-            to="/student/theme/road-safety/wrong-questions"
-          >
-            错题回看
-          </Link>
-        </div>
-      </section>
-    );
+    return <Navigate to="/student/theme/road-safety/exam/result" replace />;
   }
 
   async function handleSubmit() {

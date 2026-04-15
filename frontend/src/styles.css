@@ -5002,6 +5002,10 @@ button {
   margin: 0;
 }
 
+.student-empty-panel__ai-link {
+  color: #173754;
+}
+
 .student-record-level-card {
   display: grid;
   gap: 14px;
