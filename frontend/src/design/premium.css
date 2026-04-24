@@ -522,6 +522,25 @@ textarea:focus {
 .auth-card--register {
   align-self: start;
   margin-top: -14px;
+  max-block-size: min(72vh, 660px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.auth-card--register::-webkit-scrollbar {
+  width: 8px;
+}
+
+.auth-card--register::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(19, 35, 56, 0.05);
+}
+
+.auth-card--register::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(244, 253, 250, 0.92);
+  border-radius: 999px;
+  background: rgba(47, 69, 98, 0.28);
 }
 
 .auth-card h2 {
