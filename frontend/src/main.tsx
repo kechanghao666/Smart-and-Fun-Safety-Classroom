@@ -9,6 +9,7 @@ import "./design/student.css";
 import "./design/teacher.css";
 import "./design/admin.css";
 import "./design/alignment.css";
+import "./design/premium.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

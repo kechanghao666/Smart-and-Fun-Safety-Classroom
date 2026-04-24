@@ -73,7 +73,7 @@ export function ForgotPasswordPage() {
         <section className="hero-panel hero-panel--auth">
           <div className="auth-stage">
             <div className="hero-panel__content auth-stage__copy">
-              <h1>智趣安全学堂</h1>
+              <h1>星途知学</h1>
               <p>
                 本项目以游戏化闯关教学为核心，融合AI大模型智能问答与学习反馈能力，构建了一个兼具趣味性、智能性、教育性和可推广性的中小学生安全教育数字化平台。
               </p>

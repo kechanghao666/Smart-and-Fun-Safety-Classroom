@@ -28,7 +28,7 @@ interface SparkCallOptions {
   forceDifferent?: boolean;
 }
 
-const PRODUCT_NAME = "智趣安全学堂";
+const PRODUCT_NAME = "星途知学";
 const THEME_TITLE = "道路安全教育";
 
 const welcomeSuggestions = [
@@ -271,7 +271,7 @@ async function buildFallbackReply(input: AiChatRequest): Promise<AiChatResponse>
     return {
       reply:
         managedPrompt ??
-        "欢迎回来，我们继续在智趣安全学堂里完成今天的学习任务吧。",
+        "欢迎回来，我们继续在星途知学里完成今天的学习任务吧。",
       suggestions: welcomeSuggestions,
     };
   }
@@ -341,7 +341,7 @@ async function callSpark(
     "如果用户问的是道路安全主题，请优先给出准确、简洁、适合中小学生理解的回答。",
     "如果用户问的是无关话题，也可以先简短、友好地回答 1 到 2 句，再自然地把话题引回道路安全学习。",
     "面对学生提问时，优先用短句说明重点，再补一个简单提醒或例子。",
-    "如果用户问你是谁或这个系统是什么，请说明你是智趣安全学堂里的 AI 学习助手，负责学习陪伴、答疑和总结。",
+    "如果用户问你是谁或这个系统是什么，请说明你是星途知学里的 AI 学习助手，负责学习陪伴、答疑和总结。",
     input.scene === "hint"
       ? "当前是关卡提示场景，只给方向、观察点和思考步骤，不要直接把完整答案说出来。"
       : "",

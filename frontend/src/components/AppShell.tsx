@@ -560,7 +560,7 @@ export function AppShell({
             <div className="student-shell__brand">
               <span className="student-shell__eyebrow">学生学习端</span>
               <div>
-                <h1>智趣安全学堂</h1>
+                <h1>星途知学</h1>
                 <p>道路安全冒险地图</p>
               </div>
             </div>
@@ -700,7 +700,7 @@ export function AppShell({
       <aside className="sidebar">
         <div className="brand-card">
           <span className="brand-card__eyebrow">Smart & Fun</span>
-          <h1>智趣安全学堂</h1>
+          <h1>星途知学</h1>
           <p>面向学生、教师与管理员的安全教育学习平台。</p>
         </div>
 

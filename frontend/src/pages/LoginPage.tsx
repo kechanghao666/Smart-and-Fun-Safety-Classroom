@@ -108,7 +108,7 @@ export function LoginPage() {
         <section className="hero-panel hero-panel--auth">
           <div className="auth-stage auth-stage--framed">
             <div className="hero-panel__content auth-stage__header">
-              <h1>智趣安全学堂</h1>
+              <h1>星途知学</h1>
             </div>
 
             <div className="auth-stage__feature-column">
