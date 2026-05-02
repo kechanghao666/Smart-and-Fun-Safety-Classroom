@@ -1,5 +1,13 @@
 import React from "react";
-import { ScrollView, StyleSheet, Text, View, ViewStyle } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  ViewStyle,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { appColors, spacing } from "@/constants/appTheme";
@@ -9,22 +17,36 @@ interface ScreenProps {
   subtitle?: string;
   children: React.ReactNode;
   contentStyle?: ViewStyle;
+  keyboardAvoiding?: boolean;
 }
 
-export function Screen({ title, subtitle, children, contentStyle }: ScreenProps) {
+export function Screen({ title, subtitle, children, contentStyle, keyboardAvoiding }: ScreenProps) {
+  const content = (
+    <ScrollView
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={[styles.content, contentStyle]}>
+      {(title || subtitle) && (
+        <View style={styles.header}>
+          {title && <Text style={styles.title}>{title}</Text>}
+          {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+        </View>
+      )}
+      {children}
+    </ScrollView>
+  );
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[styles.content, contentStyle]}>
-        {(title || subtitle) && (
-          <View style={styles.header}>
-            {title && <Text style={styles.title}>{title}</Text>}
-            {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
-          </View>
-        )}
-        {children}
-      </ScrollView>
+      {keyboardAvoiding ? (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={12}
+          style={styles.keyboardAvoiding}>
+          {content}
+        </KeyboardAvoidingView>
+      ) : (
+        content
+      )}
     </SafeAreaView>
   );
 }
@@ -33,6 +55,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: appColors.background,
+  },
+  keyboardAvoiding: {
+    flex: 1,
   },
   content: {
     gap: spacing.md,
