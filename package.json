@@ -3,16 +3,22 @@
   "private": true,
   "workspaces": [
     "frontend",
-    "backend"
+    "backend",
+    "mobile"
   ],
   "scripts": {
     "dev": "npm --prefix frontend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:backend": "npm --prefix backend run dev",
+    "dev:mobile": "npm --prefix mobile run start",
+    "mobile:android": "npm --prefix mobile run android",
+    "mobile:ios": "npm --prefix mobile run ios",
+    "mobile:web": "npm --prefix mobile run web",
     "build": "npm --prefix frontend run build",
     "build:backend": "npm --prefix backend run build",
     "build:all": "npm run build && npm run build:backend",
     "check:backend": "npm --prefix backend run check",
+    "check": "npm run check:backend",
     "preview": "npm --prefix frontend run preview",
     "start:prod": "npm --prefix backend run start"
   },
