@@ -8,9 +8,13 @@
     "scheme": "xingtu-zhixue",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "bundleIdentifier": "com.xingtu.zhixue",
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "package": "com.xingtu.zhixue",
+      "versionCode": 1,
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
