@@ -1,9 +1,5 @@
 import type { ObservationTaskChoice } from "../types";
 
-function buildCommonsPhotoUrl(fileName: string) {
-  return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(fileName)}`;
-}
-
 export interface LevelTwoRoutePhotoStep {
   id: string;
   title: string;
@@ -22,7 +18,7 @@ export const levelTwoRouteSteps: LevelTwoRoutePhotoStep[] = [
     scenario: "走出校门后，第一步应该往哪里靠近，才是更安全的出发方式？",
     hint: "先朝能看清来车和信号的过街区域靠近。",
     helperText: "离开校门先别急着冲，先站到能看清路口的位置，再准备过街。",
-    imageUrl: buildCommonsPhotoUrl("Pedestrians using crosswalk (Unsplash).jpg"),
+    imageUrl: "/learning-images/level2-school-crosswalk.jpg",
     sourcePageUrl:
       "https://commons.wikimedia.org/wiki/File:Pedestrians_using_crosswalk_(Unsplash).jpg",
     options: [
@@ -46,7 +42,7 @@ export const levelTwoRouteSteps: LevelTwoRoutePhotoStep[] = [
     scenario: "走到安全岛附近时，下一步最稳妥的做法是什么？",
     hint: "安全岛不是终点，到第二段路前还要再看一次车。",
     helperText: "路中安全岛能帮你分段过街，但每一段都要重新观察，不是一路直冲。",
-    imageUrl: buildCommonsPhotoUrl("Median island and crosswalk 2.jpg"),
+    imageUrl: "/learning-images/level2-median-island.jpg",
     sourcePageUrl:
       "https://commons.wikimedia.org/wiki/File:Median_island_and_crosswalk_2.jpg",
     options: [
@@ -70,9 +66,7 @@ export const levelTwoRouteSteps: LevelTwoRoutePhotoStep[] = [
     scenario: "经过公交站附近时，应该怎么避开视线盲区？",
     hint: "大车附近最怕贴得太近，先绕开车前和车侧盲区。",
     helperText: "公交站附近常有大车进出，别贴着车头和车侧走，先让自己站在看得见、也能被看见的位置。",
-    imageUrl: buildCommonsPhotoUrl(
-      "Bus stop and pedestrian crossing on Main Street, Dundrum - geograph.org.uk - 8018928.jpg",
-    ),
+    imageUrl: "/learning-images/level2-bus-stop.jpg",
     sourcePageUrl:
       "https://commons.wikimedia.org/wiki/File:Bus_stop_and_pedestrian_crossing_on_Main_Street,_Dundrum_-_geograph.org.uk_-_8018928.jpg",
     options: [
@@ -96,7 +90,7 @@ export const levelTwoRouteSteps: LevelTwoRoutePhotoStep[] = [
     scenario: "路边停着很多车时，下面哪种做法更安全？",
     hint: "停放车辆会挡住视线，不能从车缝里突然钻出。",
     helperText: "住宅路段经常有停放车辆挡住视线，这时更要选择看得见来车、也能被司机看到的路线。",
-    imageUrl: buildCommonsPhotoUrl("Cars on a residential street.jpg"),
+    imageUrl: "/learning-images/level2-parked-cars.jpg",
     sourcePageUrl:
       "https://commons.wikimedia.org/wiki/File:Cars_on_a_residential_street.jpg",
     options: [
@@ -120,7 +114,7 @@ export const levelTwoRouteSteps: LevelTwoRoutePhotoStep[] = [
     scenario: "现在准备通过这个路口，应该先选哪种做法？",
     hint: "绿灯只是开始，还要确认右转车和直行车已经礼让。",
     helperText: "到信号灯路口时，先看灯，再看车，尤其要留意还在移动的转弯车。",
-    imageUrl: buildCommonsPhotoUrl("NYC Pedestrian crossing Stop.JPG"),
+    imageUrl: "/learning-images/level2-traffic-light-stop.jpg",
     sourcePageUrl:
       "https://commons.wikimedia.org/wiki/File:NYC_Pedestrian_crossing_Stop.JPG",
     options: [
@@ -144,7 +138,7 @@ export const levelTwoRouteSteps: LevelTwoRoutePhotoStep[] = [
     scenario: "快到家了，最后一个路口你应该怎么收尾？",
     hint: "越接近终点越不能放松，最后一段也要按规则来。",
     helperText: "很多危险都发生在“快到了”的时候，最后一站也要继续停一下、看一看、再行动。",
-    imageUrl: buildCommonsPhotoUrl("Pedestrian crossing and bus stop signs in Hanoi.jpg"),
+    imageUrl: "/learning-images/level2-home-last-check.jpg",
     sourcePageUrl:
       "https://commons.wikimedia.org/wiki/File:Pedestrian_crossing_and_bus_stop_signs_in_Hanoi.jpg",
     options: [

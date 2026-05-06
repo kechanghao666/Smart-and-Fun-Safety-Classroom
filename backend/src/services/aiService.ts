@@ -28,7 +28,7 @@ interface SparkCallOptions {
   forceDifferent?: boolean;
 }
 
-const PRODUCT_NAME = "星途知学";
+const PRODUCT_NAME = "星途知学—— AI 赋能青少年多元成长教育平台";
 const THEME_TITLE = "道路安全教育";
 
 const welcomeSuggestions = [

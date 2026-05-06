@@ -420,6 +420,13 @@ async function seedAdminLevels(db: Database) {
     const shouldBackfillGameplayMode =
       !existing.gameplay_mode ||
       (enrichedItem.id !== "level-1" && existing.gameplay_mode !== expectedGameplayMode);
+    const shouldRefreshPackagedGuardianImages =
+      enrichedItem.id === "level-3" &&
+      Boolean(enrichedItem.guardianChallengeConfig) &&
+      Boolean(
+        existing.guardian_challenge_json?.includes("data:image") ||
+          existing.guardian_challenge_json?.includes("commons.wikimedia.org"),
+      );
 
     await db.run(
       `
@@ -432,6 +439,8 @@ async function seedAdminLevels(db: Database) {
             ELSE route_challenge_json
           END,
           guardian_challenge_json = CASE
+            WHEN ?
+            THEN ?
             WHEN guardian_challenge_json IS NULL OR guardian_challenge_json = '' OR guardian_challenge_json = '{}'
             THEN ?
             ELSE guardian_challenge_json
@@ -441,6 +450,8 @@ async function seedAdminLevels(db: Database) {
       `,
       shouldBackfillGameplayMode ? expectedGameplayMode : existing.gameplay_mode,
       JSON.stringify(enrichedItem.routeChallengeConfig ?? {}),
+      shouldRefreshPackagedGuardianImages ? 1 : 0,
+      JSON.stringify(enrichedItem.guardianChallengeConfig ?? {}),
       JSON.stringify(enrichedItem.guardianChallengeConfig ?? {}),
       enrichedItem.id,
     );

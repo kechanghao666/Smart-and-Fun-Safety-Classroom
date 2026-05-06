@@ -1,9 +1,5 @@
 import type { GuardianChallengeConfig, LevelManagementItem } from "../types/contracts";
 
-function buildCommonsPhotoUrl(fileName: string) {
-  return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(fileName)}`;
-}
-
 export const levelThreeGuardianConfig: GuardianChallengeConfig = {
   stages: [
     {
@@ -15,13 +11,11 @@ export const levelThreeGuardianConfig: GuardianChallengeConfig = {
       stageLabel: "公交车",
       successText: "站位放对了，候车时就不会离车门太近。",
       taskType: "drag",
-      sceneImageUrl: buildCommonsPhotoUrl("People_waiting_at_bus_stop.jpg"),
+      sceneImageUrl: "/learning-images/level3-bus-line.jpg",
       sceneSourcePageUrl:
         "https://commons.wikimedia.org/wiki/File:People_waiting_at_bus_stop.jpg",
       sceneCaption: "公交车进站前，要站在安全线后面等车，不贴着车门和道路边缘。",
-      toolImageUrl: buildCommonsPhotoUrl(
-        "Sidewalk_and_bus_stop_pavement_marking_(43966547644).jpg",
-      ),
+      toolImageUrl: "/learning-images/level3-bus-marking.jpg",
       toolSourcePageUrl:
         "https://commons.wikimedia.org/wiki/File:Sidewalk_and_bus_stop_pavement_marking_(43966547644).jpg",
       toolCaption: "把候车站位卡拖到安全候车区，提醒自己先站稳再等车。",
@@ -37,7 +31,7 @@ export const levelThreeGuardianConfig: GuardianChallengeConfig = {
       stageLabel: "私家车",
       successText: "纠正成功，出发前先系安全带才是最稳妥的。",
       taskType: "tap",
-      sceneImageUrl: buildCommonsPhotoUrl("Fastening_belt.jpg"),
+      sceneImageUrl: "/learning-images/level3-seatbelt-scene.jpg",
       sceneSourcePageUrl:
         "https://commons.wikimedia.org/wiki/File:Fastening_belt.jpg",
       sceneCaption: "乘坐私家车时，坐稳后要先系好安全带，不把手伸出窗外。",
@@ -76,7 +70,7 @@ export const levelThreeGuardianConfig: GuardianChallengeConfig = {
       stageLabel: "电动车",
       successText: "顺序排对了，出发前的保护动作都准备好了。",
       taskType: "sequence",
-      sceneImageUrl: buildCommonsPhotoUrl("Helmet_bike.jpg"),
+      sceneImageUrl: "/learning-images/level3-helmet-scene.jpg",
       sceneSourcePageUrl:
         "https://commons.wikimedia.org/wiki/File:Helmet_bike.jpg",
       sceneCaption: "乘坐电动车前，要先戴好头盔、坐稳扶好，再确认没有超员。",

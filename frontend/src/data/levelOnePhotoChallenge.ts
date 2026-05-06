@@ -1,9 +1,5 @@
 import type { ObservationSceneTarget } from "../types";
 
-function buildCommonsPhotoUrl(fileName: string) {
-  return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(fileName)}`;
-}
-
 export interface LevelOnePhotoCard {
   id: string;
   taskId: string;
@@ -35,7 +31,7 @@ export const levelOnePhotoCards: LevelOnePhotoCard[] = [
     taskId: "step-crosswalk",
     label: "斑马线路口",
     shortHint: "先找白色条纹的人行横道。",
-    imageUrl: buildCommonsPhotoUrl("Zebra crossing11.jpg"),
+    imageUrl: "/learning-images/level1-zebra-crossing.jpg",
     sourcePageUrl:
       "https://commons.wikimedia.org/wiki/File:Zebra_crossing11.jpg",
   },
@@ -44,7 +40,7 @@ export const levelOnePhotoCards: LevelOnePhotoCard[] = [
     taskId: "step-sign",
     label: "人行横道标志",
     shortHint: "注意蓝色行人过街标志。",
-    imageUrl: buildCommonsPhotoUrl("Pedestrian crossing sign, Pristina.JPG"),
+    imageUrl: "/learning-images/level1-pedestrian-sign.jpg",
     sourcePageUrl:
       "https://commons.wikimedia.org/wiki/File:Pedestrian_crossing_sign,_Pristina.JPG",
   },
@@ -53,9 +49,7 @@ export const levelOnePhotoCards: LevelOnePhotoCard[] = [
     taskId: "step-danger-rail",
     label: "护栏危险区",
     shortHint: "靠近护栏的穿行区域最容易发生危险。",
-    imageUrl: buildCommonsPhotoUrl(
-      "Road barrier on William Street Perth 2026-01-26.jpg",
-    ),
+    imageUrl: "/learning-images/level1-road-barrier.jpg",
     sourcePageUrl:
       "https://commons.wikimedia.org/wiki/File:Road_barrier_on_William_Street_Perth_2026-01-26.jpg",
   },
@@ -64,7 +58,7 @@ export const levelOnePhotoCards: LevelOnePhotoCard[] = [
     taskId: "step-danger-red",
     label: "红灯警示位",
     shortHint: "红色行人灯亮起时不能冲跑。",
-    imageUrl: buildCommonsPhotoUrl("Norwegian traffic lights.jpg"),
+    imageUrl: "/learning-images/level1-traffic-lights.jpg",
     sourcePageUrl:
       "https://commons.wikimedia.org/wiki/File:Norwegian_traffic_lights.jpg",
   },
@@ -74,9 +68,7 @@ export const levelOneDecisionScene: LevelOneDecisionScene = {
   title: "先看灯，再看车",
   prompt: "观察真实路口照片，再从下面选出最稳妥的做法。",
   helperText: "绿灯亮起也不能马上冲，要先确认车辆已经礼让并停稳。",
-  imageUrl: buildCommonsPhotoUrl(
-    "Traffic light controlled pedestrian crossing, Redditch Road, Stoke Heath, Worcs - geograph.org.uk - 6604608.jpg",
-  ),
+  imageUrl: "/learning-images/level1-controlled-crossing.jpg",
   sourcePageUrl:
     "https://commons.wikimedia.org/wiki/File:Traffic_light_controlled_pedestrian_crossing,_Redditch_Road,_Stoke_Heath,_Worcs_-_geograph.org.uk_-_6604608.jpg",
 };
@@ -84,9 +76,7 @@ export const levelOneDecisionScene: LevelOneDecisionScene = {
 export const levelOneStickerScene: LevelOneStickerScene = {
   title: "把贴纸放到等待观察区",
   helperText: "安全贴纸要贴在准备过街、还没有进入车道的等待区，不能贴到车道中间。",
-  imageUrl: buildCommonsPhotoUrl(
-    "Pedestrian crossing, High Street, Omagh - geograph.org.uk - 4949553.jpg",
-  ),
+  imageUrl: "/learning-images/level1-waiting-zone.jpg",
   sourcePageUrl:
     "https://commons.wikimedia.org/wiki/File:Pedestrian_crossing,_High_Street,_Omagh_-_geograph.org.uk_-_4949553.jpg",
   targets: [

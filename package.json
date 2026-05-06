@@ -1,6 +1,9 @@
 {
   "name": "smart-and-fun-safety-classroom",
   "private": true,
+  "version": "1.0.0",
+  "description": "星途知学—— AI 赋能青少年多元成长教育平台",
+  "main": "electron/main.cjs",
   "workspaces": [
     "frontend",
     "backend"
@@ -14,9 +17,62 @@
     "build:all": "npm run build && npm run build:backend",
     "check:backend": "npm --prefix backend run check",
     "preview": "npm --prefix frontend run preview",
-    "start:prod": "npm --prefix backend run start"
+    "start:prod": "npm --prefix backend run start",
+    "desktop:start": "npm run build:all && electron .",
+    "desktop:pack": "npm run build:all && electron-builder --dir",
+    "desktop:dist": "npm run build:all && electron-builder"
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "cn.xingtuzhixue.education",
+    "productName": "星途知学—— AI 赋能青少年多元成长教育平台",
+    "asar": false,
+    "npmRebuild": false,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "package.json",
+      "electron/**/*",
+      "backend/dist/**/*",
+      "frontend/dist/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "desktop-runtime/node-v20.20.2-win-x64",
+        "to": "desktop-runtime/node-v20.20.2-win-x64"
+      }
+    ],
+    "asarUnpack": [
+      "node_modules/**/*.node",
+      "node_modules/sqlite3/**/*"
+    ],
+    "win": {
+      "signAndEditExecutable": false,
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }
