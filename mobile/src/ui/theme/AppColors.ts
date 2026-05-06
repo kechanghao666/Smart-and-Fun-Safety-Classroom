@@ -1,0 +1,33 @@
+export const AppColors = {
+  background: "#F3FAF7",
+  backgroundAlt: "#EAF6F2",
+  surface: "#FFFFFF",
+  surfaceSoft: "#F5FBF8",
+  surfaceTint: "#E0F5EF",
+  primary: "#087B72",
+  primaryDark: "#075E58",
+  primarySoft: "#D7F3EE",
+  secondary: "#2F80ED",
+  secondarySoft: "#DCEEFF",
+  accent: "#FFB84D",
+  accentSoft: "#FFF0D7",
+  success: "#27AE60",
+  successSoft: "#DEF7EA",
+  warning: "#F59E0B",
+  warningSoft: "#FFF4D6",
+  danger: "#E45245",
+  dangerSoft: "#FFE6E2",
+  text: "#102A43",
+  textSecondary: "#52667A",
+  textMuted: "#7C8C9B",
+  border: "#DDEAE6",
+  shadow: "#0E3D35",
+  white: "#FFFFFF",
+};
+
+export const AppGradients = {
+  hero: ["#E6F9F4", "#D9F1FF"],
+  progress: ["#0B8F83", "#2F80ED"],
+  levelActive: ["#0B8F83", "#42C6A5"],
+  levelLocked: ["#F1F5F9", "#E8EEF4"],
+};
