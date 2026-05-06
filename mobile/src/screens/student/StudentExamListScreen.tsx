@@ -61,7 +61,7 @@ export function StudentExamListScreen() {
   const isCompleted = exam.status === "completed";
 
   return (
-    <Screen title="考试 / 测验" subtitle="完成三关后进入主题测验，检验道路安全知识掌握情况。">
+    <Screen bottomNavActive="learning" showBackButton backTo="/student" title="考试 / 测验" subtitle="完成三关后进入主题测验，检验道路安全知识掌握情况。">
       <AppCard>
         <View style={styles.headerRow}>
           <View style={styles.titleWrap}>

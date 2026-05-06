@@ -122,7 +122,7 @@ export function StudentExamScreen() {
   const progressRatio = questions.length > 0 ? answeredCount / questions.length : 0;
 
   return (
-    <Screen title="主题测验" subtitle={`已完成 ${answeredCount}/${questions.length} 题`}>
+    <Screen bottomNavActive="learning" showBackButton backTo="/student/exams" title="主题测验" subtitle={`已完成 ${answeredCount}/${questions.length} 题`}>
       <AppCard>
         <View style={styles.progressHeader}>
           <Text style={styles.progressText}>

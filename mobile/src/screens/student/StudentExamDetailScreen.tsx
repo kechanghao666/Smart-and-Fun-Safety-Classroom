@@ -52,7 +52,7 @@ export function StudentExamDetailScreen() {
   const isCompleted = progress.exam.status === "completed";
 
   return (
-    <Screen title="测验说明" subtitle="开始前先看清规则，答题过程中可以前后切换检查。">
+    <Screen bottomNavActive="learning" showBackButton backTo="/student/exams" title="测验说明" subtitle="开始前先看清规则，答题过程中可以前后切换检查。">
       <AppCard>
         <Text style={styles.title}>道路安全主题测验</Text>
         <Text style={styles.description}>

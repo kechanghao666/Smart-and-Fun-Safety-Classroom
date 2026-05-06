@@ -69,7 +69,7 @@ export function StudentWrongQuestionDetailScreen() {
   }
 
   return (
-    <Screen title="错题解析" subtitle={item.reviewLabel}>
+    <Screen bottomNavActive="records" showBackButton backTo="/student/wrong-questions" title="错题解析" subtitle={item.reviewLabel}>
       <AppCard>
         <View style={styles.headerRow}>
           <Text style={styles.label}>{item.reviewed ? "已回看" : "待回看"}</Text>

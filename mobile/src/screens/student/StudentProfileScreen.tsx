@@ -12,7 +12,7 @@ export function StudentProfileScreen() {
   const { session, signOut } = useAuth();
 
   return (
-    <Screen title="个人中心" subtitle="管理当前登录状态。">
+    <Screen bottomNavActive="home" showBackButton backTo="/student" title="个人中心" subtitle="管理当前登录状态。">
       <AppCard>
         <Text style={{ color: appColors.text, fontSize: 22, fontWeight: "900" }}>学生账号</Text>
         <InfoRow label="账号" value={session?.account ?? "-"} />

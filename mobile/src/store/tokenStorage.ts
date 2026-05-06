@@ -1,6 +1,8 @@
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
+import type { StudentProfile } from "@/types/contracts";
+
 const KEY = "xingtu-zhixue-mobile-session";
 
 export interface StoredSession {
@@ -8,6 +10,7 @@ export interface StoredSession {
   role: "student" | "teacher";
   account?: string;
   displayName?: string;
+  studentProfile?: StudentProfile | null;
 }
 
 export async function saveSession(session: StoredSession) {

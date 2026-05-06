@@ -35,6 +35,7 @@ function buildStoredSession(response: LoginResponse, fallbackAccount?: string): 
     role: response.role,
     account: response.account ?? fallbackAccount,
     displayName: response.displayName,
+    studentProfile: response.studentProfile ?? null,
   };
 }
 

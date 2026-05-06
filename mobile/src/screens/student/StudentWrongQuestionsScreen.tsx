@@ -84,7 +84,7 @@ export function StudentWrongQuestionsScreen() {
   }
 
   return (
-    <Screen title="错题回看" subtitle={review.suggestion || "错题解析和回看建议来自后端记录。"}>
+    <Screen bottomNavActive="records" showBackButton backTo="/student" title="错题回看" subtitle={review.suggestion || "错题解析和回看建议来自后端记录。"}>
       <View style={styles.filterRow}>
         {filters.map((item) => (
           <Pressable

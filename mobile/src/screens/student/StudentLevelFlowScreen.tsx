@@ -209,7 +209,7 @@ export function StudentLevelFlowScreen() {
   }
 
   return (
-    <Screen title={level.title} subtitle={`${completedCount}/${taskCount || 1} 个任务已完成`}>
+    <Screen bottomNavActive="learning" showBackButton backTo={`/student/level-intro?levelId=${level.id}`} title={level.title} subtitle={`${completedCount}/${taskCount || 1} 个任务已完成`}>
       <AppCard>
         <View style={styles.progressHeader}>
           <Text style={styles.progressText}>{level.focus}</Text>

@@ -70,6 +70,7 @@ export function StudentAiScreen() {
 
   return (
     <Screen
+      bottomNavActive="ai"
       keyboardAvoiding
       title="AI 助手"
       subtitle="把问题说出来，小助手会用短句回答你。"

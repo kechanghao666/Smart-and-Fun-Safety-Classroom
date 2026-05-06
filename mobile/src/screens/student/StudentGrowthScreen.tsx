@@ -82,7 +82,7 @@ export function StudentGrowthScreen() {
   const overview = records.overview;
 
   return (
-    <Screen title="成长档案" subtitle="用真实学习数据查看你的成长积分、阶段和能力标签。">
+    <Screen bottomNavActive="growth" title="成长档案" subtitle="用真实学习数据查看你的成长积分、阶段和能力标签。">
       <AppCard style={styles.heroCard}>
         <View style={styles.heroTop}>
           <View style={styles.avatar}>

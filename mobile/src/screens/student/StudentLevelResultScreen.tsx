@@ -77,7 +77,7 @@ export function StudentLevelResultScreen() {
   const examReady = !nextLevel && progress.exam.status === "available";
 
   return (
-    <Screen title={`${level.title} · 结算`} subtitle="本关结果已同步到学习进度、成长档案和学习记录。">
+    <Screen bottomNavActive="learning" showBackButton backTo="/student/subject-detail" title={`${level.title} · 结算`} subtitle="本关结果已同步到学习进度、成长档案和学习记录。">
       <AppCard style={styles.scoreCard}>
         <Text style={styles.rewardIcon}>{result.rewardIcon ?? "★"}</Text>
         <Text style={styles.score}>{result.score} 分</Text>

@@ -99,7 +99,7 @@ export function StudentRecordsScreen() {
   }
 
   return (
-    <Screen title="学习记录" subtitle="按时间查看关卡、考试、错题回看和成长奖励。">
+    <Screen bottomNavActive="records" title="学习记录" subtitle="按时间查看关卡、考试、错题回看和成长奖励。">
       <AppCard style={styles.overviewCard}>
         <Text style={styles.cardTitle}>学习概览</Text>
         <View style={styles.summaryGrid}>

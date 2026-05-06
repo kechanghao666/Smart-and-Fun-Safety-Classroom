@@ -75,7 +75,7 @@ export function StudentLevelIntroScreen() {
   const locked = level.status === "locked";
 
   return (
-    <Screen title={level.title} subtitle="先看目标和规则，再进入适合手机触屏的闯关学习。">
+    <Screen bottomNavActive="learning" showBackButton backTo="/student/subject-detail" title={level.title} subtitle="先看目标和规则，再进入适合手机触屏的闯关学习。">
       <AppCard>
         <View style={styles.headerRow}>
           <View style={styles.headerText}>

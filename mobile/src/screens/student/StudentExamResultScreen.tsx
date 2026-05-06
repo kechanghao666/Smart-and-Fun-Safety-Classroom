@@ -62,7 +62,7 @@ export function StudentExamResultScreen() {
   const correctRate = total > 0 ? Math.round((correctCount / total) * 100) : 0;
 
   return (
-    <Screen title="测验结果" subtitle="成绩和错题来自后端记录，方便后续继续复习。">
+    <Screen bottomNavActive="records" showBackButton backTo="/student/exams" title="测验结果" subtitle="成绩和错题来自后端记录，方便后续继续复习。">
       <AppCard style={styles.scoreCard}>
         <Text style={styles.scoreLabel}>本次成绩</Text>
         <Text style={styles.score}>{exam.score ?? "--"} 分</Text>

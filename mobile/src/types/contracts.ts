@@ -119,6 +119,11 @@ export interface GuardianChallengeStage {
   successText: string;
   taskType: "drag" | "tap" | "sequence";
   sceneCaption: string;
+  sceneImageUrl?: string;
+  sceneSourcePageUrl?: string;
+  toolImageUrl?: string;
+  toolSourcePageUrl?: string;
+  toolCaption?: string;
   actionHint: string;
   tapTargets?: GuardianTapTarget[];
   sequenceItems?: GuardianSequenceItem[];
