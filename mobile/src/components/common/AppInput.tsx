@@ -31,13 +31,13 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   input: {
-    minHeight: 50,
-    borderRadius: 16,
-    borderWidth: 1,
+    backgroundColor: "#F8FBFF",
     borderColor: appColors.border,
-    backgroundColor: "#f7fbff",
+    borderRadius: 20,
+    borderWidth: 1,
     color: appColors.text,
     fontSize: 16,
-    paddingHorizontal: 16,
+    minHeight: 54,
+    paddingHorizontal: 18,
   },
 });

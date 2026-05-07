@@ -9,17 +9,18 @@ import { getLevelStatusText, LevelCard } from "@/ui/components/LevelCard";
 import { PrimaryActionButton } from "@/ui/components/PrimaryActionButton";
 import { RemoteImage } from "@/ui/components/RemoteImage";
 import { AppTheme } from "@/ui/theme/AppTheme";
+import { getDefaultLevelImageUrl, getDefaultThemeImageUrl, resolveAssetUrl } from "@/utils/assetUrl";
 import { previewStudentProgress } from "../previewData";
 import { useLearningPathViewModel } from "./LearningPathViewModel";
 
 function getLevelImageUrl(level: LevelProgress) {
   const guardianStage = level.guardianChallengeConfig?.stages.find((stage) => stage.sceneImageUrl);
   if (guardianStage?.sceneImageUrl) {
-    return guardianStage.sceneImageUrl;
+    return resolveAssetUrl(guardianStage.sceneImageUrl);
   }
 
   const guardianTool = level.guardianChallengeConfig?.stages.find((stage) => stage.toolImageUrl);
-  return guardianTool?.toolImageUrl ?? null;
+  return resolveAssetUrl(guardianTool?.toolImageUrl) ?? getDefaultLevelImageUrl(level.id);
 }
 
 function getCompletedCount(progress: StudentProgress) {
@@ -67,7 +68,7 @@ export function LearningPathContent({ mode = "detail", progress }: LearningPathS
   const completed = getCompletedCount(progress);
   const nextLevel = getNextLevel(progress);
   const examUnlocked = progress.exam.status !== "locked";
-  const themeImageUrl = progress.levels[2] ? getLevelImageUrl(progress.levels[2]) : null;
+  const themeImageUrl = getDefaultThemeImageUrl();
 
   return (
     <Screen
@@ -88,7 +89,7 @@ export function LearningPathContent({ mode = "detail", progress }: LearningPathS
       </View>
 
       <View style={styles.themeCard}>
-        <RemoteImage label={progress.themeTitle} style={styles.themeImage} uri={themeImageUrl} />
+        <RemoteImage label={progress.themeTitle} style={styles.themeImage} uri={themeImageUrl} variant="theme" />
         <View style={styles.themeBody}>
           <Text style={styles.themeTitle}>道路安全星途</Text>
           <Text style={styles.themeDescription}>
@@ -126,6 +127,7 @@ export function LearningPathContent({ mode = "detail", progress }: LearningPathS
           {progress.levels.map((level, index) => (
             <LevelCard
               imageUrl={getLevelImageUrl(level)}
+              imageVariant={level.id}
               index={index}
               key={level.id}
               level={level}

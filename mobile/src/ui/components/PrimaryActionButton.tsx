@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
   },
   label: {
     color: AppTheme.colors.white,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "900",
   },
   labelSecondary: {

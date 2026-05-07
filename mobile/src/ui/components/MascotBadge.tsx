@@ -11,6 +11,7 @@ interface MascotBadgeProps {
 export function MascotBadge({ label = "安全小星", level = "Lv.1" }: MascotBadgeProps) {
   return (
     <View style={styles.wrap}>
+      <View style={styles.glow} />
       <View style={styles.head}>
         <View style={styles.eyeLeft} />
         <View style={styles.eyeRight} />
@@ -34,8 +35,18 @@ const styles = StyleSheet.create({
     borderColor: AppTheme.colors.border,
     borderRadius: AppTheme.radius.xl,
     borderWidth: 1,
+    overflow: "hidden",
     padding: AppTheme.spacing.xs,
     width: 86,
+  },
+  glow: {
+    backgroundColor: AppTheme.colors.primarySoft,
+    borderRadius: 999,
+    height: 70,
+    position: "absolute",
+    right: -20,
+    top: -24,
+    width: 70,
   },
   head: {
     backgroundColor: "#FFE1B8",

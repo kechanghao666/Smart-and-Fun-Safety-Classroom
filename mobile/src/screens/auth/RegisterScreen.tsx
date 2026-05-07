@@ -60,8 +60,14 @@ export function RegisterScreen() {
   }
 
   return (
-    <Screen title="创建账号" subtitle="移动端第一版支持学生和教师，管理员继续使用 Web 后台。">
-      <AppCard>
+    <Screen contentStyle={styles.screen}>
+      <View style={styles.hero}>
+        <View style={styles.heroOrb} />
+        <Text style={styles.brand}>创建星途账号</Text>
+        <Text style={styles.slogan}>移动端第一版支持学生和教师，管理员继续使用 Web 后台。</Text>
+      </View>
+      <AppCard style={styles.formCard}>
+        <Text style={styles.title}>选择身份并填写信息</Text>
         <AppInput label="称呼" value={displayName} onChangeText={setDisplayName} />
         <AppInput label="注册账号" value={account} onChangeText={setAccount} />
         <View style={styles.roleRow}>
@@ -92,6 +98,47 @@ export function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    minHeight: "100%",
+    paddingVertical: spacing.xl,
+  },
+  hero: {
+    backgroundColor: appColors.primaryDark,
+    borderRadius: 30,
+    gap: spacing.sm,
+    overflow: "hidden",
+    padding: spacing.lg,
+    position: "relative",
+  },
+  heroOrb: {
+    backgroundColor: "rgba(134, 239, 172, 0.18)",
+    borderRadius: 999,
+    height: 190,
+    position: "absolute",
+    right: -70,
+    top: -86,
+    width: 190,
+  },
+  brand: {
+    color: "#FFFFFF",
+    fontSize: 34,
+    fontWeight: "900",
+    lineHeight: 42,
+  },
+  slogan: {
+    color: "rgba(255,255,255,0.78)",
+    fontSize: 15,
+    lineHeight: 23,
+  },
+  formCard: {
+    gap: spacing.md,
+  },
+  title: {
+    color: appColors.text,
+    fontSize: 22,
+    fontWeight: "900",
+    lineHeight: 28,
+  },
   roleRow: {
     flexDirection: "row",
     gap: spacing.sm,

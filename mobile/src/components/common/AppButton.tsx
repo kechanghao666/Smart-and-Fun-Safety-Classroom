@@ -42,14 +42,19 @@ export function AppButton({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 48,
-    borderRadius: 18,
     alignItems: "center",
+    borderRadius: 20,
     justifyContent: "center",
-    paddingHorizontal: 18,
+    minHeight: 50,
+    paddingHorizontal: 20,
   },
   primary: {
     backgroundColor: appColors.primary,
+    shadowColor: appColors.shadow,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    elevation: 3,
   },
   secondary: {
     backgroundColor: appColors.surfaceSoft,
@@ -60,15 +65,16 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   danger: {
-    backgroundColor: "#fde8e6",
+    backgroundColor: appColors.dangerSoft,
   },
   pressed: {
     opacity: 0.72,
+    transform: [{ scale: 0.98 }],
   },
   label: {
     color: "#fff",
-    fontSize: 16,
-    fontWeight: "800",
+    fontSize: 15,
+    fontWeight: "900",
   },
   labelSecondary: {
     color: appColors.text,

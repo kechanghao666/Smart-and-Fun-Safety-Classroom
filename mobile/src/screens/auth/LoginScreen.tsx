@@ -43,10 +43,16 @@ export function LoginScreen() {
   return (
     <Screen contentStyle={styles.screen}>
       <View style={styles.hero}>
+        <View style={styles.heroOrb} />
         <Text style={styles.brand}>星途知学</Text>
         <Text style={styles.slogan}>把安全教育、AI 助学和课堂反馈装进手机里。</Text>
+        <View style={styles.chipRow}>
+          <Text style={styles.heroChip}>游戏化闯关</Text>
+          <Text style={styles.heroChip}>AI 引导</Text>
+          <Text style={styles.heroChip}>教师可看</Text>
+        </View>
       </View>
-      <AppCard>
+      <AppCard style={styles.formCard}>
         <Text style={styles.title}>账号密码登录</Text>
         <AppInput label="账号" value={account} onChangeText={setAccount} />
         <AppInput label="密码" value={password} onChangeText={setPassword} secureTextEntry />
@@ -68,19 +74,56 @@ const styles = StyleSheet.create({
   screen: {
     justifyContent: "center",
     minHeight: "100%",
+    paddingVertical: spacing.xl,
   },
   hero: {
+    backgroundColor: appColors.primaryDark,
+    borderRadius: 30,
     gap: spacing.sm,
+    overflow: "hidden",
+    padding: spacing.lg,
+    position: "relative",
+  },
+  heroOrb: {
+    backgroundColor: "rgba(134, 239, 172, 0.18)",
+    borderRadius: 999,
+    height: 190,
+    position: "absolute",
+    right: -70,
+    top: -86,
+    width: 190,
   },
   brand: {
-    color: appColors.text,
-    fontSize: 42,
+    color: "#FFFFFF",
+    fontSize: 44,
     fontWeight: "900",
+    lineHeight: 52,
   },
   slogan: {
-    color: appColors.textMuted,
+    color: "rgba(255,255,255,0.78)",
     fontSize: 16,
     lineHeight: 24,
+  },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  heroChip: {
+    backgroundColor: "rgba(255,255,255,0.14)",
+    borderColor: "rgba(255,255,255,0.18)",
+    borderRadius: 999,
+    borderWidth: 1,
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "900",
+    overflow: "hidden",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  formCard: {
+    gap: spacing.md,
   },
   title: {
     color: appColors.text,

@@ -3,13 +3,14 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { LearningStatus, LevelProgress, LevelResult } from "@/types/contracts";
 import { AppTheme } from "@/ui/theme/AppTheme";
-import { RemoteImage } from "./RemoteImage";
+import { RemoteImage, type RemoteImageVariant } from "./RemoteImage";
 
 interface LevelCardProps {
   level: LevelProgress;
   index: number;
   result?: LevelResult;
   imageUrl?: string | null;
+  imageVariant?: RemoteImageVariant;
   onPress: () => void;
 }
 
@@ -40,7 +41,7 @@ export function getLevelStatusText(status: LearningStatus) {
   return statusMeta[status]?.label ?? "待开始";
 }
 
-export function LevelCard({ level, index, result, imageUrl, onPress }: LevelCardProps) {
+export function LevelCard({ level, index, result, imageUrl, imageVariant = "default", onPress }: LevelCardProps) {
   const meta = statusMeta[level.status];
   const disabled = level.status === "locked";
   const isActive = level.status === "available" || level.status === "in_progress";
@@ -63,12 +64,14 @@ export function LevelCard({ level, index, result, imageUrl, onPress }: LevelCard
         <View style={styles.pathLine} />
       </View>
       <View style={styles.content}>
-        <RemoteImage label={level.focus} style={styles.image} uri={imageUrl} />
-        <View style={styles.headerRow}>
-          <Text style={styles.title}>{level.title}</Text>
+        <View style={styles.imageWrap}>
+          <RemoteImage label={level.focus} style={styles.image} uri={imageUrl} variant={imageVariant} />
           <View style={[styles.statusBadge, { backgroundColor: meta.background }]}>
             <Text style={[styles.statusText, { color: meta.color }]}>{meta.label}</Text>
           </View>
+        </View>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>{level.title}</Text>
         </View>
         <Text numberOfLines={2} style={styles.description}>
           {level.description}
@@ -88,7 +91,7 @@ export function LevelCard({ level, index, result, imageUrl, onPress }: LevelCard
 const styles = StyleSheet.create({
   card: {
     backgroundColor: AppTheme.colors.surface,
-    borderColor: AppTheme.colors.border,
+    borderColor: "rgba(255,255,255,0.82)",
     borderRadius: AppTheme.radius.xl,
     borderWidth: 1,
     flexDirection: "row",
@@ -140,8 +143,13 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: AppTheme.spacing.sm,
   },
+  imageWrap: {
+    borderRadius: AppTheme.radius.xl,
+    overflow: "hidden",
+    position: "relative",
+  },
   image: {
-    minHeight: 136,
+    minHeight: 168,
   },
   headerRow: {
     alignItems: "flex-start",
@@ -158,6 +166,9 @@ const styles = StyleSheet.create({
   },
   statusBadge: {
     borderRadius: AppTheme.radius.pill,
+    position: "absolute",
+    right: AppTheme.spacing.sm,
+    top: AppTheme.spacing.sm,
     paddingHorizontal: AppTheme.spacing.sm,
     paddingVertical: AppTheme.spacing.xxs,
   },

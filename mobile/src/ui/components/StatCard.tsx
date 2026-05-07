@@ -12,6 +12,7 @@ interface StatCardProps {
 export function StatCard({ label, value, tone = "primary" }: StatCardProps) {
   return (
     <View style={[styles.card, styles[tone]]}>
+      <View style={styles.microLine} />
       <Text style={styles.value}>{value}</Text>
       <Text style={styles.label}>{label}</Text>
     </View>
@@ -22,7 +23,8 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: AppTheme.radius.lg,
     flex: 1,
-    minHeight: 82,
+    minHeight: 90,
+    overflow: "hidden",
     padding: AppTheme.spacing.md,
   },
   primary: {
@@ -39,14 +41,21 @@ const styles = StyleSheet.create({
   },
   value: {
     color: AppTheme.colors.text,
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: "900",
-    lineHeight: 30,
+    lineHeight: 31,
+    marginTop: AppTheme.spacing.xs,
   },
   label: {
     color: AppTheme.colors.textSecondary,
     fontSize: 12,
     fontWeight: "800",
     marginTop: AppTheme.spacing.xxs,
+  },
+  microLine: {
+    backgroundColor: "rgba(16,42,67,0.18)",
+    borderRadius: 999,
+    height: 4,
+    width: 24,
   },
 });

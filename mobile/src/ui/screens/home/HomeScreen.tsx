@@ -138,16 +138,52 @@ export function HomeContent({
   return (
     <Screen bottomNavActive="home" contentStyle={styles.screen}>
       <View style={styles.hero}>
+        <View style={styles.heroGlow} />
         <View style={styles.heroText}>
-          <Text style={styles.kicker}>今日学习</Text>
+          <Text style={styles.kicker}>星途学习站</Text>
           <Text style={styles.heroTitle}>你好，{displayName}</Text>
           <Text style={styles.heroSubtitle}>今天继续完成 1 个安全挑战吧</Text>
         </View>
         <MascotBadge label={profileLabel} level={profileLevel} />
       </View>
 
+      <View style={styles.progressCard}>
+        <View style={styles.orbOne} />
+        <View style={styles.orbTwo} />
+        <View style={styles.progressTop}>
+          <View style={styles.progressCopy}>
+            <Text style={styles.progressLabel}>正在学习</Text>
+            <Text style={styles.progressTitle}>{progress.themeTitle}</Text>
+            <Text style={styles.progressHint}>观察、判断、守护，沿着三关路径拿到主题徽章。</Text>
+          </View>
+          <View style={styles.progressBadge}>
+            <Text style={styles.progressBadgeValue}>{Math.round(ratio * 100)}%</Text>
+            <Text style={styles.progressBadgeLabel}>完成度</Text>
+          </View>
+        </View>
+        <View style={styles.statRow}>
+          <StatCard label="成长积分" value={progress.points} />
+          <StatCard label="徽章" tone="success" value={progress.badges.length} />
+          <StatCard label="考试" tone="warning" value={statusText(progress.exam.status)} />
+        </View>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${Math.max(8, Math.round(ratio * 100))}%` }]} />
+        </View>
+        <View style={styles.progressFooter}>
+          <Text style={styles.progressText}>
+            已完成 {completedLevels}/{progress.levels.length} 关
+          </Text>
+          <Text style={styles.progressText}>下一步：{progress.exam.status !== "locked" ? "主题测验" : "继续闯关"}</Text>
+        </View>
+        <PrimaryActionButton
+          label={progress.exam.status !== "locked" ? "继续测验" : "继续学习"}
+          onPress={() => router.push(getContinueRoute(progress))}
+          style={styles.continueButton}
+        />
+      </View>
+
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>常用入口</Text>
+        <Text style={styles.sectionTitle}>快捷行动</Text>
         <Pressable onPress={() => router.push("/student/profile")}>
           <Text style={styles.profileLink}>个人中心</Text>
         </Pressable>
@@ -166,32 +202,6 @@ export function HomeContent({
           ))}
         </View>
       ))}
-
-      <View style={styles.progressCard}>
-        <View style={styles.orbOne} />
-        <View style={styles.orbTwo} />
-        <Text style={styles.progressLabel}>当前主题</Text>
-        <Text style={styles.progressTitle}>{progress.themeTitle}</Text>
-        <View style={styles.statRow}>
-          <StatCard label="成长积分" value={progress.points} />
-          <StatCard label="徽章" tone="success" value={progress.badges.length} />
-          <StatCard label="考试" tone="warning" value={statusText(progress.exam.status)} />
-        </View>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${Math.max(8, Math.round(ratio * 100))}%` }]} />
-        </View>
-        <View style={styles.progressFooter}>
-          <Text style={styles.progressText}>
-            已完成 {completedLevels}/{progress.levels.length} 关
-          </Text>
-          <Text style={styles.progressText}>{Math.round(ratio * 100)}%</Text>
-        </View>
-        <PrimaryActionButton
-          label={progress.exam.status !== "locked" ? "继续测验" : "继续学习"}
-          onPress={() => router.push(getContinueRoute(progress))}
-          style={styles.continueButton}
-        />
-      </View>
     </Screen>
   );
 }
@@ -210,15 +220,32 @@ export function HomeScreenPreview() {
 const styles = StyleSheet.create({
   screen: {
     backgroundColor: AppTheme.colors.background,
-    gap: AppTheme.spacing.md,
+    gap: AppTheme.spacing.lg,
     paddingHorizontal: AppTheme.spacing.md,
     paddingTop: AppTheme.spacing.md,
   },
   hero: {
     alignItems: "center",
+    backgroundColor: AppTheme.colors.surface,
+    borderColor: "rgba(255,255,255,0.82)",
+    borderRadius: AppTheme.radius.xl,
+    borderWidth: 1,
     flexDirection: "row",
     gap: AppTheme.spacing.md,
     justifyContent: "space-between",
+    overflow: "hidden",
+    padding: AppTheme.spacing.md,
+    position: "relative",
+    ...AppTheme.shadow,
+  },
+  heroGlow: {
+    backgroundColor: AppTheme.colors.primarySoft,
+    borderRadius: 999,
+    height: 150,
+    left: -62,
+    position: "absolute",
+    top: -76,
+    width: 150,
   },
   heroText: {
     flex: 1,
@@ -238,8 +265,8 @@ const styles = StyleSheet.create({
     ...AppTheme.typography.body,
   },
   progressCard: {
-    backgroundColor: AppTheme.colors.surface,
-    borderColor: AppTheme.colors.border,
+    backgroundColor: "#0B4F4A",
+    borderColor: "rgba(255,255,255,0.2)",
     borderRadius: AppTheme.radius.xl,
     borderWidth: 1,
     overflow: "hidden",
@@ -248,7 +275,7 @@ const styles = StyleSheet.create({
     ...AppTheme.shadow,
   },
   orbOne: {
-    backgroundColor: AppTheme.colors.primarySoft,
+    backgroundColor: "rgba(120, 255, 212, 0.18)",
     borderRadius: 90,
     height: 180,
     position: "absolute",
@@ -257,7 +284,7 @@ const styles = StyleSheet.create({
     width: 180,
   },
   orbTwo: {
-    backgroundColor: AppTheme.colors.secondarySoft,
+    backgroundColor: "rgba(47, 128, 237, 0.22)",
     borderRadius: 72,
     bottom: -70,
     height: 144,
@@ -266,16 +293,52 @@ const styles = StyleSheet.create({
     width: 144,
   },
   progressLabel: {
-    color: AppTheme.colors.primary,
+    color: "#A7F3D0",
     fontSize: 13,
     fontWeight: "900",
   },
   progressTitle: {
-    color: AppTheme.colors.text,
+    color: AppTheme.colors.white,
     fontSize: 24,
     fontWeight: "900",
     lineHeight: 30,
     marginTop: AppTheme.spacing.xxs,
+  },
+  progressTop: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: AppTheme.spacing.md,
+    justifyContent: "space-between",
+  },
+  progressCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  progressHint: {
+    color: "rgba(255,255,255,0.78)",
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 21,
+    marginTop: AppTheme.spacing.xs,
+  },
+  progressBadge: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.14)",
+    borderColor: "rgba(255,255,255,0.24)",
+    borderRadius: AppTheme.radius.xl,
+    borderWidth: 1,
+    padding: AppTheme.spacing.sm,
+    width: 82,
+  },
+  progressBadgeValue: {
+    color: AppTheme.colors.white,
+    fontSize: 22,
+    fontWeight: "900",
+  },
+  progressBadgeLabel: {
+    color: "rgba(255,255,255,0.74)",
+    fontSize: 11,
+    fontWeight: "900",
   },
   statRow: {
     flexDirection: "row",
@@ -283,14 +346,14 @@ const styles = StyleSheet.create({
     marginTop: AppTheme.spacing.md,
   },
   progressTrack: {
-    backgroundColor: "#E7EEF3",
+    backgroundColor: "rgba(255,255,255,0.18)",
     borderRadius: AppTheme.radius.pill,
     height: 12,
     marginTop: AppTheme.spacing.md,
     overflow: "hidden",
   },
   progressFill: {
-    backgroundColor: AppTheme.colors.primary,
+    backgroundColor: "#86EFAC",
     borderRadius: AppTheme.radius.pill,
     height: "100%",
   },
@@ -300,12 +363,13 @@ const styles = StyleSheet.create({
     marginTop: AppTheme.spacing.xs,
   },
   progressText: {
-    color: AppTheme.colors.textSecondary,
+    color: "rgba(255,255,255,0.82)",
     fontSize: 13,
     fontWeight: "800",
   },
   continueButton: {
     alignSelf: "flex-start",
+    backgroundColor: "#20C997",
     marginTop: AppTheme.spacing.md,
     minWidth: 154,
   },
