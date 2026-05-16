@@ -195,6 +195,28 @@
   margin-top: auto;
 }
 
+.hero-panel--auth-register {
+  overflow: visible;
+}
+
+.hero-panel--auth-register .auth-stage--framed {
+  grid-template-rows: auto auto;
+  align-items: start;
+  min-height: auto;
+}
+
+.hero-panel--auth-register .auth-card--register,
+.hero-panel--auth-register .auth-card--register .auth-form {
+  min-height: auto;
+  height: auto;
+}
+
+.hero-panel--auth-register .auth-card--register {
+  margin-top: 0;
+  padding-top: 52px;
+  padding-bottom: 40px;
+}
+
 .data-workbench__content > * {
   min-width: 0;
 }
