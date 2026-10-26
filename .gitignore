@@ -20,6 +20,7 @@ backend/data/*.sqlite-wal
 .codex_tmp/
 .codex-run/
 auth-info.docx
+鉴权信息.docx
 deploy-smart-classroom*.tar.gz
 desktop-runtime/*.zip
 desktop-runtime/node-v20.20.2-win-x64/
